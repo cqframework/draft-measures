@@ -4,13 +4,13 @@ This implementation guide provides draft measure content. Measures in this imple
 
 Commits to this repository will automatically trigger a new build of the IG, which will then be published to the following location:
 
-[http://build.fhir.org/ig/HL7/draft-measures](http://build.fhir.org/ig/HL7/draft-measures)
+[http://build.fhir.org/ig/cqframework/draft-measures](http://build.fhir.org/ig/cqframework/draft-measures)
 
 Build log is available here:
-[http://ig-build.fhir.org.s3-website-us-east-1.amazonaws.com/logs/HL7/draft-measures](http://ig-build.fhir.org.s3-website-us-east-1.amazonaws.com/logs/HL7/draft-measures)
+[http://ig-build.fhir.org.s3-website-us-east-1.amazonaws.com/logs/cqframework/draft-measures](http://ig-build.fhir.org.s3-website-us-east-1.amazonaws.com/logs/cqframework/draft-measures)
 
 Full debugging information is available here:
-[http://build.fhir.org/ig/HL7/draft-measures/debug.tgz](http://build.fhir.org/ig/HL7/draft-measures/debug.tgz)
+[http://build.fhir.org/ig/cqframework/draft-measures/debug.tgz](http://build.fhir.org/ig/cqframework/draft-measures/debug.tgz)
 
 ## Local Build
 
