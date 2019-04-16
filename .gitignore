@@ -1,0 +1,12 @@
+*.DS_Store
+/output
+/qa
+/temp
+/.idea
+/.vscode
+/txCache
+/ig.ini
+/resources/ig-expansion-parameters.json
+/resources/ig-new.json
+/resources/ig-new.xml
+/resources/ig-validation-parameters.json
