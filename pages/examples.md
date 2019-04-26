@@ -38,6 +38,7 @@ These examples are planned
 This section will contain links to trackers that have been submitted for issues encountered during the translation.
 
 Walkthrough examples, specifically identifying gaps and how they were addressed within translation.
+
 Capture and document known gaps.
 
 # Common Patterns and Approaches
