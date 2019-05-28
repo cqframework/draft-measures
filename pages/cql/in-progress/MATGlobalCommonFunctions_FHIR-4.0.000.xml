@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <library xmlns="urn:hl7-org:elm:r1" xmlns:t="urn:hl7-org:elm-types:r1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:fhir="http://hl7.org/fhir" xmlns:qdm43="urn:healthit-gov:qdm:v4_3" xmlns:qdm53="urn:healthit-gov:qdm:v5_3" xmlns:a="urn:hl7-org:cql-annotations:r1">
-   <identifier id="MATGlobalCommonFunctions_FHIR" version="2.0.000"/>
+   <identifier id="MATGlobalCommonFunctions_FHIR" version="4.0.000"/>
    <schemaIdentifier id="urn:hl7-org:elm" version="r1"/>
    <usings>
       <def localIdentifier="System" uri="urn:hl7-org:elm-types:r1"/>
@@ -25,6 +25,7 @@
    <valueSets>
       <def name="Encounter Inpatient" id="https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.666.5.307" accessLevel="Public"/>
       <def name="Emergency Department Visit" id="https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.292" accessLevel="Public"/>
+      <def name="Observation Services" id="https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1111.143" accessLevel="Public"/>
    </valueSets>
    <codes>
       <def name="Birthdate" id="21112-8" display="Birth date" accessLevel="Public">
@@ -648,6 +649,137 @@
          </expression>
          <operand name="reference">
             <operandTypeSpecifier name="fhir:Reference" xsi:type="NamedTypeSpecifier"/>
+         </operand>
+      </def>
+      <def name="HospitalizationWithObservation" context="Patient" accessLevel="Public" xsi:type="FunctionDef">
+         <expression xsi:type="Query">
+            <source alias="Visit">
+               <expression name="TheEncounter" xsi:type="OperandRef"/>
+            </source>
+            <let identifier="ObsVisit">
+               <expression xsi:type="Last">
+                  <source xsi:type="Query">
+                     <source alias="LastObs">
+                        <expression dataType="fhir:Encounter" codeProperty="type" xsi:type="Retrieve">
+                           <codes name="Observation Services" xsi:type="ValueSetRef"/>
+                        </expression>
+                     </source>
+                     <where xsi:type="In">
+                        <operand xsi:type="End">
+                           <operand name="ToInterval" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                              <operand path="period" scope="LastObs" xsi:type="Property"/>
+                           </operand>
+                        </operand>
+                        <operand lowClosed="true" highClosed="true" xsi:type="Interval">
+                           <low xsi:type="Subtract">
+                              <operand xsi:type="Start">
+                                 <operand name="ToInterval" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                                    <operand path="period" scope="Visit" xsi:type="Property"/>
+                                 </operand>
+                              </operand>
+                              <operand value="1" unit="hour" xsi:type="Quantity"/>
+                           </low>
+                           <high xsi:type="Start">
+                              <operand name="ToInterval" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                                 <operand path="period" scope="Visit" xsi:type="Property"/>
+                              </operand>
+                           </high>
+                        </operand>
+                     </where>
+                     <sort>
+                        <by direction="asc" xsi:type="ByExpression">
+                           <expression xsi:type="End">
+                              <operand name="ToInterval" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                                 <operand name="period" xsi:type="IdentifierRef"/>
+                              </operand>
+                           </expression>
+                        </by>
+                     </sort>
+                  </source>
+               </expression>
+            </let>
+            <let identifier="VisitStart">
+               <expression xsi:type="Coalesce">
+                  <operand xsi:type="Start">
+                     <operand name="ToInterval" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                        <operand path="period" xsi:type="Property">
+                           <source name="ObsVisit" xsi:type="QueryLetRef"/>
+                        </operand>
+                     </operand>
+                  </operand>
+                  <operand xsi:type="Start">
+                     <operand name="ToInterval" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                        <operand path="period" scope="Visit" xsi:type="Property"/>
+                     </operand>
+                  </operand>
+               </expression>
+            </let>
+            <let identifier="EDVisit">
+               <expression xsi:type="Last">
+                  <source xsi:type="Query">
+                     <source alias="LastED">
+                        <expression dataType="fhir:Encounter" codeProperty="type" xsi:type="Retrieve">
+                           <codes name="Emergency Department Visit" xsi:type="ValueSetRef"/>
+                        </expression>
+                     </source>
+                     <where xsi:type="In">
+                        <operand xsi:type="End">
+                           <operand name="ToInterval" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                              <operand path="period" scope="LastED" xsi:type="Property"/>
+                           </operand>
+                        </operand>
+                        <operand lowClosed="true" highClosed="true" xsi:type="Interval">
+                           <low xsi:type="Subtract">
+                              <operand name="VisitStart" xsi:type="QueryLetRef"/>
+                              <operand value="1" unit="hour" xsi:type="Quantity"/>
+                           </low>
+                           <high name="VisitStart" xsi:type="QueryLetRef"/>
+                        </operand>
+                     </where>
+                     <sort>
+                        <by direction="asc" xsi:type="ByExpression">
+                           <expression xsi:type="End">
+                              <operand name="ToInterval" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                                 <operand name="period" xsi:type="IdentifierRef"/>
+                              </operand>
+                           </expression>
+                        </by>
+                     </sort>
+                  </source>
+               </expression>
+            </let>
+            <return>
+               <expression lowClosed="true" highClosed="true" xsi:type="Interval">
+                  <low xsi:type="Coalesce">
+                     <operand xsi:type="Start">
+                        <operand name="ToInterval" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                           <operand path="period" xsi:type="Property">
+                              <source name="EDVisit" xsi:type="QueryLetRef"/>
+                           </operand>
+                        </operand>
+                     </operand>
+                     <operand name="VisitStart" xsi:type="QueryLetRef"/>
+                  </low>
+                  <high xsi:type="End">
+                     <operand name="ToInterval" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                        <operand path="period" scope="Visit" xsi:type="Property"/>
+                     </operand>
+                  </high>
+               </expression>
+            </return>
+         </expression>
+         <operand name="TheEncounter">
+            <operandTypeSpecifier name="fhir:Encounter" xsi:type="NamedTypeSpecifier"/>
+         </operand>
+      </def>
+      <def name="HospitalizationWithObservationLengthofStay" context="Patient" accessLevel="Public" xsi:type="FunctionDef">
+         <expression name="LengthInDays" xsi:type="FunctionRef">
+            <operand name="HospitalizationWithObservation" xsi:type="FunctionRef">
+               <operand name="Encounter" xsi:type="OperandRef"/>
+            </operand>
+         </expression>
+         <operand name="Encounter">
+            <operandTypeSpecifier name="fhir:Encounter" xsi:type="NamedTypeSpecifier"/>
          </operand>
       </def>
    </statements>
