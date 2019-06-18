@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<library xmlns="urn:hl7-org:elm:r1" xmlns:t="urn:hl7-org:elm-types:r1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:fhir="http://hl7.org/fhir" xmlns:qdm43="urn:healthit-gov:qdm:v4_3" xmlns:qdm53="urn:healthit-gov:qdm:v5_3" xmlns:a="urn:hl7-org:cql-annotations:r1">
+   <identifier id="TJC_Overall" version="3.6.000"/>
+   <schemaIdentifier id="urn:hl7-org:elm" version="r1"/>
+   <usings>
+      <def localIdentifier="System" uri="urn:hl7-org:elm-types:r1"/>
+      <def localIdentifier="FHIR" uri="http://hl7.org/fhir" version="3.0.0"/>
+   </usings>
+   <includes>
+      <def localIdentifier="FHIRHelpers" path="FHIRHelpers" version="3.0.0"/>
+      <def localIdentifier="Global" path="MATGlobalCommonFunctions_FHIR" version="4.0.000"/>
+      <def localIdentifier="SDE" path="SupplementalDataElements_FHIR" version="1.0.0"/>
+   </includes>
+   <parameters>
+      <def name="Measurement Period" accessLevel="Public">
+         <parameterTypeSpecifier xsi:type="IntervalTypeSpecifier">
+            <pointType name="t:DateTime" xsi:type="NamedTypeSpecifier"/>
+         </parameterTypeSpecifier>
+      </def>
+   </parameters>
+   <codeSystems>
+      <def name="SNOMEDCT" id="http://snomed.info/sct/731000124108" accessLevel="Public"/>
+      <def name="LOINC" id="http://loinc.org" accessLevel="Public"/>
+   </codeSystems>
+   <valueSets>
+      <def name="Comfort Measures" id="https://cts.nlm.nih.gov/fhir/ValueSet/1.3.6.1.4.1.33895.1.3.0.45" accessLevel="Public"/>
+      <def name="Discharge To Acute Care Facility" id="https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.87" accessLevel="Public"/>
+      <def name="Discharged to Health Care Facility for Hospice Care" id="https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.207" accessLevel="Public"/>
+      <def name="Discharged to Home for Hospice Care" id="https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.209" accessLevel="Public"/>
+      <def name="Emergency Department Visit" id="https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.292" accessLevel="Public"/>
+      <def name="Encounter Inpatient" id="https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.666.5.307" accessLevel="Public"/>
+      <def name="Hemorrhagic Stroke" id="https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.212" accessLevel="Public"/>
+      <def name="Ischemic Stroke" id="https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.247" accessLevel="Public"/>
+      <def name="Left Against Medical Advice" id="https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.308" accessLevel="Public"/>
+      <def name="Non-Elective Inpatient Encounter" id="https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.424" accessLevel="Public"/>
+      <def name="Patient Expired" id="https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.309" accessLevel="Public"/>
+      <def name="Ticagrelor Therapy" id="https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1110.39" accessLevel="Public"/>
+      <def name="Observation Services" id="https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1111.143" accessLevel="Public"/>
+   </valueSets>
+   <codes>
+      <def name="Birth date" id="21112-8" display="Birth date" accessLevel="Public">
+         <codeSystem name="LOINC"/>
+      </def>
+   </codes>
+   <statements>
+      <def name="Patient" context="Patient">
+         <expression xsi:type="SingletonFrom">
+            <operand dataType="fhir:Patient" xsi:type="Retrieve"/>
+         </expression>
+      </def>
+      <def name="Intervention Comfort Measures" context="Patient" accessLevel="Public">
+         <expression xsi:type="Union">
+            <operand xsi:type="As">
+               <operand xsi:type="Query">
+                  <source alias="P">
+                     <expression dataType="fhir:ProcedureRequest" codeProperty="code" xsi:type="Retrieve">
+                        <codes name="Comfort Measures" xsi:type="ValueSetRef"/>
+                     </expression>
+                  </source>
+                  <where xsi:type="Equal">
+                     <operand name="ToString" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                        <operand path="intent" scope="P" xsi:type="Property"/>
+                     </operand>
+                     <operand valueType="t:String" value="order" xsi:type="Literal"/>
+                  </where>
+               </operand>
+               <asTypeSpecifier xsi:type="ListTypeSpecifier">
+                  <elementType xsi:type="ChoiceTypeSpecifier">
+                     <choice name="fhir:Procedure" xsi:type="NamedTypeSpecifier"/>
+                     <choice name="fhir:ProcedureRequest" xsi:type="NamedTypeSpecifier"/>
+                  </elementType>
+               </asTypeSpecifier>
+            </operand>
+            <operand xsi:type="As">
+               <operand xsi:type="Query">
+                  <source alias="InterventionPerformed">
+                     <expression dataType="fhir:Procedure" codeProperty="code" xsi:type="Retrieve">
+                        <codes name="Comfort Measures" xsi:type="ValueSetRef"/>
+                     </expression>
+                  </source>
+                  <where xsi:type="Equal">
+                     <operand name="ToString" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                        <operand path="status" scope="InterventionPerformed" xsi:type="Property"/>
+                     </operand>
+                     <operand valueType="t:String" value="completed" xsi:type="Literal"/>
+                  </where>
+               </operand>
+               <asTypeSpecifier xsi:type="ListTypeSpecifier">
+                  <elementType xsi:type="ChoiceTypeSpecifier">
+                     <choice name="fhir:Procedure" xsi:type="NamedTypeSpecifier"/>
+                     <choice name="fhir:ProcedureRequest" xsi:type="NamedTypeSpecifier"/>
+                  </elementType>
+               </asTypeSpecifier>
+            </operand>
+         </expression>
+      </def>
+      <def name="Non Elective Inpatient Encounter" context="Patient" accessLevel="Public">
+         <expression xsi:type="Query">
+            <source alias="NonElectiveEncounter">
+               <expression dataType="fhir:Encounter" codeProperty="type" xsi:type="Retrieve">
+                  <codes name="Non-Elective Inpatient Encounter" xsi:type="ValueSetRef"/>
+               </expression>
+            </source>
+            <where xsi:type="And">
+               <operand xsi:type="LessOrEqual">
+                  <operand name="LengthInDays" libraryName="Global" xsi:type="FunctionRef">
+                     <operand name="ToInterval" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                        <operand path="period" scope="NonElectiveEncounter" xsi:type="Property"/>
+                     </operand>
+                  </operand>
+                  <operand valueType="t:Integer" value="120" xsi:type="Literal"/>
+               </operand>
+               <operand xsi:type="In">
+                  <operand xsi:type="End">
+                     <operand name="ToInterval" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                        <operand path="period" scope="NonElectiveEncounter" xsi:type="Property"/>
+                     </operand>
+                  </operand>
+                  <operand name="Measurement Period" xsi:type="ParameterRef"/>
+               </operand>
+            </where>
+         </expression>
+      </def>
+      <def name="All Stroke Encounter" context="Patient" accessLevel="Public">
+         <expression xsi:type="Query">
+            <source alias="NonElectiveEncounter">
+               <expression name="Non Elective Inpatient Encounter" xsi:type="ExpressionRef"/>
+            </source>
+            <where xsi:type="Or">
+               <operand xsi:type="InValueSet">
+                  <code name="ToConcept" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                     <operand path="code" xsi:type="Property">
+                        <source name="PrincipalDiagnosis" libraryName="Global" xsi:type="FunctionRef">
+                           <operand name="NonElectiveEncounter" xsi:type="AliasRef"/>
+                        </source>
+                     </operand>
+                  </code>
+                  <valueset name="Hemorrhagic Stroke"/>
+               </operand>
+               <operand xsi:type="InValueSet">
+                  <code name="ToConcept" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                     <operand path="code" xsi:type="Property">
+                        <source name="PrincipalDiagnosis" libraryName="Global" xsi:type="FunctionRef">
+                           <operand name="NonElectiveEncounter" xsi:type="AliasRef"/>
+                        </source>
+                     </operand>
+                  </code>
+                  <valueset name="Ischemic Stroke"/>
+               </operand>
+            </where>
+         </expression>
+      </def>
+      <def name="Encounter with Principal Diagnosis and Age" context="Patient" accessLevel="Public">
+         <expression xsi:type="Query">
+            <source alias="AllStrokeEncounter">
+               <expression name="All Stroke Encounter" xsi:type="ExpressionRef"/>
+            </source>
+            <relationship alias="BirthDate" xsi:type="With">
+               <expression dataType="fhir:Patient" xsi:type="Retrieve"/>
+               <suchThat xsi:type="GreaterOrEqual">
+                  <operand name="CalendarAgeInYearsAt" libraryName="Global" xsi:type="FunctionRef">
+                     <operand xsi:type="ToDateTime">
+                        <operand name="ToDate" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                           <operand path="birthDate" scope="BirthDate" xsi:type="Property"/>
+                        </operand>
+                     </operand>
+                     <operand xsi:type="Start">
+                        <operand name="ToInterval" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                           <operand path="period" scope="AllStrokeEncounter" xsi:type="Property"/>
+                        </operand>
+                     </operand>
+                  </operand>
+                  <operand valueType="t:Integer" value="18" xsi:type="Literal"/>
+               </suchThat>
+            </relationship>
+         </expression>
+      </def>
+      <def name="Ischemic Stroke Encounter" context="Patient" accessLevel="Public">
+         <expression xsi:type="Query">
+            <source alias="EncounterWithAge">
+               <expression name="Encounter with Principal Diagnosis and Age" xsi:type="ExpressionRef"/>
+            </source>
+            <where xsi:type="InValueSet">
+               <code name="ToConcept" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                  <operand path="code" xsi:type="Property">
+                     <source name="PrincipalDiagnosis" libraryName="Global" xsi:type="FunctionRef">
+                        <operand name="EncounterWithAge" xsi:type="AliasRef"/>
+                     </source>
+                  </operand>
+               </code>
+               <valueset name="Ischemic Stroke"/>
+            </where>
+         </expression>
+      </def>
+      <def name="Ischemic Stroke Encounters with Discharge Disposition" context="Patient" accessLevel="Public">
+         <expression xsi:type="Query">
+            <source alias="IschemicStrokeEncounter">
+               <expression name="Ischemic Stroke Encounter" xsi:type="ExpressionRef"/>
+            </source>
+            <where xsi:type="Or">
+               <operand xsi:type="Or">
+                  <operand xsi:type="Or">
+                     <operand xsi:type="Or">
+                        <operand xsi:type="InValueSet">
+                           <code name="ToConcept" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                              <operand path="dischargeDisposition" xsi:type="Property">
+                                 <source path="hospitalization" scope="IschemicStrokeEncounter" xsi:type="Property"/>
+                              </operand>
+                           </code>
+                           <valueset name="Discharge To Acute Care Facility"/>
+                        </operand>
+                        <operand xsi:type="InValueSet">
+                           <code name="ToConcept" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                              <operand path="dischargeDisposition" xsi:type="Property">
+                                 <source path="hospitalization" scope="IschemicStrokeEncounter" xsi:type="Property"/>
+                              </operand>
+                           </code>
+                           <valueset name="Left Against Medical Advice"/>
+                        </operand>
+                     </operand>
+                     <operand xsi:type="InValueSet">
+                        <code name="ToConcept" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                           <operand path="dischargeDisposition" xsi:type="Property">
+                              <source path="hospitalization" scope="IschemicStrokeEncounter" xsi:type="Property"/>
+                           </operand>
+                        </code>
+                        <valueset name="Patient Expired"/>
+                     </operand>
+                  </operand>
+                  <operand xsi:type="InValueSet">
+                     <code name="ToConcept" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                        <operand path="dischargeDisposition" xsi:type="Property">
+                           <source path="hospitalization" scope="IschemicStrokeEncounter" xsi:type="Property"/>
+                        </operand>
+                     </code>
+                     <valueset name="Discharged to Home for Hospice Care"/>
+                  </operand>
+               </operand>
+               <operand xsi:type="InValueSet">
+                  <code name="ToConcept" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                     <operand path="dischargeDisposition" xsi:type="Property">
+                        <source path="hospitalization" scope="IschemicStrokeEncounter" xsi:type="Property"/>
+                     </operand>
+                  </code>
+                  <valueset name="Discharged to Health Care Facility for Hospice Care"/>
+               </operand>
+            </where>
+         </expression>
+      </def>
+      <def name="Comfort Measures during Hospitalization" context="Patient" accessLevel="Public">
+         <expression xsi:type="Query">
+            <source alias="IschemicStrokeEncounter">
+               <expression name="Ischemic Stroke Encounter" xsi:type="ExpressionRef"/>
+            </source>
+            <relationship alias="ComfortMeasure" xsi:type="With">
+               <expression name="Intervention Comfort Measures" xsi:type="ExpressionRef"/>
+               <suchThat xsi:type="In">
+                  <operand xsi:type="Coalesce">
+                     <operand xsi:type="Start">
+                        <operand name="ToInterval" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                           <operand asType="fhir:Period" xsi:type="As">
+                              <operand path="performed" scope="ComfortMeasure" xsi:type="Property"/>
+                           </operand>
+                        </operand>
+                     </operand>
+                     <operand name="ToDateTime" libraryName="FHIRHelpers" xsi:type="FunctionRef">
+                        <operand path="authoredOn" scope="ComfortMeasure" xsi:type="Property"/>
+                     </operand>
+                  </operand>
+                  <operand name="HospitalizationWithObservation" libraryName="Global" xsi:type="FunctionRef">
+                     <operand name="IschemicStrokeEncounter" xsi:type="AliasRef"/>
+                  </operand>
+               </suchThat>
+            </relationship>
+         </expression>
+      </def>
+      <def name="CalendarDayOfOrDayAfter" context="Patient" accessLevel="Public" xsi:type="FunctionDef">
+         <expression lowClosed="true" highClosed="false" xsi:type="Interval">
+            <low name="ToDate" libraryName="Global" xsi:type="FunctionRef">
+               <operand name="StartValue" xsi:type="OperandRef"/>
+            </low>
+            <high name="ToDate" libraryName="Global" xsi:type="FunctionRef">
+               <operand xsi:type="Add">
+                  <operand name="StartValue" xsi:type="OperandRef"/>
+                  <operand value="2" unit="days" xsi:type="Quantity"/>
+               </operand>
+            </high>
+         </expression>
+         <operand name="StartValue">
+            <operandTypeSpecifier name="t:DateTime" xsi:type="NamedTypeSpecifier"/>
+         </operand>
+      </def>
+   </statements>
+</library>
+
+

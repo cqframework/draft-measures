@@ -1,8 +1,9 @@
+library EXM117_FHIR version '1.0.1'
+
 /*
 Childhood Immunization Screening (CIS)
 */
 
-library CIS_FHIR version '1.0.1'
 //using FHIR version '3.0.1'
 using FHIR version '3.0.0'
 

@@ -23,3 +23,28 @@ These examples illustrate patient-based screening measures
 
 These examples are currently in progress
 
+* [**EXM165**](BP) (CPC+ 2019)
+* [**EXM105**](Stroke-6) (EH 2019) Will review progress on a future call (5/21)
+* [**EXM122**](DM) (CPC+ 2019)
+* [**EXM117**](CIS)
+* [**EXM9**](PC-05)
+
+# Planned
+
+These examples are planned
+
+# Issues
+
+This section will contain links to trackers that have been submitted for issues encountered during the translation.
+
+Walkthrough examples, specifically identifying gaps and how they were addressed within translation.
+
+Capture and document known gaps.
+
+# Common Patterns and Approaches
+
+TODO: Start with Cooking with CQL Examples and provide FHIR equivalents
+
+# Tools
+
+
