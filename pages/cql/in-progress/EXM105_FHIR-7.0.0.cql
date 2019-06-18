@@ -59,7 +59,7 @@ define "Non Elective Inpatient Encounter":
 	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
 		where "LengthInDays"(NonElectiveEncounter.period)<= 120
 			and NonElectiveEncounter.period ends during "Measurement Period"
-      
+
 define function "EncounterDiagnosis"(Encounter Encounter):
   Encounter.diagnosis D
     return singleton from ([Condition: id in "GetId"(D.condition.reference)])
@@ -73,10 +73,11 @@ define function "LengthInDays"(Value Interval<DateTime>):
 
 define function "GetId"(uri String):
 	Last(Split(uri, '/'))
-	
+
 define "Denominator":
 	"Initial Population"
 
+//QA
 define "Statin Allergy":
 	["AllergyIntolerance": "Statin Allergen"]
 
@@ -89,11 +90,13 @@ define "Ischemic Stroke Encounter":
 	"Encounter with Principal Diagnosis and Age" EncounterWithAge
 		where PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
 
+//QA
 define "Statin at Discharge":
 	["MedicationRequest"] Statin
 		where (Statin.medication as CodeableConcept) in "Statin Grouper"
 			and Statin.intent = 'order'
 
+//QA
 define "Statin Not Given at Discharge":
 	["MedicationRequest"] NoStatin
 		where (NoStatin.medication as CodeableConcept) in "Statin Grouper"
@@ -105,7 +108,7 @@ define function "Normalize Onset"(onset Choice<FHIR.dateTime, FHIR.Age, FHIR.Per
 	if onset is FHIR.dateTime then Interval[onset.value, onset.value]
 	else if onset is FHIR.Period then FHIRHelpers.ToInterval(onset as FHIR.Period)
 	else null
-	
+
 define "Encounter with Max LDL less than 70 mg per dL":
 	"Ischemic Stroke Encounter" IschemicStrokeEncounter
 		where Max(["Observation": "LDL-c"] Ldl
@@ -118,14 +121,14 @@ define "Denominator Exception":
 		with "Statin Not Given at Discharge" NoDischargeStatin
 			such that NoDischargeStatin.authoredOn during IschemicStrokeEncounter.period
 	)
-	union 
+	union
 	("Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Statin Allergy" StatinAllergy
 			such that "Normalize Onset"(StatinAllergy.onset) on or before end of FHIRHelpers.ToInterval(IschemicStrokeEncounter.period))
 
 define "Denominator Exclusion":
 	"Ischemic Stroke Encounters with Discharge Status"
-	union 
+	union
 	"Comfort Measures during Hospitalization"
 
 define "Ischemic Stroke Encounters with Discharge Status":
@@ -137,13 +140,23 @@ define "Ischemic Stroke Encounters with Discharge Status":
 			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
 	)
 
+//QA
 define "Comfort Measures during Hospitalization":
 	"Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Intervention Comfort Measures" ComfortMeasure
 			such that ComfortMeasure.authoredOn during Global."Hospitalization"(IschemicStrokeEncounter)
 
+/*
 define "Intervention Comfort Measures":
-	(["ProcedureRequest": "Comfort Measures"] P 
+	(["ProcedureRequest": "Comfort Measures"] P
 		where P.intent = 'order')
 		union ["Procedure": "Comfort Measures"]
+*/
 
+//QA
+define "Intervention Comfort Measures":
+	(["ProcedureRequest": "Comfort Measures"] P
+		where P.intent = 'order')
+		union
+		(["Procedure": "Comfort Measures"] IntervetionPerformed
+		where IntervetionPerformed.status = 'completed')
