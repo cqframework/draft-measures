@@ -43,7 +43,19 @@ Capture and document known gaps.
 
 # Common Patterns and Approaches
 
-TODO: Start with Cooking with CQL Examples and provide FHIR equivalents
+## Encounter Examples
+
+## Diagnosis Examples
+
+## Imaging Examples
+
+## Laboratory Examples
+
+## Vital Signs
+
+### Blood Pressure
+
+### BMI
 
 # Tools
 
