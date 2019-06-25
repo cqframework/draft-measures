@@ -54,7 +54,7 @@ define "Denominator Exclusions":
 	exists ( [Condition: code in "Conditions Due To Human Immunodeficiency Virus (HIV)"] HIVConditions
 			where HIVConditions.clinicalStatus = 'active'
 			and HIVConditions.verificationStatus = 'confirmed'
-			and HIVConditions.onsetPeriod starts before start of "Measurement Period"
+			and (HIVConditions.onset as dateTime) before start of "Measurement Period"
 	)
 
 define "Numerator":
@@ -63,11 +63,11 @@ define "Numerator":
 define "HIV Test Performed":
 	( [Observation: "Human Immunodeficiency Virus (HIV) Laboratory Test Codes (Ab and Ag)"]
 		union [Observation: "HIV 1 and 2 tests - Meaningful Use set"] ) HIVTest
-		where exists ( Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of HIVTest.relevantPeriod)>= 15
-					and Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of HIVTest.relevantPeriod)< 66
+		where exists ( Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of HIVTest.effective)>= 15
+					and Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of HIVTest.effective)< 66
 		)
 			and HIVTest.status in {'final', 'amended', 'corrected', 'preliminary'}
-			and HIVTest.effectivePeriod starts before end of "Measurement Period"
+			and HIVTest.effective starts before end of "Measurement Period"
 
 define "Initial Population":
 exists ( Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of "Measurement Period")>= 15
