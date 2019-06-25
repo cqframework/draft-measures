@@ -55,8 +55,8 @@ define "New or Recurrent Major Depressive Disorder Encounter":
 			and PriorMDDEpisodeEncounter.period ends 104 days or less before day of start of NewOrRecurrentMDDEncounter.period
 	where NewOrRecurrentMDDEncounter.period during "Measurement Period"
 
-define "Numerator"
-"New or Recurrent Major Depressive Disorder Encounter" NewOrRecurrentMDDEncounter
-	with ["Procedure": "Suicide risk assessment (procedure)"] SuicideRiskAssessment
-		such that SuicideRiskAssessment.performed during NewOrRecurrentMDDEncounter.period
-      and SuicideRiskAssessment.status = 'completed'
+define "Numerator":
+  "New or Recurrent Major Depressive Disorder Encounter" NewOrRecurrentMDDEncounter
+  	with ["Procedure": "Suicide risk assessment (procedure)"] SuicideRiskAssessment
+	  	such that SuicideRiskAssessment.performed during NewOrRecurrentMDDEncounter.period
+        and SuicideRiskAssessment.status = 'completed'
