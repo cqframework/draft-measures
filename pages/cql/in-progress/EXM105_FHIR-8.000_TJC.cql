@@ -4,6 +4,8 @@ library EXM105 version '8.0.0'
 using FHIR version '3.0.0'
 
 include FHIRHelpers version '3.0.0'
+include MATGlobalCommonFunctions_FHIR version '2.0.000' called Global
+include SupplementalDataElements_FHIR version '1.0.0' called SDE
 
 codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
@@ -53,12 +55,12 @@ define "Encounter with Principal Diagnosis and Age":
 
 define "All Stroke Encounter":
 	"Non Elective Inpatient Encounter" NonElectiveEncounter
-		where "PrincipalDiagnosis"(NonElectiveEncounter).code in "Hemorrhagic Stroke"
-		or "PrincipalDiagnosis"(NonElectiveEncounter).code in "Ischemic Stroke"
+		where Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Hemorrhagic Stroke"
+		or Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Ischemic Stroke"
 
 define "Non Elective Inpatient Encounter":
 	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
-		where "LengthInDays"(NonElectiveEncounter.period)<= 120
+		where Global."LengthInDays"(FHIRHelpers.ToInterval(NonElectiveEncounter.period))<= 120
 			and NonElectiveEncounter.period ends during "Measurement Period"
 
 define "Denominator":
@@ -74,7 +76,7 @@ define "Numerator":
 
 define "Ischemic Stroke Encounter":
 	"Encounter with Principal Diagnosis and Age" EncounterWithAge
-		where PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
+		where Global.PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
 
 define "Statin at Discharge":
 	["MedicationRequest"] Statin
