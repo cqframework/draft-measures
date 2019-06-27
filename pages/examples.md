@@ -65,16 +65,60 @@ Capture and document known gaps.
 
 ## Diagnosis Examples
 
-## Imaging Examples
+## Medications
 
-## Laboratory Examples
+### Medication use
 
-## Vital Signs
+### Non-Medication Substances
 
-### Blood Pressure
+### Non-Medication Substance Use
 
-### BMI
+## Procedures/Interventions
+
+## Care Plan - Care Goals
+
+## Communication
+
+## Devices
+
+### Device Use
+
+## Care Plan - Care Goals
+
+## Adverse Event
+
+## Allergy/Intolerance
+
+## Observations
+
+### General Observations
+
+### Laboratory tests
+
+### Diagnostic Imaging Studies
+
+### Symptoms
+
+### Vital Signs
+
+#### Blood Pressure
+
+#### BMI
+
+## Family History
+
+## Immunization
+
+## Cross-context queries (e.g to another individuals record)
+
+## Program Participation (e.g. health plan, disease specific program)
+
+## Requests
+
+### Orders
+
+### Recommendations
+
+### Proposals
 
 # Tools
-
-
