@@ -46,7 +46,6 @@ define "Ischemic Stroke Encounter":
 	"Encounter with Principal Diagnosis and Age" EncounterWithAge
 		where Global.PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
 
-
 define "Non Elective Inpatient Encounter":
 	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
 		where Global."LengthInDays"(NonElectiveEncounter.period)<= 120
@@ -74,3 +73,6 @@ define "Encounter with Principal Diagnosis and Age":
 
 define function "CalendarDayOfOrDayAfter"(StartValue DateTime ):
 	Interval[Global."ToDate"(StartValue), Global."ToDate"(StartValue + 2 days))
+
+define function "HospitalizationWithObservationLengthofStay" (Encounter Encounter)
+	Global."LengthInDays" (Global."HospitalizationWithObservation"(Encounter))
