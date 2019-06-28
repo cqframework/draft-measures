@@ -151,3 +151,19 @@ define function GetLocation(reference Reference):
   singleton from (
     [Location: id in GetId(reference.reference)]
   )
+
+define function "HospitalizationWithObservation" (Encounter Encounter)
+	Encounter Visit 
+		let ObsVisit: Last(["Encounter, Performed": "Observation Services"] LastObs
+					where LastObs.period ends 1 hour or less on or before start of Visit.period
+					sort by
+					end of period
+		),
+		VisitStart: Coalesce(start of ObsVisit.period, start of Visit.period),
+		EDVisit: Last([Encounter_Encounter: "Emergency Department Visit"]LastED
+					where LastED.period ends 1 hour or less on or before VisitStart
+					sort by
+					end of period
+		)
+		return Interval[Coalesce(start of EDVisit.period, VisitStart),
+		end of Visit.period]
