@@ -131,7 +131,7 @@ define "Denominator Exclusions":
 define "Encounter With An INR Greater Than 3.5":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		where ["Observation": "INR"] INR
-				where "Observation" { id: INR.id, effective: INR.issued TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))}
+				where "Observation" { id: INR.id, INR.effective, INR.issued: TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))}
 				return INR.value as Quantity > 3.5
 
 //Done
