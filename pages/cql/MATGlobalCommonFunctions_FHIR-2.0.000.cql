@@ -153,19 +153,18 @@ define function GetLocation(reference Reference):
     [Location: id in GetId(reference.reference)]
   )
 
-//Review at workgroup
-define function "HospitalizationWithObservation" (Encounter "Encounter")
-Encounter Visit
-		let ObsVisit: Last(["Encounter": "Observation Services"] LastObs
-					where LastObs.period ends 1 hour or less on or before start of Visit.period
-					sort by
-					end of period
-		),
-		VisitStart: Coalesce(start of ObsVisit.period, start of Visit.period),
-		EDVisit: Last(["Encounter": "Emergency Department Visit"]LastED
-					where LastED.period ends 1 hour or less on or before VisitStart
-					sort by
-					end of period
-		)
-		return Interval[Coalesce(start of EDVisit.period, VisitStart),
-		end of Visit.period]
+	define function "HospitalizationWithObservation"(TheEncounter FHIR.Encounter):
+		TheEncounter Visit
+				let ObsVisit: Last([Encounter: "Observation Services"] LastObs
+											where LastObs.period ends 1 hour or less on or before start of Visit.period
+											sort by end of period
+											),
+						VisitStart: Coalesce(start of ObsVisit.period, start of Visit.period),
+						EDVisit: Last([Encounter: "Emergency Department Visit"] LastED
+										 where LastED.period ends 1 hour or less on or before VisitStart
+										 sort by end of period
+											)
+			return Interval[Coalesce(start of EDVisit.period, VisitStart), end of Visit.period]
+
+	define function "HospitalizationWithObservationLengthofStay"(Encounter FHIR.Encounter):
+		"LengthInDays"("HospitalizationWithObservation"(Encounter))
