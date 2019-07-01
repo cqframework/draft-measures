@@ -18,6 +18,7 @@ codesystem "Diagnosis Role": 'http://hl7.org/fhir/diagnosis-role'
 
 valueset "Encounter Inpatient": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.666.5.307'
 valueset "Emergency Department Visit": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.292'
+valueset "Observation Services": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1111.143'
 
 code "Birthdate": '21112-8' from "LOINC" display 'Birth date'
 code "Dead": '419099009' from "SNOMEDCT" display 'Dead'
@@ -152,15 +153,16 @@ define function GetLocation(reference Reference):
     [Location: id in GetId(reference.reference)]
   )
 
-define function "HospitalizationWithObservation" (Encounter Encounter)
-	Encounter Visit 
-		let ObsVisit: Last(["Encounter, Performed": "Observation Services"] LastObs
+//Review at workgroup
+define function "HospitalizationWithObservation" (Encounter "Encounter")
+Encounter Visit
+		let ObsVisit: Last(["Encounter": "Observation Services"] LastObs
 					where LastObs.period ends 1 hour or less on or before start of Visit.period
 					sort by
 					end of period
 		),
 		VisitStart: Coalesce(start of ObsVisit.period, start of Visit.period),
-		EDVisit: Last([Encounter_Encounter: "Emergency Department Visit"]LastED
+		EDVisit: Last(["Encounter": "Emergency Department Visit"]LastED
 					where LastED.period ends 1 hour or less on or before VisitStart
 					sort by
 					end of period
