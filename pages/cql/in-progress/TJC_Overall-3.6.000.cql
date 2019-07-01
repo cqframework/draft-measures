@@ -74,5 +74,5 @@ define "Encounter with Principal Diagnosis and Age":
 define function "CalendarDayOfOrDayAfter"(StartValue DateTime ):
 	Interval[Global."ToDate"(StartValue), Global."ToDate"(StartValue + 2 days))
 
-define function "HospitalizationWithObservationLengthofStay" (Encounter Encounter)
+define function "HospitalizationWithObservationLengthofStay" (Encounter "Encounter")
 	Global."LengthInDays" (Global."HospitalizationWithObservation"(Encounter))
