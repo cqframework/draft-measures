@@ -111,7 +111,7 @@ define "Encounter with Thrombolytic Therapy Medication or Procedures":
 //Requires adding "HospitalizationWithObservation" to Global library as well, still has errors
 define "Encounter Less Than Two Days":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-		where HospitalizationWithObservationLengthofStay(IschemicStrokeEncounter)< 2
+		where Global.HospitalizationWithObservationLengthofStay(IschemicStrokeEncounter)< 2
 
 //Done
 define "Encounter With Thrombolytic Therapy Prior to Arrival":
