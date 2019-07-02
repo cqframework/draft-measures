@@ -1,21 +1,13 @@
 library EXM506_FHIR3 version '1.3.000'
-//version needs to be spelled out
-//This file came in as a .txt.  It will only perform validation with .CQL extension
 
 using FHIR version '3.0.0'
 
 include MATGlobalCommonFunctions_FHIR version '4.0.000' called Global
-//Updated to 4.0
 include FHIRHelpers version '3.0.0' called FHIRHelpers
 include SupplementalDataElements_FHIR version '1.0.0' called SDE
-//this is the correct version of SDE
 
-/*codesystem "Birth date" '21112-8' from "LOINC" display 'Birth date'
-codesystem "Birth date": 'https://cts.nlm.nih.gov/fhir/CodeSystem/$lookup?system=http://loinc.org&version=2.50&code=21112-8'
-codesystem "Order": 'order' from "RequestIntent" display 'Order'*/
 codesystem "Diagnosis Role": 'http://hl7.org/fhir/diagnosis-role'
 codesystem "LOINC": 'http://loinc.org'
-//codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'  This URL points to an informational document.  Is there something else needed from SnoMed?
 codesystem "SNOMEDCT": 'http://snomed.org'
 codesystem "RequestIntent": 'http://hl7.org/fhir/request-intent'
 
