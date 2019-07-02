@@ -9,6 +9,7 @@ include TJC_Overall version '3.6.000' called TJC
 include SupplementalDataElements_FHIR version '1.0.0' called SDE
 
 codesystem "LOINC": 'http://loinc.org'
+codesystem "RequestIntent": 'http://hl7.org/fhir/request-intent'
 
 valueset "Antithrombotic Therapy": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.201'
 valueset "Ethnicity": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.837'
@@ -26,6 +27,7 @@ valueset "Observation Services": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840
 valueset "Emergency Department Visit": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.292'
 
 code "Birth date": '21112-8' from "LOINC" display 'Birth date'
+code "Order": 'order' from "RequestIntent" display 'Order'
 
 context Patient
 
@@ -131,7 +133,7 @@ define "Denominator Exclusions":
 define "Encounter With An INR Greater Than 3.5":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		where ["Observation": "INR"] INR
-				where "Observation" { id: INR.id, INR.effective, INR.issued: TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))}
+				where "Observation" { id: INR.id, INR.effective INR.issued: TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))}
 				return INR.value as Quantity > 3.5
 
 //Done
