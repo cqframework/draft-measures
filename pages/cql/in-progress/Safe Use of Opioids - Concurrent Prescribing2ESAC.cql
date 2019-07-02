@@ -37,33 +37,28 @@ code "Birthdate": '21112-8' from "LOINC" display 'Birth date'
 code "Order": 'order' from "RequestIntent" display 'Order'
 //codes have to come after value sets and code systems
 
-
-
 parameter "Measurement Period" Interval<DateTime>
 
 context Patient
 
-
 define "Inpatient Hospital Based Encounter with Age Greater than or Equal to 18":
-	(["Encounter": "Encounter Inpatient"] EncounterInpatient //Need to name this//
-where EncounterInpatient.status = 'finished'
-		  and "LengthInDays"(EncounterInpatient.period) <= 120
-			and EncounterInpatient.period ends during "Measurement Period")InpatientHospitalEncounter
-      with ["Patient"] BirthDate
-   		such that Global.CalendarAgeInYearsAt(ToDateTime(BirthDate.birthDate), start of FHIRHelpers.ToInterval(InpatientHospitalEncounter.period)>= 18
+	["Encounter": "Encounter Inpatient"] EncounterInpatient //Need to name this//
+		where EncounterInpatient.status = 'finished'
+		  and Global."LengthInDays"(EncounterInpatient.period) <= 120
+			and EncounterInpatient.period ends during "Measurement Period"
+      and Global.CalendarAgeInYearsAt(ToDateTime(Patient.birthDate), start of FHIRHelpers.ToInterval(EncounterInpatient.period)) >= 18
 
 define "ED or Observation Based Encounter with Age Greater than or Equal to 18":
-(["Encounter": "Encounter ED and Observation Stay"] EDorObservationEncounter
+["Encounter": "Encounter ED and Observation Stay"] EDorObservationEncounter
 	where EDorObservationEncounter.status = 'finished'
-   and EDorObservationEncounter.period ends during "Measurement Period")EDorObservationEncounter
-    with ["Patient Characteristic Birthdate": "Birth date"] BirthDate
-    such that Global.CalendarAgeInYearsAt(ToDateTime(BirthDate.birthDatetime), start of FHIRHelpers.ToInterval(InpatientHospitalEncounter.period)>= 18
+   and EDorObservationEncounter.period ends during "Measurement Period"
+   and Global.CalendarAgeInYearsAt(ToDateTime(Patient.birthDate), start of FHIRHelpers.ToInterval(EDorObservationEncounter.period)) >= 18
 
 define "Hospital Based Encounters for Adults":
 "Inpatient Hospital Based Encounter with Age Greater than or Equal to 18"
 	union "ED or Observation Based Encounter with Age Greater than or Equal to 18"
 
-define "Encounter Discharges with Opioids or Benzodiazepines":
+/* define "Encounter Discharges with Opioids or Benzodiazepines":
 	"Hospital Based Encounters for Adults" HospitalBasedEncounters
 		with [MedicationRequest: medication in "Schedule II and Schedule III Opioids"] OpioidsDischarge
     such that OpioidsDischarge.authoredOn during HospitalBasedEncounters.period
@@ -71,7 +66,17 @@ define "Encounter Discharges with Opioids or Benzodiazepines":
 					union ("Hospital Based Encounters for Adults" HospitalBasedEncounters
     with [MedicationRequest: medication in "Schedule IV Benzodiazepines"] BenzodiazepineDischarge
     such that BenzodiazepineDischarge.authoredOn during HospitalBasedEncounters.period
-           and BenzodiazepineDischarge.intent = 'order')
+           and BenzodiazepineDischarge.intent = 'order') */
+
+define "Encounter Discharges with Opioids or Benzodiazepines":
+	from "Hospital Based Encounters for Adults" HospitalBasedEncounters,
+		[MedicationRequest: medication in "Schedule II and Schedule III Opioids"] OpioidsDischarge,
+		[MedicationRequest: medication in "Schedule IV Benzodiazepines"] BenzodiazepineDischarge
+			where OpioidsDischarge.authoredOn during HospitalBasedEncounters.period
+				and OpioidsDischarge.intent = 'order'
+				and BenzodiazepineDischarge.authoredOn during HospitalBasedEncounters.period
+	      and BenzodiazepineDischarge.intent = 'order'
+			return HospitalBasedEncounters
 
 define "Initial Population":
 "Encounter Discharges with Opioids or Benzodiazepines"
@@ -79,7 +84,7 @@ define "Initial Population":
 define "Denominator":
 "Initial Population"
 
-define "Denominator Exclusions":
+/* define "Denominator Exclusions":
 	"Hospital Based Encounters for Adults" HospitalBasedEncounter
 	with [Condition: code in "All Primary and Secondary Cancer"]Cancer
        such that Cancer.clinicalStatus = 'active'
@@ -92,9 +97,27 @@ define "Denominator Exclusions":
     union ("Hospital Based Encounters for Adults" HospitalBasedEncounter
     (["Procedure": "Palliative Care"]
     	union ["Procedure": "Hospice Care"] ) PalliativeOrHospiceCarePerformed
-    					where PalliativeOrHospiceCarePerformed.period overlaps HospitalBasedEncounter.period)
+    					where PalliativeOrHospiceCarePerformed.period overlaps HospitalBasedEncounter.period) */
 
-define "Encounter with Opiates and Benzodiazepines at Discharge":
+define "Denominator Exclusions":
+	from "Hospital Based Encounters for Adults" HospitalBasedEncounter,
+		[Condition: code in "All Primary and Secondary Cancer"] Cancer,
+		(
+			["ProcedureRequest": "Palliative Care"]
+				union ["ProcedureRequest": "Hospice Care"]
+		) PalliativeOrHospiceCareOrder,
+		(
+			["Procedure": "Palliative Care"] union ["Procedure": "Hospice Care"]
+		) PalliativeOrHospiceCarePerformed
+			where Cancer.clinicalStatus = 'active'
+				and Cancer.verificationStatus = 'confirmed'
+				and Cancer.onset overlaps HospitalBasedEncounter.period
+				and PalliativeOrHospiceCareOrder.intent = 'order'
+	      and PalliativeOrHospiceCareOrder.authoredOn during HospitalBasedEncounter.period
+				and PalliativeOrHospiceCarePerformed.performed overlaps HospitalBasedEncounter.period
+			return HospitalBasedEncounter
+
+/* define "Encounter with Opiates and Benzodiazepines at Discharge":
  (("Hospital Based Encounters for Adults" HospitalBasedEncounter
    with ["MedicationRequest"]: OpioidsDischarge
    such that (OpioidsDischarge.medication in "Schedule II and Schedule III Opioids"
@@ -103,24 +126,41 @@ define "Encounter with Opiates and Benzodiazepines at Discharge":
      with ["MedicationRequest"]: BenzodiazepineDischarge
       such that (BenzodiazepineDischarge.medication in "Schedule IV Benzodiazepines"
        where BenzodiazepineDischarge.authoredOn during HospitalBasedEncounters.period
-        and BenzodiazepineDischarge.intent = 'order'))
+        and BenzodiazepineDischarge.intent = 'order')) */
 
-define "Has Two or More Opioids at Discharge":
+define "Encounter with Opiates and Benzodiazepines at Discharge":
+	from "Hospital Based Encounters for Adults" HospitalBasedEncounter,
+		[MedicationRequest: "Schedule II and Schedule III Opioids"] OpioidsDischarge,
+		[MedicationRequest: "Schedule IV Benzodiazepines"] BenzodiazepineDischarge
+			where OpioidsDischarge.authoredOn during HospitalBasedEncounter.period
+	    	and OpioidsDischarge.intent = 'order'
+				and BenzodiazepineDischarge.authoredOn during HospitalBasedEncounter.period
+        and BenzodiazepineDischarge.intent = 'order'
+			return HospitalBasedEncounter
+
+/* define "Has Two or More Opioids at Discharge":
   "Hospital Based Encounters for Adults" HospitalBasedEncounter
     with Count(["MedicationRequest"]:  Opioids
   such that Opioids.medication in "Schedule II and Schedule III Opioids"
     	where Opioids.authorDatetime during HospitalBasedEncounter.relevantPeriod
-    	)>= 2
+    	)>= 2 */
+
+define "Has Two or More Opioids at Discharge":
+	"Hospital Based Encounters for Adults" HospitalBasedEncounter
+		where Count(
+			[MedicationRequest: "Schedule II and Schedule III Opioids"] Opioids
+				where Opioids.authoredOn during HospitalBasedEncounter.period
+		) >= 2
 
 define "Numerator":
-"Has Two or More Opioids at Discharge"
-union "Encounter with Opiates and Benzodiazepines at Discharge"
+	"Has Two or More Opioids at Discharge"
+		union "Encounter with Opiates and Benzodiazepines at Discharge"
 
-define function "LengthInDays"(Value Interval<DateTime>):
+/* define function "LengthInDays"(Value Interval<DateTime>):
 	difference in days between start of Value and end of Value
 
 define function "Global.ToDate"(Value DateTime):
 DateTime(year from Value, month from Value, day from Value, 0, 0, 0, 0, timezone from Value)
 
 define function "Global.CalendarAgeInYearsAt"(BirthDateTime DateTime, AsOf DateTime):
-      years between ToDate(BirthDateTime)and ToDate(AsOf)
+      years between ToDate(BirthDateTime)and ToDate(AsOf) */
