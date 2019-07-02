@@ -23,11 +23,8 @@ valueset "Race": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.8
 valueset "Schedule II and Schedule III Opioids":  'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1125.2'
 valueset "Schedule IV Benzodiazepines": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1125.1'
 
-
 code "Birthdate": '21112-8' from "LOINC" display 'Birth date'
-//code "Order": 'order' from 'Request Intent' display 'Order'
 code "Order": 'order' from "RequestIntent" display 'Order'
-//codes have to come after value sets and code systems
 
 parameter "Measurement Period" Interval<DateTime>
 
