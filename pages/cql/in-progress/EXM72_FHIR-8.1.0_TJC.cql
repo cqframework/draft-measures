@@ -28,6 +28,7 @@ valueset "Emergency Department Visit": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.
 
 code "Birth date": '21112-8' from "LOINC" display 'Birth date'
 code "Order": 'order' from "RequestIntent" display 'Order'
+//Should this be added to the FHIRHelpers?
 
 context Patient
 
@@ -62,6 +63,7 @@ define "Thrombolytic Therapy Medication or Procedures":
 	"Thrombolytic Medication"
 		union ( ["Procedure": "Intravenous or Intra-arterial Thrombolytic (t-PA) Therapy"] ) ThrombolyticProcedure
 		where ThrombolyticProcedure.status = 'completed'
+		// Noticed we didn't use "procedure in" prior to the value set, as the medeication resource does. Why is that?
 
 //Done? No, need to define status, remove negationRationale
 // Am I using reasonNotGiven correctly here?
@@ -78,18 +80,21 @@ define "No Antithrombotic Ordered for Medical Reason or Patient Refusal":
 		where NoAntithromboticOrder.negationRationale in "Medical Reason"
 			or NoAntithromboticOrder.negationRationale in "Patient Refusal"
 */
+
+	 // TODO: Tracker for QI-core to add doNotPerform extension for MedicationRequest and suggest to the base Resource
 define "No Antithrombotic Ordered for Medical Reason or Patient Refusal"
 ((  ["MedicationRequest": medication in "Antithrombotic Therapy"]
 ) MedicationOrder
 where MedicationOrder.intent = 'order'
 	and GetExtension(MedicationOrder.extension, 'http://example.org/fhir/extensions/doNotPerform').value is true
-	//MedicationOrder.doNotPerform is true // Needs a QI-Core extension to support, look at resource further
+	//MedicationOrder.doNotPerform is true // Needs a QI-Core extension to support, look at resource further, what is the tracker number so we can follow up on that extension.
 )
 
 
 define "No Antithrombotic Ordered":
 	"No Antithrombotic Ordered for Medical Reason or Patient Refusal"
 		union "No Antithrombotic Administered"
+		//Why didn't we need to update this specifically?
 
 //Done
 define "Encounter with Comfort Measures":
@@ -130,16 +135,17 @@ define "Denominator Exclusions":
 		union "Encounter With Thrombolytic Therapy Documented As Already Given"
 
 //Issues with FHIR types here.
+//Send to Bryn (Yanyan and Lisa) to review prior to the meeting next week for review. (Do 7/3)
 define "Encounter With An INR Greater Than 3.5":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		where ["Observation": "INR"] INR
-				where "Observation" { id: INR.id, INR.effective INR.issued: TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))}
+				where "Observation" { id: INR.id, effective: INR.issued } TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
 				return INR.value as Quantity > 3.5
 
 //Done
 define "Encounter with Antithrombotic Therapy":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-		with ["MedicationAdministration": "Antithrombotic Therapy"] Antithrombotic
+		with ["MedicationAdministration": medication in "Antithrombotic Therapy"] Antithrombotic
 			such that Antithrombotic.effective starts during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
 
 //Done
@@ -151,7 +157,7 @@ define "No Antithrombotic Ordered Day Of or Day After Hospital Arrival":
 //Done
 define "Encounter With Ticagrelor Therapy Given Day Of or Day After Hospital Arrival":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-		with ["MedicationAdministration": "Ticagrelor Therapy"] Ticagrelor
+		with ["MedicationAdministration": medication in "Ticagrelor Therapy"] Ticagrelor
 			such that Ticagrelor.effective starts during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
 
 //Done
