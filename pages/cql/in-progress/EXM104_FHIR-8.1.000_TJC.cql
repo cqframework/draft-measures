@@ -23,7 +23,7 @@ valueset "Race": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.8
 
 code "Birth date": '21112-8' from "LOINC" display 'Birth date'
 
-context Patient
+context Patien
 
 define "SDE Ethnicity":
   SDE."SDE Ethnicity"
