@@ -80,6 +80,7 @@ define "Ischemic Stroke Encounter":
 	"Encounter with Principal Diagnosis and Age" EncounterWithAge
 		where Global.PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
 
+// Medication orders at discharge, how do we know that these are ordered with the intent to be taken discharge rather than the inpatient stay.
 define "Statin at Discharge":
 	["MedicationRequest"] Statin
 		where (Statin.medication as CodeableConcept) in "Statin Grouper"
