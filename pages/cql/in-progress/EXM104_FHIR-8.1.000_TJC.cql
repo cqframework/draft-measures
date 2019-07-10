@@ -37,6 +37,7 @@ define "SDE Race":
 define "SDE Sex":
 	SDE."SDE Sex"
 
+// Medication orders at discharge, how do we know that these are ordered with the intent to be taken discharge rather than the inpatient stay.
 define "Antithrombotic Therapy at Discharge":
 	["MedicationRequest"] Antithrombotic
 	 where (Antithrombotic.medication as CodeableConcept) in "Antithrombotic Therapy"
@@ -53,8 +54,8 @@ define "Numerator":
 define "Antithrombotic Not Given at Discharge":
 	["MedicationRequest"] NoAntithromboticDischarge
 		where (NoAntithromboticDischarge.medication as CodeableConcept) in "Antithrombotic Therapy"
-			and (singeleton from NoAntithromboticDischarge.reasonCode in "Medical Reason"
-				or singelton from NoAntithromboticDischarge.reasonCode in "Patient Refusal")
+			and (singleton from NoAntithromboticDischarge.reasonCode in "Medical Reason"
+				or singleton from NoAntithromboticDischarge.reasonCode in "Patient Refusal")
 
 define "Initial Population":
 	TJC."Encounter with Principal Diagnosis and Age"
