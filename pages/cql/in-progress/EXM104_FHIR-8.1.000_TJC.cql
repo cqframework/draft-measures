@@ -22,7 +22,6 @@ valueset "Payer": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.
 valueset "Race": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.836'
 
 code "Birth date": '21112-8' from "LOINC" display 'Birth date'
-code "Order": 'order' from "RequestIntent" display 'Order'
 
 context Patient
 
@@ -55,7 +54,7 @@ define "Antithrombotic Not Given at Discharge":
 	["MedicationRequest"] NoAntithromboticDischarge
 		where (NoAntithromboticDischarge.medication as CodeableConcept) in "Antithrombotic Therapy"
 			and (singeleton from NoAntithromboticDischarge.reasonCode in "Medical Reason"
-				or singelton from NoAntithromboticDischarge.reasonCode in "Patient Refusal"
+				or singelton from NoAntithromboticDischarge.reasonCode in "Patient Refusal")
 
 define "Initial Population":
 	TJC."Encounter with Principal Diagnosis and Age"
