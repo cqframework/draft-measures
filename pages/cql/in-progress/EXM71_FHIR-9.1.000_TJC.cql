@@ -39,25 +39,27 @@ define "SDE Sex":
 	SDE."SDE Sex"
 
 define "Reason for Not Giving Anticoagulant at Discharge":
-	["Medication, Not Discharged": "Anticoagulant Therapy"] NoAnticoagulant
-		where NoAnticoagulant.negationRationale in "Medical Reason"
-			or NoAnticoagulant.negationRationale in "Patient Refusal"
+	["MedicationRequest"] NoAnticoagulant
+	 where (NoAnticoagulant.medication as CodeableConcept) in "Anticoagulant Therapy"
+	 		and (singleton from NoAnticoagulant.reasonCode in "Medical Reason"
+				or singleton from NoAnticoagulant.reasonCode in "Patient Refusal")
+
 
 define "Anticoagulant Therapy at Discharge":
-	["Medication, Discharge": "Anticoagulant Therapy"]
+	["MedicationRequest": "Anticoagulant Therapy"]
 
 define "Initial Population":
 	TJC."Encounter with Principal Diagnosis and Age"
 
 define "Encounter with Atrial Ablation Procedure":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-		with ["Procedure, Performed": "Atrial Ablation"] AtrialAblation
-			such that AtrialAblation.relevantPeriod starts before start of IschemicStrokeEncounter.relevantPeriod
+		with ["Procedure": "Atrial Ablation"] AtrialAblation
+			such that AtrialAblation.performed starts before start of IschemicStrokeEncounter.period
 
 define "Numerator":
 	"Denominator" Encounter
 		with "Anticoagulant Therapy at Discharge" DischargeAnticoagulant
-			such that DischargeAnticoagulant.authorDatetime during Encounter.relevantPeriod
+			such that DischargeAnticoagulant.authoredOn during Encounter.period
 
 define "Current Diagnosis Atrial Fibrillation or Flutter":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
