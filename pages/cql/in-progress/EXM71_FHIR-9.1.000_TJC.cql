@@ -44,7 +44,6 @@ define "Reason for Not Giving Anticoagulant at Discharge":
 	 		and (singleton from NoAnticoagulant.reasonCode in "Medical Reason"
 				or singleton from NoAnticoagulant.reasonCode in "Patient Refusal")
 
-
 define "Anticoagulant Therapy at Discharge":
 	["MedicationRequest": "Anticoagulant Therapy"]
 
@@ -54,7 +53,7 @@ define "Initial Population":
 define "Encounter with Atrial Ablation Procedure":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with ["Procedure": "Atrial Ablation"] AtrialAblation
-			such that AtrialAblation.performed starts before start of IschemicStrokeEncounter.period
+			such that AtrialAblation.performed Period starts before start of IschemicStrokeEncounter.period
 
 define "Numerator":
 	"Denominator" Encounter
