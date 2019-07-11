@@ -47,6 +47,18 @@ parameter "Measurement Period" Interval<DateTime>
 
 context Patient
 
+define "SDE Ethnicity":
+  SDE."SDE Ethnicity"
+
+define "SDE Payer":
+	SDE."SDE Payer"
+
+define "SDE Race":
+  SDE."SDE Race"
+
+define "SDE Sex":
+	SDE."SDE Sex"
+
 define "Initial Population":
 	"Encounter with Principal Diagnosis and Age"
 
