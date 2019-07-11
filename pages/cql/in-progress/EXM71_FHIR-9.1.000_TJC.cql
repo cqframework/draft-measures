@@ -1,38 +1,42 @@
-library AnticoagulationTherapyforAtrialFibrillationFlutter version '9.1.000'
+library EXM71 version '9.1.000'
 
-using QDM version '5.4'
+using FHIR version '4.0.0'
 
+include FHIRHelpers version '3.0.0'
 include MATGlobalCommonFunctions version '4.0.000' called Global
 include TJC_Overall version '3.6.000' called TJC
+include SupplementalDataElements_FHIR version '1.0.0' called SDE
 
-valueset "Anticoagulant Therapy": 'urn:oid:2.16.840.1.113883.3.117.1.7.1.200'
-valueset "Atrial Ablation": 'urn:oid:2.16.840.1.113883.3.117.1.7.1.203'
-valueset "Atrial Fibrillation/Flutter": 'urn:oid:2.16.840.1.113883.3.117.1.7.1.202'
-valueset "Discharge To Acute Care Facility": 'urn:oid:2.16.840.1.113883.3.117.1.7.1.87'
-valueset "Discharged to Health Care Facility for Hospice Care": 'urn:oid:2.16.840.1.113883.3.117.1.7.1.207'
-valueset "Discharged to Home for Hospice Care": 'urn:oid:2.16.840.1.113883.3.117.1.7.1.209'
-valueset "Ethnicity": 'urn:oid:2.16.840.1.114222.4.11.837'
-valueset "Left Against Medical Advice": 'urn:oid:2.16.840.1.113883.3.117.1.7.1.308'
-valueset "Medical Reason": 'urn:oid:2.16.840.1.113883.3.117.1.7.1.473'
-valueset "ONC Administrative Sex": 'urn:oid:2.16.840.1.113762.1.4.1'
-valueset "Patient Expired": 'urn:oid:2.16.840.1.113883.3.117.1.7.1.309'
-valueset "Patient Refusal": 'urn:oid:2.16.840.1.113883.3.117.1.7.1.93'
-valueset "Payer": 'urn:oid:2.16.840.1.114222.4.11.3591'
-valueset "Race": 'urn:oid:2.16.840.1.114222.4.11.836'
+codesystem "LOINC": 'http://loinc.org'
+
+valueset "Anticoagulant Therapy": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.200'
+valueset "Atrial Ablation": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.203'
+valueset "Atrial Fibrillation/Flutter": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.202'
+valueset "Discharge To Acute Care Facility": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.87'
+valueset "Discharged to Health Care Facility for Hospice Care": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.207'
+valueset "Discharged to Home for Hospice Care": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.209'
+valueset "Ethnicity": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.837'
+valueset "Left Against Medical Advice": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.308'
+valueset "Medical Reason": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.473'
+valueset "ONC Administrative Sex": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1'
+valueset "Patient Expired": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.309'
+valueset "Patient Refusal": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.93'
+valueset "Payer": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.3591'
+valueset "Race": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.836'
 
 context Patient
 
 define "SDE Ethnicity":
-	["Patient Characteristic Ethnicity": "Ethnicity"]
+  SDE."SDE Ethnicity"
 
 define "SDE Payer":
-	["Patient Characteristic Payer": "Payer"]
+	SDE."SDE Payer"
 
 define "SDE Race":
-	["Patient Characteristic Race": "Race"]
+  SDE."SDE Race"
 
 define "SDE Sex":
-	["Patient Characteristic Sex": "ONC Administrative Sex"]
+	SDE."SDE Sex"
 
 define "Reason for Not Giving Anticoagulant at Discharge":
 	["Medication, Not Discharged": "Anticoagulant Therapy"] NoAnticoagulant
