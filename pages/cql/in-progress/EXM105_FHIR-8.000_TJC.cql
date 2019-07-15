@@ -1,5 +1,5 @@
 // for 2020 Reporting Year
-library EXM105 version '8.0.0'
+library "Discharged on Statin Medication" version '8.0.0'
 
 using FHIR version '3.0.0'
 
