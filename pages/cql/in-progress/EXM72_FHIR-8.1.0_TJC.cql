@@ -167,3 +167,7 @@ define "Encounter With Thrombolytic Therapy Documented As Already Given":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with [Condition: "Intravenous or Intra arterial Thrombolytic (tPA) Therapy Prior to Arrival"] PriorTPA
 			such that PriorTPA.onset during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
+			  and PriorTPA.clinicalStatus in { 'active', 'recurrence', 'relapse' }
+				// NOTE: Feedback at Digitial Quality Summit 2019 indicates verificationStatus may be difficult for implementers to retrieve
+				//and PriorTPA.verificationStatus = 'confirmed'
+

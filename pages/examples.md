@@ -63,9 +63,48 @@ Capture and document known gaps.
 
 ## Encounter Examples
 
+### Inpatient Encounter Example
+
+Encounter with Age at Start (VTE-1)
+
+### Inpatient Encounter with Principal Diagnosis
+
+EXM105 - All Stroke Encounter
+
+### Inpatient Encounter with Principal Procedure
+
+VTE-1 - "Encounter With Principal Procedure of SCIP VTE Selected Surgery"
+
 ## Diagnosis Examples
 
+EXM72_FHIR
+
+```cql
+define "Encounter With Thrombolytic Therapy Documented As Already Given":
+	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
+		with [Condition: "Intravenous or Intra arterial Thrombolytic (tPA) Therapy Prior to Arrival"] PriorTPA
+			such that PriorTPA.onset during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
+			  and PriorTPA.clinicalStatus in { 'active', 'recurrence', 'relapse' }
+```
+
+Note that verificationStatus is not being checked due to feedback received that it may be difficult for implementers to retrieve the element.
+
 ## Medications
+
+### Medications at discharge
+
+```cql
+define "Antithrombotic Therapy at Discharge":
+	["MedicationRequest": "Antithrombotic Therapy"] Antithrombotic
+	  where exists (Antithrombotic.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+	    and Antithrombotic.intent = 'order'
+```
+
+Note that the FHIRHelpers.ToConcept usage is intended to be implicit and will be unnecessary once QUICK is fully supported.
+
+### Medication not administered
+
+### Medication not ordered
 
 ### Medication use
 
@@ -82,6 +121,12 @@ Capture and document known gaps.
 ## Devices
 
 ### Device Use
+
+### Device Not Used
+
+### Device Order
+
+### Device Not Ordered
 
 ## Care Plan - Care Goals
 
