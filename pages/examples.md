@@ -91,6 +91,23 @@ Note that verificationStatus is not being checked due to feedback received that 
 
 ## Medications
 
+EXM108_FHIR
+```cql
+
+define "VTE Prophylaxis by Medication Administered":
+( ["MedicationAdministration": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"] VTEMedication
+	where VTEMedication.status = 'completed'
+				and VTEMedication.dosage.route in "Subcutaneous route"
+)
+union (
+		(["MedicationAdministration": medication in "Low Molecular Weight Heparin for VTE Prophylaxis"]
+			union ["MedicationAdministration": medication in "Injectable Factor Xa Inhibitor for VTE Prophylaxis"]
+				union ["MedicationAdministration": medication in "Warfarin"]
+				) M
+				where M.status = 'completed')
+
+
+```
 ### Medications at discharge
 
 EXM104_FHIR-8.1.000_TJC.cql
@@ -127,7 +144,39 @@ define "Antithrombotic Not Given at Discharge":
 
 ### Medication not administered
 
+EXM108_FHIR
+```cql
+
+define "No VTE Prophylaxis Medication Administered":
+(	["MedicationAdministration": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"]
+	union
+	["MedicationAdministration": medication in "Low Molecular Weight Heparin for VTE Prophylaxis"]
+	union
+	["MedicationAdministration": medication in "Injectable Factor Xa Inhibitor for VTE Prophylaxis"]
+	union
+	["MedicationAdministration": medication in "Warfarin"]
+	) MedicationAdm
+		where MedicationAdm.status = 'not-done'
+
+```
+
 ### Medication not ordered
+
+EXM108_FHIR
+```cql
+
+define "No VTE Prophylaxis Medication Ordered":
+	(	["MedicationRequest": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"]
+	union
+	["MedicationRequest": medication in "Low Molecular Weight Heparin for VTE Prophylaxis"]
+	union
+	["MedicationRequest": medication in "Injectable Factor Xa Inhibitor for VTE Prophylaxis"]
+	union
+	["MedicationRequest": medication in "Warfarin"]
+	) MedicationOrder
+	where 	MedicationOrder.intent = 'order' //TJC: Need Fix- status is required, do we need to express here?
+		 and MedicationOrder.doNotPerform.value is true
+```
 
 ### Medication use
 
@@ -137,6 +186,16 @@ define "Antithrombotic Not Given at Discharge":
 
 ## Procedures/Interventions
 
+EXM108_FHIR
+```cql
+define "Intervention Comfort Measures":
+	(["ServiceRequest": "Comfort Measures"] P
+		where P.intent = 'order')
+	union
+	(["Procedure": "Comfort Measures"] IntervetionPerformed
+		where IntervetionPerformed.status = 'completed')
+```
+
 ## Care Plan - Care Goals
 
 ## Communication
@@ -145,11 +204,51 @@ define "Antithrombotic Not Given at Discharge":
 
 ### Device Use
 
+EXM108_FHIR
+```cql
+
+define "VTE Prophylaxis by Device Applied":
+ (
+				["DeviceUseStatement": code in "Intermittent pneumatic compression devices (IPC)"]
+				union ["DeviceUseStatement": code in "Venous foot pumps (VFP)"]
+				union ["DeviceUseStatement": code in "Graduated compression stockings (GCS)"]
+      ) DeviceApplied
+				where DeviceApplied.status = 'completed'
+
+
+```
+
 ### Device Not Used
+
+EXM108_FHIR
+```cql
+
+define "No VTE Prophylaxis Device Applied":
+  
+   (["DeviceUseStatement": code in "Venous foot pumps (VFP)"]
+    union ["DeviceUseStatement": code in "Intermittent pneumatic compression devices (IPC)"]
+    union ["DeviceUseStatement": code in "Graduated compression stockings (GCS)"]
+  ) DeviceApplied
+    where GetExtension(DeviceApplied.extension, 'http://example.org/fhir/extensions/notDone').value is true
+    //TJC: not sure if we can use R4 extension url of doNotPerform http://hl7.org/fhir/StructureDefinition/request-doNotPerform
+  
+```
 
 ### Device Order
 
 ### Device Not Ordered
+
+EXM108_FHIR
+```cql
+define "No VTE Prophylaxis Device Ordered":
+    ["DeviceRequest": code in "Venous foot pumps (VFP)"]
+      union ["DeviceRequest": code in "Intermittent pneumatic compression devices (IPC)"]
+      union ["DeviceRequest": code in "Graduated compression stockings (GCS)"]
+  ) DevideOrder
+    where DevideOrder.intent = 'Order'
+      and GetExtension(DevideOrder.extension, 'http://hl7.org/fhir/StructureDefinition/request-doNotPerform').value is true
+  
+```
 
 ## Care Plan - Care Goals
 
@@ -158,6 +257,14 @@ define "Antithrombotic Not Given at Discharge":
 ## Allergy/Intolerance
 
 ## Observations
+
+EXM108_FHIR
+```cql
+define "Is In Low Risk for VTE or On Anticoagulant":
+	( ["Observation": code in "Risk for venous thromboembolism"] VTERiskAssessment
+			where exists(FHIRHelpers.ToConcept(VTERiskAssessment.value) ~ FHIRHelpers.ToConcept("Low Risk" )
+	)
+```
 
 ### General Observations
 
