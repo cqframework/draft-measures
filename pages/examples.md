@@ -163,6 +163,16 @@ define "No VTE Prophylaxis Medication Ordered":
 
 ## Procedures/Interventions
 
+EXM108_FHIR
+```cql
+define "Intervention Comfort Measures":
+	(["ServiceRequest": "Comfort Measures"] P
+		where P.intent = 'order')
+	union
+	(["Procedure": "Comfort Measures"] IntervetionPerformed
+		where IntervetionPerformed.status = 'completed')
+```
+
 ## Care Plan - Care Goals
 
 ## Communication
