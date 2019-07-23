@@ -77,7 +77,7 @@ VTE-1 - "Encounter With Principal Procedure of SCIP VTE Selected Surgery"
 
 ## Diagnosis Examples
 
-EXM72_FHIR
+EXM72_FHIR-8.1.0_TJC.cql
 
 ```cql
 define "Encounter With Thrombolytic Therapy Documented As Already Given":
@@ -93,6 +93,8 @@ Note that verificationStatus is not being checked due to feedback received that 
 
 ### Medications at discharge
 
+EXM104_FHIR-8.1.000_TJC.cql
+
 ```cql
 define "Antithrombotic Therapy at Discharge":
 	["MedicationRequest": "Antithrombotic Therapy"] Antithrombotic
@@ -101,6 +103,27 @@ define "Antithrombotic Therapy at Discharge":
 ```
 
 Note that the FHIRHelpers.ToConcept usage is intended to be implicit and will be unnecessary once QUICK is fully supported.
+
+### Medication not discharged
+
+```cql
+define "Antithrombotic Not Given at Discharge":
+	["MedicationRequest": "Antithrombotic Therapy"] NoAntithromboticDischarge
+	  // STU3
+		where exists (NoAntithromboticDischarge.extension E where E.url = 'http://hl7.org/fhir/us/davinci-deqm/STU3/StructureDefinition/extension-doNotPerform' and E.value is true)
+		// R4
+		//where NoAntithromboticDischarge.doNotPerform is true
+			and (singleton from NoAntithromboticDischarge.reasonCode in "Medical Reason"
+				or singleton from NoAntithromboticDischarge.reasonCode in "Patient Refusal")
+
+// NOTE: On the assumption that status of not-taken is the closest to what the measure is looking for, this is the expression:				
+// TODO: Request discussion w/ Pharmacy regarding how medications not prescribed at discharged would be documented
+//define "Antithrombotic Not Given at Discharge R4":
+//  ["MedicationStatement": "Antithrombotic Therapy"] AntithromboticTherapy
+//	  where AntithromboticTherapy.status = 'not-taken'
+//		  and (AntithromboticTherapy.statusReason in "Medical Reason"
+//				or AntithrombtoicTherapy.statusReason in "Patient Refusal")
+```
 
 ### Medication not administered
 
