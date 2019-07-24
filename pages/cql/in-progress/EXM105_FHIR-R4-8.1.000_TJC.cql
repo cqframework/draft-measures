@@ -1,12 +1,12 @@
 // for 2020 Reporting Year
 library "Discharged on Statin Medication" version '8.0.0'
 
-using FHIR version '3.0.0'
+using FHIR version '4.0.0'
 
 include FHIRHelpers version '3.0.0'
 include MATGlobalCommonFunctions_FHIR version '4.0.000' called Global
 include SupplementalDataElements_FHIR version '1.0.0' called SDE
-include TJC_Overall version '3.6.000' called TJC
+include TJC_Overall version '3.7.000' called TJC
 
 codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
@@ -67,10 +67,19 @@ define "Encounter with Principal Diagnosis and Age":
 		with ["Patient"] BirthDate
 			such that AgeInYearsAt(AllStrokeEncounter.period.start) >= 18
 
+/*
+R3 definition
 define "All Stroke Encounter":
 	"Non Elective Inpatient Encounter" NonElectiveEncounter
 		where Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Hemorrhagic Stroke"
 		or Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Ischemic Stroke"
+*/
+
+define "All Stroke Encounter"
+  "Non Elective Inpatient Encounter" NonElectiveEncounter
+    where NonElectiveEncounter.diagnosis.rank ="1" in "Hemorrhagic Stoke"
+    or NonElectiveEncounter.diagnosis.rank ="1" in "Ischemic Stroke"
+
 
 define "Non Elective Inpatient Encounter":
 	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
