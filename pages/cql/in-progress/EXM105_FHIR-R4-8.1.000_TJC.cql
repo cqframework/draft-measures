@@ -60,27 +60,28 @@ define "SDE Race":
 define "SDE Sex":
 	SDE."SDE Sex"
 
+// Add "TJC" to the definition alias.
 define "Initial Population":
-	"Encounter with Principal Diagnosis and Age"
+	TJC."Encounter with Principal Diagnosis and Age"
 
 define "Encounter with Principal Diagnosis and Age":
 	"All Stroke Encounter" AllStrokeEncounter
 		with ["Patient"] BirthDate
 			such that AgeInYearsAt(AllStrokeEncounter.period.start) >= 18
 
-/*
-R3 definition
+
+// Is it okay here to continue using PrincipalDiagnosis?
 define "All Stroke Encounter":
 	"Non Elective Inpatient Encounter" NonElectiveEncounter
 		where Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Hemorrhagic Stroke"
 		or Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Ischemic Stroke"
-*/
 
+/*
 define "All Stroke Encounter"
-  "Non Elective Inpatient Encounter" NonElectiveEncounter
-    where NonElectiveEncounter.diagnosis.rank ="1" in "Hemorrhagic Stoke"
-    or NonElectiveEncounter.diagnosis.rank ="1" in "Ischemic Stroke"
-
+[Encounter: "Non Elective Inpatient Encounter"] NonElectiveEncounter
+    where NonElectiveEncounter.diagnosis.rank = "1" in "Hemorrhagic Stoke"
+    or NonElectiveEncounter.diagnosis.rank = "1" in "Ischemic Stroke"
+*/
 
 define "Non Elective Inpatient Encounter":
 	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
@@ -98,8 +99,9 @@ define "Numerator":
 		with "Statin at Discharge" DischargeStatin
 			such that DischargeStatin.authoredOn during IschemicStrokeEncounter.period
 
+//Added "TJC" to the front of the definition alias.
 define "Ischemic Stroke Encounter":
-	"Encounter with Principal Diagnosis and Age" EncounterWithAge
+	TJC."Encounter with Principal Diagnosis and Age" EncounterWithAge
 		where Global.PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
 
 // Medication orders at discharge, how do we know that these are ordered with the intent to be taken discharge rather than the inpatient stay.
