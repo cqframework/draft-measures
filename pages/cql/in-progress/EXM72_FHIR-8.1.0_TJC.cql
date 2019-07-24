@@ -170,4 +170,3 @@ define "Encounter With Thrombolytic Therapy Documented As Already Given":
 			  and PriorTPA.clinicalStatus in { 'active', 'recurrence', 'relapse' }
 				// NOTE: Feedback at Digitial Quality Summit 2019 indicates verificationStatus may be difficult for implementers to retrieve
 				//and PriorTPA.verificationStatus = 'confirmed'
-
