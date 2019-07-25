@@ -6,7 +6,8 @@ using FHIR version '4.0.0'
 include FHIRHelpers version '3.0.0'
 include MATGlobalCommonFunctions_FHIR version '4.0.000' called Global
 include SupplementalDataElements_FHIR version '1.0.0' called SDE
-include TJC_Overall_FHIR_R4 version '4.1.000' called TJC
+//include TJC_Overall_FHIR_R4 version '4.1.000' called TJC
+include TJC_Overall version '3.6.000' called TJC
 
 codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
@@ -123,16 +124,16 @@ define "Statin Not Given at Discharge":
 			and (singleton from NoStatin.reasonCode in "Medical Reason"
 				or singleton from NoStatin.reasonCode in "Patient Refusal")
 */
-
-define "Statin Not Given at Discharge"
+//Modeled after EXM104 "Antithrombotic Therapy at Discharge" in the examples.md file.
+define "Statin Not Given at Discharge":
   ["MedicationRequest": "Statin Grouper"] NoStatin
-    where NoStatin.doNotPerform is true  
+    where NoStatin.doNotPerform is true
     and (singleton from NoStatin.reasonCode in "Medical Reason"
       or singleton from NoStatin.reasonCode in "Patient Refusal")
 
 
 
-//Folling function copied from MATGlobalCommonFunctions 2.0 in cqf-measures github repo
+//Following function copied from MATGlobalCommonFunctions 2.0 in cqf-measures github repo
 define function "Normalize Onset"(onset Choice<FHIR.dateTime, FHIR.Age, FHIR.Period, FHIR.Range, FHIR.string>):
 	if onset is FHIR.dateTime then Interval[onset.value, onset.value]
 	else if onset is FHIR.Period then FHIRHelpers.ToInterval(onset as FHIR.Period)
@@ -174,15 +175,9 @@ define "Comfort Measures during Hospitalization":
 		with "Intervention Comfort Measures" ComfortMeasure
 			such that ComfortMeasure.authoredOn during Global."Hospitalization"(IschemicStrokeEncounter)
 
-/*
-define "Intervention Comfort Measures":
-	(["ProcedureRequest": "Comfort Measures"] P
-		where P.intent = 'order')
-		union ["Procedure": "Comfort Measures"]
-*/
 
 define "Intervention Comfort Measures":
-	(["ProcedureRequest": "Comfort Measures"] P
+	(["ServiceRequest": "Comfort Measures"] P
 		where P.intent = 'order')
 		union
 		(["Procedure": "Comfort Measures"] IntervetionPerformed
