@@ -3,7 +3,6 @@ library TJC_Overall_FHIR_R4 version '4.1.000'
 
 using FHIR version '4.0.0'
 include FHIRHelpers version '3.0.0' called FHIRHelpers
-//TODO: MATGlobalCommonFunctions_FHIR version '2.0.000' need to be updated to 4.0
 include MATGlobalCommonFunctions_FHIR version '4.0.000' called Global
 include SupplementalDataElements_FHIR version '1.0.0' called SDE
 
