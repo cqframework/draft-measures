@@ -104,16 +104,33 @@ define "Ischemic Stroke Encounter":
 		where Global.PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
 
 // Medication orders at discharge, how do we know that these are ordered with the intent to be taken discharge rather than the inpatient stay.
+/*
 define "Statin at Discharge":
 	["MedicationRequest"] Statin
 		where (Statin.medication as CodeableConcept) in "Statin Grouper"
 			and Statin.intent = 'order'
+*/
 
+define "Statin at Discharge":
+  ["MedicationRequest": "Statin Grouper"] Statin
+    where exists (Statin.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+      and Statin.intent = 'order'
+
+/*
 define "Statin Not Given at Discharge":
 	["MedicationRequest"] NoStatin
 		where (NoStatin.medication as CodeableConcept) in "Statin Grouper"
 			and (singleton from NoStatin.reasonCode in "Medical Reason"
 				or singleton from NoStatin.reasonCode in "Patient Refusal")
+*/
+
+define "Statin Not Given at Discharge"
+  ["MedicationRequest": "Statin Grouper"] NoStatin
+    where NoStatin.doNotPerform is true  
+    and (singleton from NoStatin.reasonCode in "Medical Reason"
+      or singleton from NoStatin.reasonCode in "Patient Refusal")
+
+
 
 //Folling function copied from MATGlobalCommonFunctions 2.0 in cqf-measures github repo
 define function "Normalize Onset"(onset Choice<FHIR.dateTime, FHIR.Age, FHIR.Period, FHIR.Range, FHIR.string>):
