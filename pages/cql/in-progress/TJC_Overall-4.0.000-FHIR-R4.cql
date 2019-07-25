@@ -30,8 +30,9 @@ parameter "Measurement Period" Interval<DateTime>
 
 context Patient
 
+//Changed "ProcedureRequest" to "ServiceRequest"
 define "Intervention Comfort Measures":
-	(["ProcedureRequest": "Comfort Measures"] P
+	(["ServiceRequest": "Comfort Measures"] P
 		where P.intent = 'order')
 		union
 		(["Procedure": "Comfort Measures"] InterventionPerformed
