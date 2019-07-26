@@ -224,14 +224,14 @@ EXM108_FHIR
 ```cql
 
 define "No VTE Prophylaxis Device Applied":
-  
+
    (["DeviceUseStatement": code in "Venous foot pumps (VFP)"]
     union ["DeviceUseStatement": code in "Intermittent pneumatic compression devices (IPC)"]
     union ["DeviceUseStatement": code in "Graduated compression stockings (GCS)"]
   ) DeviceApplied
     where GetExtension(DeviceApplied.extension, 'http://example.org/fhir/extensions/notDone').value is true
     //TJC: not sure if we can use R4 extension url of doNotPerform http://hl7.org/fhir/StructureDefinition/request-doNotPerform
-  
+
 ```
 
 ### Device Order
@@ -247,7 +247,7 @@ define "No VTE Prophylaxis Device Ordered":
   ) DevideOrder
     where DevideOrder.intent = 'Order'
       and GetExtension(DevideOrder.extension, 'http://hl7.org/fhir/StructureDefinition/request-doNotPerform').value is true
-  
+
 ```
 
 ## Care Plan - Care Goals
