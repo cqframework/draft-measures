@@ -137,8 +137,9 @@ define function "EncounterDiagnosis"(Encounter Encounter):
 
 // Returns the condition that is specified as the principal diagnosis for the encounter
 define function "PrincipalDiagnosis"(Encounter Encounter):
-	(singleton from (Encounter.diagnosis D where D.role ~ ToConcept("Billing") and D.rank = 1)) PD
+(singleton from (Encounter.diagnosis D where FHIRHelpers.ToInteger(D.rank) = 1)) PD
 		return singleton from ([Condition: id in "GetId"(PD.condition.reference)])
+								 
 
 // Returns the location for the given location reference
 define function GetLocation(reference Reference):
