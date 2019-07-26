@@ -64,7 +64,7 @@ define "Ischemic Stroke Encounters with Discharge Disposition":
 define "Comfort Measures during Hospitalization":
 	"Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Intervention Comfort Measures" ComfortMeasure
-			such that Coalesce(start of FHIRHelpers.ToInterval(ComfortMeasure.performed during IschemicStrokeEncounter.period), ComfortMeasure.authoredOn) during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
+			such that Coalesce(ComfortMeasure.performed as dateTime, ComfortMeasure.authoredOn) during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 
 define "Encounter with Principal Diagnosis and Age":
 	"All Stroke Encounter" AllStrokeEncounter
