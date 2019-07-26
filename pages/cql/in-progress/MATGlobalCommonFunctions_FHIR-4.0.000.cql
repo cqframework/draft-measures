@@ -1,6 +1,6 @@
 library MATGlobalCommonFunctions_FHIR version '4.0.000'
 
-using FHIR version '3.0.0'
+using FHIR version '4.0.0'
 
 include FHIRHelpers version '3.0.0' called FHIRHelpers
 
@@ -161,4 +161,3 @@ define function "HospitalizationWithObservation"(TheEncounter FHIR.Encounter):
 
 define function "HospitalizationWithObservationLengthofStay"(Encounter FHIR.Encounter):
 	"LengthInDays"("HospitalizationWithObservation"(Encounter))
-
