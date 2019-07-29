@@ -62,15 +62,15 @@ define "SDE Sex":
 
 // Add "TJC" to the definition alias.
 define "Initial Population":
-	TJC."Encounter with Principal Diagnosis and Age"
+	"Encounter with Principal Diagnosis and Age"
 
 define "Encounter with Principal Diagnosis and Age":
-	"All Stroke Encounter" AllStrokeEncounter
-		with ["Patient"] BirthDate
-			such that AgeInYearsAt(AllStrokeEncounter.period.start) >= 18
+  "All Stroke Encounter" AllStrokeEncounter
+  	with ["Patient"] BirthDate
+  		such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of FHIRHelpers.ToInterval(AllStrokeEncounter.period)) >= 18
 
 
-// Is it okay here to continue using PrincipalDiagnosis?
+// Is it okay here to continue using PrincipalDiagnosis? Yes, only if we update this to QDM 5.5, would that be a problem.
 define "All Stroke Encounter":
 	"Non Elective Inpatient Encounter" NonElectiveEncounter
 		where Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Hemorrhagic Stroke"
@@ -101,7 +101,7 @@ define "Numerator":
 
 //Added "TJC" to the front of the definition alias.
 define "Ischemic Stroke Encounter":
-	TJC."Encounter with Principal Diagnosis and Age" EncounterWithAge
+	"Encounter with Principal Diagnosis and Age" EncounterWithAge
 		where Global.PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
 
 // Medication orders at discharge, how do we know that these are ordered with the intent to be taken discharge rather than the inpatient stay.
@@ -130,8 +130,6 @@ define "Statin Not Given at Discharge":
     where NoStatin.doNotPerform is true
     and (singleton from NoStatin.reasonCode in "Medical Reason"
       or singleton from NoStatin.reasonCode in "Patient Refusal")
-
-
 
 //Following function copied from MATGlobalCommonFunctions 2.0 in cqf-measures github repo
 define function "Normalize Onset"(onset Choice<FHIR.dateTime, FHIR.Age, FHIR.Period, FHIR.Range, FHIR.string>):
@@ -172,8 +170,8 @@ define "Ischemic Stroke Encounters with Discharge Status":
 
 define "Comfort Measures during Hospitalization":
 	"Ischemic Stroke Encounter" IschemicStrokeEncounter
-		with "Intervention Comfort Measures" ComfortMeasure
-			such that ComfortMeasure.authoredOn during Global."Hospitalization"(IschemicStrokeEncounter)
+   	with "Intervention Comfort Measures" ComfortMeasure
+    	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."Hospitalization"(IschemicStrokeEncounter)
 
 
 define "Intervention Comfort Measures":
