@@ -87,7 +87,7 @@ define "Statin Allergy":
 define "Numerator":
 	"Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Statin at Discharge" DischargeStatin
-			such that DischargeStatin.authoredOn during FHIRHelpers.ToInterval(IschemicStrokeEncounter.period)
+			such that DischargeStatin.authoredOn during (IschemicStrokeEncounter.period)
 
 define "Ischemic Stroke Encounter":
 	"Encounter with Principal Diagnosis and Age" EncounterWithAge
