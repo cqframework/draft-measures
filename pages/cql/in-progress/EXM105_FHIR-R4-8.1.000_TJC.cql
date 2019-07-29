@@ -1,5 +1,5 @@
 // for 2020 Reporting Year
-library "Discharged on Statin Medication" version '8.0.0'
+library "Discharged on Statin Medication" version '8.1.0'
 
 using FHIR version '4.0.0'
 
@@ -87,7 +87,7 @@ define "Statin Allergy":
 define "Numerator":
 	"Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Statin at Discharge" DischargeStatin
-			such that DischargeStatin.authoredOn during IschemicStrokeEncounter.period
+			such that DischargeStatin.authoredOn during FHIRHelpers.ToInterval(IschemicStrokeEncounter.period)
 
 define "Ischemic Stroke Encounter":
 	"Encounter with Principal Diagnosis and Age" EncounterWithAge
