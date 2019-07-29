@@ -89,43 +89,21 @@ define "Numerator":
 		with "Statin at Discharge" DischargeStatin
 			such that DischargeStatin.authoredOn during IschemicStrokeEncounter.period
 
-//Added "TJC" to the front of the definition alias.
 define "Ischemic Stroke Encounter":
 	"Encounter with Principal Diagnosis and Age" EncounterWithAge
 		where Global.PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
-
-// Medication orders at discharge, how do we know that these are ordered with the intent to be taken discharge rather than the inpatient stay.
-/*
-define "Statin at Discharge":
-	["MedicationRequest"] Statin
-		where (Statin.medication as CodeableConcept) in "Statin Grouper"
-			and Statin.intent = 'order'
-*/
 
 define "Statin at Discharge":
   ["MedicationRequest": "Statin Grouper"] Statin
     where exists (Statin.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
       and Statin.intent = 'order'
 
-/*
-define "Statin Not Given at Discharge":
-	["MedicationRequest"] NoStatin
-		where (NoStatin.medication as CodeableConcept) in "Statin Grouper"
-			and (singleton from NoStatin.reasonCode in "Medical Reason"
-				or singleton from NoStatin.reasonCode in "Patient Refusal")
-*/
 //Modeled after EXM104 "Antithrombotic Therapy at Discharge" in the examples.md file.
 define "Statin Not Given at Discharge":
   ["MedicationRequest": "Statin Grouper"] NoStatin
     where NoStatin.doNotPerform is true
     and (singleton from NoStatin.reasonCode in "Medical Reason"
       or singleton from NoStatin.reasonCode in "Patient Refusal")
-
-//Following function copied from MATGlobalCommonFunctions 2.0 in cqf-measures github repo
-define function "Normalize Onset"(onset Choice<FHIR.dateTime, FHIR.Age, FHIR.Period, FHIR.Range, FHIR.string>):
-	if onset is FHIR.dateTime then Interval[onset.value, onset.value]
-	else if onset is FHIR.Period then FHIRHelpers.ToInterval(onset as FHIR.Period)
-	else null
 
 define "Encounter with Max LDL less than 70 mg per dL":
 	"Ischemic Stroke Encounter" IschemicStrokeEncounter
@@ -170,3 +148,9 @@ define "Intervention Comfort Measures":
 		union
 		(["Procedure": "Comfort Measures"] IntervetionPerformed
 		where IntervetionPerformed.status = 'completed')
+
+//Following function copied from MATGlobalCommonFunctions 2.0 in cqf-measures github repo
+define function "Normalize Onset"(onset Choice<FHIR.dateTime, FHIR.Age, FHIR.Period, FHIR.Range, FHIR.string>):
+	if onset is FHIR.dateTime then Interval[onset.value, onset.value]
+	 else if onset is FHIR.Period then FHIRHelpers.ToInterval(onset as FHIR.Period)
+  	else null
