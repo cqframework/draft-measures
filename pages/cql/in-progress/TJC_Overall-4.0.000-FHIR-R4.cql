@@ -72,4 +72,4 @@ define "Encounter with Principal Diagnosis and Age":
 			such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of FHIRHelpers.ToInterval(AllStrokeEncounter.period)) >= 18
 
 define function "CalendarDayOfOrDayAfter"(StartValue DateTime ):
-	Interval[Global."ToDate"(StartValue), Global."ToDate"(StartValue + 2 days))
+	Interval(Global."ToDate"(StartValue), Global."ToDate"(StartValue + 2 days))
