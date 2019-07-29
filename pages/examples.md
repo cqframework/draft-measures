@@ -148,15 +148,15 @@ EXM108_FHIR
 ```cql
 
 define "No VTE Prophylaxis Medication Administered":
-(	["MedicationAdministration": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"]
-	union
-	["MedicationAdministration": medication in "Low Molecular Weight Heparin for VTE Prophylaxis"]
-	union
-	["MedicationAdministration": medication in "Injectable Factor Xa Inhibitor for VTE Prophylaxis"]
-	union
-	["MedicationAdministration": medication in "Warfarin"]
-	) MedicationAdm
-		where MedicationAdm.status = 'not-done'
+(["MedicationAdministration": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"]
+union
+["MedicationAdministration": medication in "Low Molecular Weight Heparin for VTE Prophylaxis"]
+union
+["MedicationAdministration": medication in "Injectable Factor Xa Inhibitor for VTE Prophylaxis"]
+union
+["MedicationAdministration": medication in "Warfarin"]
+) MedicationAdm
+where MedicationAdm.status = 'not-done'
 
 ```
 
@@ -174,8 +174,7 @@ define "No VTE Prophylaxis Medication Ordered":
 	union
 	["MedicationRequest": medication in "Warfarin"]
 	) MedicationOrder
-	where 	MedicationOrder.intent = 'order' //TJC: Need Fix- status is required, do we need to express here?
-		 and MedicationOrder.doNotPerform.value is true
+	where FHIRHelpers.ToBoolean(MedicationOrder.doNotPerform) is true
 ```
 
 ### Medication use
@@ -229,9 +228,8 @@ define "No VTE Prophylaxis Device Applied":
     union ["DeviceUseStatement": code in "Intermittent pneumatic compression devices (IPC)"]
     union ["DeviceUseStatement": code in "Graduated compression stockings (GCS)"]
   ) DeviceApplied
-    where GetExtension(DeviceApplied.extension, 'http://example.org/fhir/extensions/notDone').value is true
-    //TJC: not sure if we can use R4 extension url of doNotPerform http://hl7.org/fhir/StructureDefinition/request-doNotPerform
-
+    where exists (DeviceApplied.extension E where E.url = 'http://hl7.org/fhir/R4/extension-request-doNotPerform.html' 
+    	and FHIRHelpers.ToBoolean(E.value) is true)
 ```
 
 ### Device Order
@@ -246,8 +244,7 @@ define "No VTE Prophylaxis Device Ordered":
       union ["DeviceRequest": code in "Graduated compression stockings (GCS)"]
   ) DevideOrder
     where DevideOrder.intent = 'Order'
-      and GetExtension(DevideOrder.extension, 'http://hl7.org/fhir/StructureDefinition/request-doNotPerform').value is true
-
+      and exists (DeviceOrder.extension E where E.url = 'http://hl7.org/fhir/R4/extension-request-doNotPerform.html' and FHIRHelpers.ToBoolean(E.value) is true)
 ```
 
 ## Care Plan - Care Goals
@@ -261,9 +258,9 @@ define "No VTE Prophylaxis Device Ordered":
 EXM108_FHIR
 ```cql
 define "Is In Low Risk for VTE or On Anticoagulant":
-	( ["Observation": code in "Risk for venous thromboembolism"] VTERiskAssessment
-			where exists(FHIRHelpers.ToConcept(VTERiskAssessment.value) ~ FHIRHelpers.ToConcept("Low Risk" )
-	)
+["Observation": code in "Risk for venous thromboembolism"] VTERiskAssessment
+where VTERiskAssessment.value in "Low Risk"
+
 ```
 
 ### General Observations
