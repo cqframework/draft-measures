@@ -60,7 +60,6 @@ define "SDE Race":
 define "SDE Sex":
 	SDE."SDE Sex"
 
-// Add "TJC" to the definition alias.
 define "Initial Population":
 	"Encounter with Principal Diagnosis and Age"
 
@@ -69,19 +68,10 @@ define "Encounter with Principal Diagnosis and Age":
   	with ["Patient"] BirthDate
   		such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of FHIRHelpers.ToInterval(AllStrokeEncounter.period)) >= 18
 
-
-// Is it okay here to continue using PrincipalDiagnosis? Yes, only if we update this to QDM 5.5, would that be a problem.
 define "All Stroke Encounter":
 	"Non Elective Inpatient Encounter" NonElectiveEncounter
 		where Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Hemorrhagic Stroke"
 		or Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Ischemic Stroke"
-
-/*
-define "All Stroke Encounter"
-[Encounter: "Non Elective Inpatient Encounter"] NonElectiveEncounter
-    where NonElectiveEncounter.diagnosis.rank = "1" in "Hemorrhagic Stoke"
-    or NonElectiveEncounter.diagnosis.rank = "1" in "Ischemic Stroke"
-*/
 
 define "Non Elective Inpatient Encounter":
 	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
@@ -140,7 +130,7 @@ define function "Normalize Onset"(onset Choice<FHIR.dateTime, FHIR.Age, FHIR.Per
 define "Encounter with Max LDL less than 70 mg per dL":
 	"Ischemic Stroke Encounter" IschemicStrokeEncounter
 		where Max(["Observation": "LDL-c"] Ldl
-				where Ldl.issued during Interval[IschemicStrokeEncounter.period.start - 30 days,IschemicStrokeEncounter.period.end]
+				where Ldl.issued during FHIRHelpers.ToInterval(IschemicStrokeEncounter.period.start - 30 days,IschemicStrokeEncounter.period.end)
 				return (Ldl.value as Quantity)
 		) < 70
 
