@@ -54,7 +54,7 @@ define "Numerator":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Antithrombotic Therapy at Discharge" DischargeAntithrombotic
 			such that DischargeAntithrombotic.authoredOn during IschemicStrokeEncounter.period
-			
+
 define "Encounter With Procedure":
   ["Encounter": "Inpatient"] E
 	  with ["Procedure", "SCIP"] P
@@ -62,7 +62,7 @@ define "Encounter With Procedure":
 			// Translator would output
 		  //such that (P.performed as dateTime) during E.period
 			//  or (P.performed as Period) during E.period
-				
+
 define "Antithrombotic Not Given at Discharge":
 	["MedicationRequest": "Antithrombotic Therapy"] NoAntithromboticDischarge
 	  // STU3
@@ -72,7 +72,7 @@ define "Antithrombotic Not Given at Discharge":
 			and (singleton from NoAntithromboticDischarge.reasonCode in "Medical Reason"
 				or singleton from NoAntithromboticDischarge.reasonCode in "Patient Refusal")
 
-// NOTE: On the assumption that status of not-taken is the closest to what the measure is looking for, this is the expression:				
+// NOTE: On the assumption that status of not-taken is the closest to what the measure is looking for, this is the expression:
 // TODO: Request discussion w/ Pharmacy regarding how medications not prescribed at discharged would be documented
 //define "Antithrombotic Not Given at Discharge R4":
 //  ["MedicationStatement": "Antithrombotic Therapy"] AntithromboticTherapy
