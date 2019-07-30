@@ -160,6 +160,7 @@ define "Intervention Comfort Measures":
 		union
 		(["Procedure": "Comfort Measures"] IntervetionPerformed
 		where IntervetionPerformed.status = 'completed')
+    //Change to "in progress", add in progress
 
 //Following function copied from MATGlobalCommonFunctions 2.0 in cqf-measures github repo
 define function "Normalize Onset"(onset Choice<FHIR.dateTime, FHIR.Age, FHIR.Period, FHIR.Range, FHIR.string>):
