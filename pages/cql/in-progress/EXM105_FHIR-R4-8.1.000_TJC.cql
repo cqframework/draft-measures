@@ -87,7 +87,7 @@ define "Statin Allergy":
 define "Numerator":
 	"Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Statin at Discharge" DischargeStatin
-			such that DischargeStatin.authoredOn during (IschemicStrokeEncounter.period)
+			such that FHIRHelpers.ToDateTime(DischargeStatin.authoredOn) during (IschemicStrokeEncounter.period)
 
 define "Ischemic Stroke Encounter":
 	"Encounter with Principal Diagnosis and Age" EncounterWithAge
@@ -107,16 +107,16 @@ define "Statin Not Given at Discharge":
       or singleton from NoStatin.reasonCode in "Patient Refusal")
 
 define "Encounter with Max LDL less than 70 mg per dL":
-	"Ischemic Stroke Encounter" IschemicStrokeEncounter
-		where Max(["Observation": "LDL-c"] Ldl
-				where Ldl.issued during FHIRHelpers.ToInterval(IschemicStrokeEncounter.period.start - 30 days,IschemicStrokeEncounter.period.end)
-				return (Ldl.value as Quantity)
-		) < 70
+  "Ischemic Stroke Encounter" IschemicStrokeEncounter
+    where Max(["Observation": "LDL-c"] Ldl
+      	where Ldl.issued during Interval[IschemicStrokeEncounter.period.start - 30 days,IschemicStrokeEncounter.period.end]
+      	return (Ldl.value as Quantity)
+    ) < 70
 
 define "Denominator Exception":
 	("Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Statin Not Given at Discharge" NoDischargeStatin
-			such that NoDischargeStatin.authoredOn during IschemicStrokeEncounter.period
+			such that FHIRHelpers.ToDateTime(NoDischargeStatin.authoredOn) during IschemicStrokeEncounter.period
 	)
 	union
 	("Ischemic Stroke Encounter" IschemicStrokeEncounter
