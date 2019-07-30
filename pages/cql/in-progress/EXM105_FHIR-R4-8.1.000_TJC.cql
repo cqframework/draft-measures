@@ -93,12 +93,13 @@ define "Ischemic Stroke Encounter":
 	"Encounter with Principal Diagnosis and Age" EncounterWithAge
 		where Global.PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
 
+//Modeled after EXM104 "Antithrombotic Therapy at Discharge" in the examples.md file.
 define "Statin at Discharge":
   ["MedicationRequest": "Statin Grouper"] Statin
     where exists (Statin.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
       and Statin.intent = 'order'
 
-//Modeled after EXM104 "Antithrombotic Therapy at Discharge" in the examples.md file.
+//Modeled after EXM104 "Antithrombotic Not Given at Discharge" in the examples.md file.
 define "Statin Not Given at Discharge":
   ["MedicationRequest": "Statin Grouper"] NoStatin
     where NoStatin.doNotPerform is true
