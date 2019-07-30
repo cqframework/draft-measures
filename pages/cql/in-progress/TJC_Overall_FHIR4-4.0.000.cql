@@ -1,10 +1,12 @@
 //For 2020 Reporting Year
-library TJC_Overall_FHIR_R4 version '4.0.000'
+// NOTE: BTR 2019-07-30: Renamed for consistency
+library TJC_Overall_FHIR4 version '4.0.000'
 
 using FHIR version '4.0.0'
-include FHIRHelpers version '3.0.0' called FHIRHelpers
-include MATGlobalCommonFunctions_FHIR version '4.0.000' called Global
-include SupplementalDataElements_FHIR version '1.0.0' called SDE
+// NOTE: BTR 2019-07-30: Updated version dependencies
+include FHIRHelpers version '4.0.0' called FHIRHelpers
+include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Global
+include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
 
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
 codesystem "LOINC": 'http://loinc.org'
@@ -62,7 +64,7 @@ define "Ischemic Stroke Encounters with Discharge Disposition":
 	)
 
 	define "Comfort Measures during Hospitalization":
-		"Ischemic Stroke Encounter" IschemicStrokeEncounter
+		"Ischemic Stroke Encounter" IschemicStrokeEncounter 
 	   	with "Intervention Comfort Measures" ComfortMeasure
 	    	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 

@@ -1,8 +1,8 @@
-library MATGlobalCommonFunctions_FHIR version '4.0.000'
+library MATGlobalCommonFunctions_FHIR4 version '4.0.000'
 
-using FHIR version '3.0.0'
+using FHIR version '4.0.0'
 
-include FHIRHelpers version '3.0.0' called FHIRHelpers
+include FHIRHelpers version '4.0.0' called FHIRHelpers
 
 codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
@@ -136,8 +136,9 @@ define function "EncounterDiagnosis"(Encounter Encounter):
     return singleton from ([Condition: id in "GetId"(D.condition.reference)])
 
 // Returns the condition that is specified as the principal diagnosis for the encounter
+// TODO: BTR 2019-07-30: Shouldn't need the FHIRHelpers reference here, investigate
 define function "PrincipalDiagnosis"(Encounter Encounter):
-	(singleton from (Encounter.diagnosis D where D.rank = 1)) PD
+	(singleton from (Encounter.diagnosis D where FHIRHelpers.ToInteger(D.rank) = 1)) PD
 		return singleton from ([Condition: id in "GetId"(PD.condition.reference)])
 
 // Returns the location for the given location reference

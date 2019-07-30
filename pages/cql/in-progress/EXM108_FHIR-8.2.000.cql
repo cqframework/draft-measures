@@ -5,10 +5,12 @@ library  EXM108_FHIR version '8.2.000'
 
 using FHIR version '4.0.0'
 
-include FHIRHelpers version '3.0.0' called FHIRHelpers
-include MATGlobalCommonFunctions_FHIR version '4.0.000' called Global
-include VTEICU_FHIR version '3.1.000' called VTEICU
-include SupplementalDataElements_FHIR version '1.0.0' called SDE
+// NOTE: BTR 2019-07-30: FHIRHelpers version should match the FHIR version...
+include FHIRHelpers version '4.0.0' called FHIRHelpers
+// NOTE: BTR 2019-07-30: I created FHIR4 versions of all these dependencies, the versions all need to match throughout
+include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Global
+include VTEICU_FHIR4 version '3.1.000' called VTEICU
+include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
 
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
 codesystem "LOINC": 'http://loinc.org'
@@ -74,6 +76,7 @@ define "Admission Without VTE or Obstetrical Conditions":
 							)
 
 // Note: added FHIRHelpers.ToDate() in R4
+// NOTE: BTR 2019-07-30: This shouldn't be necessary, I'll investigate
 define "Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions":
   ( Global."Inpatient Encounter" InpatientEncounter
   		with ["Patient"] BirthDate
