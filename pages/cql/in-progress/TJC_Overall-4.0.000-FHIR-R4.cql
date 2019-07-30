@@ -1,9 +1,8 @@
 //For 2020 Reporting Year
-library TJC_Overall version '3.6.000'
+library TJC_Overall_FHIR_R4 version '4.0.000'
 
-using FHIR version '3.0.0'
+using FHIR version '4.0.0'
 include FHIRHelpers version '3.0.0' called FHIRHelpers
-//TODO: MATGlobalCommonFunctions_FHIR version '2.0.000' need to be updated to 4.0
 include MATGlobalCommonFunctions_FHIR version '4.0.000' called Global
 include SupplementalDataElements_FHIR version '1.0.0' called SDE
 
@@ -30,8 +29,9 @@ parameter "Measurement Period" Interval<DateTime>
 
 context Patient
 
+//Changed "ProcedureRequest" to "ServiceRequest"
 define "Intervention Comfort Measures":
-	(["ProcedureRequest": "Comfort Measures"] P
+	(["ServiceRequest": "Comfort Measures"] P
 		where P.intent = 'order')
 		union
 		(["Procedure": "Comfort Measures"] InterventionPerformed
@@ -61,10 +61,10 @@ define "Ischemic Stroke Encounters with Discharge Disposition":
 		)
 	)
 
-define "Comfort Measures during Hospitalization":
-	"Ischemic Stroke Encounter" IschemicStrokeEncounter
-		with "Intervention Comfort Measures" ComfortMeasure
-			such that Coalesce(start of FHIRHelpers.ToInterval(ComfortMeasure.performed), ComfortMeasure.authoredOn)during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
+	define "Comfort Measures during Hospitalization":
+		"Ischemic Stroke Encounter" IschemicStrokeEncounter
+	   	with "Intervention Comfort Measures" ComfortMeasure
+	    	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 
 define "Encounter with Principal Diagnosis and Age":
 	"All Stroke Encounter" AllStrokeEncounter

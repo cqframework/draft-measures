@@ -1,6 +1,6 @@
 library "Anticoagulation Therapy for Atrial Fibrillation/Flutter" version '9.1.000'
 
-using FHIR version '4.0.0'
+using FHIR version '3.0.0'
 
 include FHIRHelpers version '3.0.0'
 include MATGlobalCommonFunctions version '4.0.000' called Global

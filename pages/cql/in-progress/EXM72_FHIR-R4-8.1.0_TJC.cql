@@ -1,11 +1,12 @@
 // for 2020 Reporting Year
 library AntithromboticTherapyByEndofHospitalDay2 version '8.1.000'
 
-using FHIR version '3.0.0'
+using FHIR version '4.0.0'
 
 include FHIRHelpers version '3.0.0' called FHIRHelpers
 include MATGlobalCommonFunctions version '4.0.000' called Global
-include TJC_Overall version '3.6.000' called TJC
+//include TJC_Overall version '3.6.000' called TJC
+include TJC_Overall_FHIR_R4 version '4.0.000' called TJC
 include SupplementalDataElements_FHIR version '1.0.0' called SDE
 
 codesystem "LOINC": 'http://loinc.org'
