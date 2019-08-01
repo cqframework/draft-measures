@@ -105,7 +105,7 @@ define "No Antithrombotic Ordered":
 define "Encounter with Comfort Measures":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with TJC."Intervention Comfort Measures" ComfortMeasures
-			such that Coalesce(start of ComfortMeasures.performed, ComfortMeasures.authoredOn)during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
+			such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasures.performed as dateTime, ComfortMeasures.authoredOn))during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
 
 //Done
 define "Encounter with Thrombolytic Medication":
@@ -142,7 +142,7 @@ define "Denominator Exclusions":
 define "Encounter With An INR Greater Than 3.5":
     TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
         with ["Observation": "INR"] INR
-          such that INR.issued in TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
+          such that (INR.issued in TJC."CalendarDayOfOrDayAfter"FHIRHelpers.ToInterval(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
                 and INR.value > 3.5
 
 //Done
@@ -155,7 +155,7 @@ define "Encounter with Antithrombotic Therapy":
 define "No Antithrombotic Ordered Day Of or Day After Hospital Arrival":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "No Antithrombotic Ordered" NoAntithrombotic
-			such that NoAntithrombotic.effective during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
+			such that FHIRHelpers.ToInterval(NoAntithrombotic.effective) during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
 
 //Done
 define "Encounter With Ticagrelor Therapy Given Day Of or Day After Hospital Arrival":
@@ -172,7 +172,7 @@ define "Denominator Exceptions":
 define "Encounter With Thrombolytic Therapy Documented As Already Given":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with [Condition: "Intravenous or Intra arterial Thrombolytic (tPA) Therapy Prior to Arrival"] PriorTPA
-			such that PriorTPA.onset during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
+			such that FHIRHelpers.ToDateTime(PriorTPA.onset) during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 			  and PriorTPA.clinicalStatus in { 'active', 'recurrence', 'relapse' }
 				// NOTE: Feedback at Digitial Quality Summit 2019 indicates verificationStatus may be difficult for implementers to retrieve
 				//and PriorTPA.verificationStatus = 'confirmed'
