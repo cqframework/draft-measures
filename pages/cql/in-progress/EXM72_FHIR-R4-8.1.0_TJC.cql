@@ -3,14 +3,19 @@ library AntithromboticTherapyByEndofHospitalDay2 version '8.1.000'
 
 using FHIR version '4.0.0'
 
-include FHIRHelpers version '3.0.0' called FHIRHelpers
-include MATGlobalCommonFunctions version '4.0.000' called Global
-//include TJC_Overall version '3.6.000' called TJC
-include TJC_Overall_FHIR_R4 version '4.0.000' called TJC
-include SupplementalDataElements_FHIR version '1.0.0' called SDE
+include FHIRHelpers version '4.0.0'
+include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Global
+include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
+include TJC_Overall_FHIR4 version '4.0.000' called TJC
 
 codesystem "LOINC": 'http://loinc.org'
-codesystem "RequestIntent": 'http://hl7.org/fhir/request-intent'
+codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
+// NOTE: R4 code system URLs changed to be based on terminology.hl7.org...
+codesystem "Diagnosis Role": 'http://terminology.hl7.org/CodeSystem/diagnosis-role'
+//codesystem "Diagnosis Role": 'http://hl7.org/fhir/diagnosis-role'
+codesystem "RequestIntent": 'http://terminology.hl7.org/CodeSystem/request-intent'
+//codesystem "RequestIntent": 'http://hl7.org/fhir/request-intent'
+codesystem "MedicationRequestCategory": 'http://terminology.hl7.org/CodeSystem/medicationrequest-category'
 
 valueset "Antithrombotic Therapy": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.201'
 valueset "Ethnicity": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.837'
@@ -29,6 +34,7 @@ valueset "Emergency Department Visit": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.
 
 code "Birth date": '21112-8' from "LOINC" display 'Birth date'
 code "Order": 'order' from "RequestIntent" display 'Order'
+code "Discharge": 'discharge' from "MedicationRequestCategory" display 'Discharge'
 //Should this be added to the FHIRHelpers?
 
 context Patient
@@ -113,8 +119,7 @@ define "Encounter with Thrombolytic Therapy Medication or Procedures":
 		with "Thrombolytic Therapy Medication or Procedures" ThrombolyticTherapy
 			such that ThrombolyticTherapy.effective starts 24 hours or less before start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 
-//Added "HospitalizationWithObservationLengthofStay" to the TJC library, still have errors
-//Requires adding "HospitalizationWithObservation" to Global library as well, still has errors
+//Done
 define "Encounter Less Than Two Days":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		where Global.HospitalizationWithObservationLengthofStay(IschemicStrokeEncounter)< 2
