@@ -142,7 +142,7 @@ define "Denominator Exclusions":
 define "Encounter With An INR Greater Than 3.5":
     TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
         with ["Observation": "INR"] INR
-          such that (INR.issued in TJC."CalendarDayOfOrDayAfter"FHIRHelpers.ToInterval(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
+          such that (INR.issued in TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
                 and INR.value > 3.5
 
 //Done
