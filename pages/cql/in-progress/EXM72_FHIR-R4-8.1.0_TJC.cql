@@ -72,11 +72,11 @@ define "Thrombolytic Therapy Medication or Procedures":
 		where ThrombolyticProcedure.status = 'completed'
 		// Noticed we didn't use "procedure in" prior to the value set, as the medeication resource does. Why is that?
 
-//Done
+//Done: changed from "reasonNotDone" to "reasonCode"
 define "No Antithrombotic Administered":
 	["MedicationAdministration": medication in "Antithrombotic Therapy"] NoAntithromboticGiven
-		where NoAntithromboticGiven.reasonNotGiven in "Medical Reason"
-			or NoAntithromboticGiven.reasonNotGiven in "Patient Refusal"
+		where NoAntithromboticGiven.reasonCode in "Medical Reason"
+			or NoAntithromboticGiven.reasonCode in "Patient Refusal"
 				and NoAntithromboticGiven.status = 'completed'
 /*
 CQL definition below, following is FHIR
