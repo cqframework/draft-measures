@@ -8,8 +8,6 @@ include FHIRHelpers version '4.0.0'
 include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Global
 include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
 
-
-
 codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
 //Yanyan, I added this and it fixed some errors
@@ -130,7 +128,7 @@ define "Last Gestational Age Prior To Or At the Same Time of Delivery":
       Last(["Observation": "Estimated Gestational Age at Delivery"] LastGestational
           with "Delivery Time" Delivery
                   such that LastGestational.status = 'final'
-                  and LastGestational.effective 1 day or less before or on Delivery.effective
+                  and FHIRHelpers.ToDateTime(LastGestational.effective as dateTime) 1 day or less before or on FHIRHelpers.ToDateTime(Delivery.effective as dateTime)
           sort by effective
             )
 
@@ -140,6 +138,7 @@ define "Delivery Time":
               ["Observation": "Time of Delivery"] DeliveryTime
               where DeliveryTime.status = 'final'
               and DeliveryTime.category C where FHIRHelpers.ToConcept(C) ~ "Exam"
+// Will bring up the issue of "ToConcept" errors on FHIR WG Call 8/6/19
 
 
 //define "Delivery Encounter With Cesarean Birth Without Labor or History of Uterine Surgery":
@@ -153,11 +152,12 @@ define "Delivery Time":
   define "Delivery Encounter With Cesarean Birth Without Labor or History of Uterine Surgery":
               "Delivery Encounter Near Term" DeliveryEncounter
                   with "Cesarean Birth While Not in Labor" CSectionNoLabor
-                    such that CSectionNoLabor.performed as period starts during DeliveryEncounter.period
+                    such that CSectionNoLabor.performed as Period starts during DeliveryEncounter.period
                   without "History of Uterine Surgery Procedure" PriorUterineProcedure
-                    such that PriorUterineProcedure.performed as period starts before start of DeliveryEncounter.period
+                    such that PriorUterineProcedure.performed as Period starts before start of DeliveryEncounter.period
                   without "History of Uterine Surgery Diagnosis" PriorUterineDiagnosis
-                    such that PriorUterineDiagnosis.onset as period starts before start of DeliveryEncounter.period
+                    such that PriorUterineDiagnosis.onset as Period starts before start of DeliveryEncounter.period
+//Changed lower case "P" period "as Period", resolved issues with red lined "period"
 
 //define "Cesarean Birth While Not in Labor":
 //    ["Procedure, Performed": "Cesarean Birth"] CSection
@@ -223,8 +223,8 @@ define "Medical Induction Medication Administered While Not In Labor":
             "Delivery Encounter Near Term" DeliveryEncounter,
             "Medical Induction Medication" InductionMedication,
             "Is In Labor" Labor
-            where Labor.issued during DeliveryEncounter.period
-              and InductionMedication.effective Period 24 hours or less before Labor.issued
+            where FHIRHelpers.ToDateTime(Labor.effective as dateTime) during DeliveryEncounter.period
+              and InductionMedication.effective as Period 24 hours or less before FHIRHelpers.ToInterval(Labor.effective)
             return DeliveryEncounter
 
 //Need additional constraints?
