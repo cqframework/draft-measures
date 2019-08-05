@@ -5,8 +5,8 @@ library EXM113 version '8.1.000'
 using FHIR version '4.0.0'
 
 include FHIRHelpers version '4.0.0'
-include MATGlobalCommonFunctions version '4.0.000' called Global
-include SupplementalDataElements_FHIR version '1.0.0' called SDE
+include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Global
+include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
 
 
 
