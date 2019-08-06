@@ -140,9 +140,10 @@ define "Denominator Exclusions":
 //Done
 define "Encounter With An INR Greater Than 3.5":
     TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-        with ["Observation": "INR"] INR
-          such that (INR.issued in TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
+      with ["Observation": "INR"] INR
+          such that (INR.issued during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
                 and INR.value > 3.5
+//Double quotes are an identifier, and single quotes are a string.
 
 //Done
 define "Encounter with Antithrombotic Therapy":
@@ -175,3 +176,4 @@ define "Encounter With Thrombolytic Therapy Documented As Already Given":
 			  and PriorTPA.clinicalStatus in { 'active', 'recurrence', 'relapse' }
 				// NOTE: Feedback at Digitial Quality Summit 2019 indicates verificationStatus may be difficult for implementers to retrieve
 				//and PriorTPA.verificationStatus = 'confirmed'
+        //issue is we are comparing a codeable concept with a string, are the code values on the list? cerate alias before "Prior" to validate.
