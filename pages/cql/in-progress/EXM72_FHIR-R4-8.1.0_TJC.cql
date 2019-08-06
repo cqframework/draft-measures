@@ -70,7 +70,6 @@ define "Thrombolytic Therapy Medication or Procedures":
 	"Thrombolytic Medication"
 		union ( ["Procedure": "Intravenous or Intra-arterial Thrombolytic (t-PA) Therapy"] ) ThrombolyticProcedure
 		where ThrombolyticProcedure.status = 'completed'
-		// Noticed we didn't use "procedure in" prior to the value set, as the medeication resource does. Why is that?
 
 //Done: changed from "reasonNotDone" to "reasonCode"
 define "No Antithrombotic Administered":
