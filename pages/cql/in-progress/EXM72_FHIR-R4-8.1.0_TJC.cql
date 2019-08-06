@@ -35,7 +35,7 @@ valueset "Emergency Department Visit": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.
 code "Birth date": '21112-8' from "LOINC" display 'Birth date'
 code "Order": 'order' from "RequestIntent" display 'Order'
 code "Discharge": 'discharge' from "MedicationRequestCategory" display 'Discharge'
-//Should this be added to the FHIRHelpers?
+
 
 context Patient
 
