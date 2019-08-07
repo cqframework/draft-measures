@@ -2,6 +2,7 @@
 // NOTE: BTR 2019-07-30: Renamed for consistency
 library EXM105_FHIR4 version '8.1.000'
 //library "Discharged on Statin Medication" version '8.1.0'
+//STK 6
 
 using FHIR version '4.0.0'
 
