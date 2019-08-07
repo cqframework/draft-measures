@@ -86,7 +86,7 @@ define "Non Elective Inpatient Encounter":
 			and NonElectiveEncounter.period ends during "Measurement Period"
 
 define "Denominator":
-	"Initial Population"
+	TJC."Ischemic Stroke Encounter"
 
 define "Statin Allergy":
 	["AllergyIntolerance": "Statin Allergen"]
