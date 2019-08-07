@@ -10,7 +10,6 @@ include FHIRHelpers version '4.0.0'
 include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Global
 include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
 include TJC_Overall_FHIR4 version '4.0.000' called TJC
-//include TJC_Overall version '3.6.000' called TJC
 
 codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
