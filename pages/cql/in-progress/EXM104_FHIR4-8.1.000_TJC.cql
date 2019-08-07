@@ -3,16 +3,20 @@ library "Discharged on Antithrombotic Therapy" version '8.1.000'
 
 using FHIR version '3.0.0'
 
-include FHIRHelpers version '3.0.0'
-include MATGlobalCommonFunctions version '4.0.000' called Global
-include TJC_Overall version '3.6.000' called TJC
-include SupplementalDataElements_FHIR version '1.0.0' called SDE
+using FHIR version '4.0.0'
+
+include FHIRHelpers version '4.0.0'
+include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Global
+include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
+include TJC_Overall_FHIR4 version '4.0.000' called TJC
 
 codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
-codesystem "Diagnosis Role": 'http://hl7.org/fhir/diagnosis-role'
-codesystem "RequestIntent": 'http://hl7.org/fhir/request-intent'
-// NOTE: This is an R4 code system
+// NOTE: R4 code system URLs changed to be based on terminology.hl7.org...
+codesystem "Diagnosis Role": 'http://terminology.hl7.org/CodeSystem/diagnosis-role'
+//codesystem "Diagnosis Role": 'http://hl7.org/fhir/diagnosis-role'
+codesystem "RequestIntent": 'http://terminology.hl7.org/CodeSystem/request-intent'
+//codesystem "RequestIntent": 'http://hl7.org/fhir/request-intent'
 codesystem "MedicationRequestCategory": 'http://terminology.hl7.org/CodeSystem/medicationrequest-category'
 
 valueset "Antithrombotic Therapy": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.201'
@@ -24,9 +28,8 @@ valueset "Payer": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.
 valueset "Race": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.836'
 
 code "Birth date": '21112-8' from "LOINC" display 'Birth date'
-
-// NOTE: This is an R4 code
-code "Discharge": 'discharge' from "MedicationRequestCategory"
+code "Order": 'order' from "RequestIntent" display 'Order'
+code "Discharge": 'discharge' from "MedicationRequestCategory" display 'Discharge'
 
 context Patient
 
