@@ -56,22 +56,11 @@ define "Denominator":
 define "Numerator":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Antithrombotic Therapy at Discharge" DischargeAntithrombotic
-			such that DischargeAntithrombotic.authoredOn during IschemicStrokeEncounter.period
-
-define "Encounter With Procedure":
-  ["Encounter": "Inpatient"] E
-	  with ["Procedure", "SCIP"] P
-		  such that P.performed during E.period
-			// Translator would output
-		  //such that (P.performed as dateTime) during E.period
-			//  or (P.performed as Period) during E.period
+			such that FHIRHelpers.ToDateTime(DischargeAntithrombotic.authoredOn) during IschemicStrokeEncounter.period
 
 define "Antithrombotic Not Given at Discharge":
 	["MedicationRequest": medication in "Antithrombotic Therapy"] NoAntithromboticDischarge
-	  // STU3
-		//where exists (NoAntithromboticDischarge.extension E where E.url = 'http://hl7.org/fhir/us/davinci-deqm/STU3/StructureDefinition/extension-doNotPerform' and E.value is true)
-		// R4
-		where NoAntithromboticDischarge.doNotPerform is true
+			where FHIRHelpers.ToBoolean(NoAntithromboticDischarge.doNotPerform) is true
 			and (singleton from NoAntithromboticDischarge.reasonCode in "Medical Reason"
 				or singleton from NoAntithromboticDischarge.reasonCode in "Patient Refusal")
 
@@ -98,7 +87,7 @@ define "Denominator Exclusions":
 define "Encounter With No Antithrombotic At Discharge":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Antithrombotic Not Given at Discharge" NoDischargeAntithrombotic
-			such that NoDischargeAntithrombotic.authoredOn during IschemicStrokeEncounter.period
+			such that FHIRHelpers.ToDateTime(NoDischargeAntithrombotic.authoredOn) during IschemicStrokeEncounter.period
 
 define "Encounter With Ticagrelor During Hospitalization":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
