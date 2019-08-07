@@ -1,5 +1,6 @@
 // for 2020 Reporting Year
 library AntithromboticTherapyByEndofHospitalDay2 version '8.1.000'
+//STK 5
 
 using FHIR version '4.0.0'
 
