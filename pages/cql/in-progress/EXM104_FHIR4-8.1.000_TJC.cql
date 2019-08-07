@@ -90,10 +90,17 @@ define "Encounter With No Antithrombotic At Discharge":
 		with "Antithrombotic Not Given at Discharge" NoDischargeAntithrombotic
 			such that FHIRHelpers.ToDateTime(NoDischargeAntithrombotic.authoredOn) during IschemicStrokeEncounter.period
 
-define "Encounter With Ticagrelor During Hospitalization":
+/*define "Encounter With Ticagrelor During Hospitalization":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with ["MedicationAdministration": medication in TJC."Ticagrelor Therapy"] Ticagrelor
-			such that Ticagrelor.effective starts during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
+			such that Ticagrelor.effective starts during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)*/
+//Looking for Ticagrelor as discharge medication, include a corrected defintion in 2021 CQL based measure
+
+define "Encounter With Ticagrelor During Hospitalization":
+  ["MedicationRequest": medication in TJC."Ticagrelor Therapy"] Ticagrelor
+    where exists (Ticagrelor.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+      and Ticagrelor.intent = 'order'
+
 
 define "Denominator Exceptions":
 	"Encounter With No Antithrombotic At Discharge"
