@@ -3,10 +3,10 @@ library "Discharged on Statin Medication" version '8.1.0'
 
 using FHIR version '4.0.0'
 
-include FHIRHelpers version '3.0.0'
+include FHIRHelpers version '4.0.0'
 include MATGlobalCommonFunctions_FHIR version '4.0.000' called Global
 include SupplementalDataElements_FHIR version '1.0.0' called SDE
-include TJC_Overall_FHIR_R4 version '4.0.000' called TJC
+include TJC_Overall_FHIR4 version '4.0.000' called TJC
 //include TJC_Overall version '3.6.000' called TJC
 
 codesystem "LOINC": 'http://loinc.org'
@@ -95,13 +95,13 @@ define "Ischemic Stroke Encounter":
 
 //Modeled after EXM104 "Antithrombotic Therapy at Discharge" in the examples.md file.
 define "Statin at Discharge":
-  ["MedicationRequest": "Statin Grouper"] Statin
+  ["MedicationRequest": medication in "Statin Grouper"] Statin
     where exists (Statin.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
       and Statin.intent = 'order'
 
 //Modeled after EXM104 "Antithrombotic Not Given at Discharge" in the examples.md file.
 define "Statin Not Given at Discharge":
-  ["MedicationRequest": "Statin Grouper"] NoStatin
+  ["MedicationRequest": medication in "Statin Grouper"] NoStatin
     where NoStatin.doNotPerform is true
     and (singleton from NoStatin.reasonCode in "Medical Reason"
       or singleton from NoStatin.reasonCode in "Patient Refusal")
