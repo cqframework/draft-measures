@@ -75,7 +75,7 @@ define function "GetId"(uri String):
 	Last(Split(uri, '/'))
 
 define "Denominator":
-	"Initial Population"
+	TJC."Ischemic Stroke Encounter"
 
 //QA
 define "Statin Allergy":
