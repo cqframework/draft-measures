@@ -55,14 +55,6 @@ define "Numerator":
 		with "Antithrombotic Therapy at Discharge" DischargeAntithrombotic
 			such that DischargeAntithrombotic.authoredOn during IschemicStrokeEncounter.period
 
-define "Encounter With Procedure":
-  ["Encounter": "Inpatient"] E
-	  with ["Procedure", "SCIP"] P
-		  such that P.performed during E.period
-			// Translator would output
-		  //such that (P.performed as dateTime) during E.period
-			//  or (P.performed as Period) during E.period
-
 define "Antithrombotic Not Given at Discharge":
 	["MedicationRequest": "Antithrombotic Therapy"] NoAntithromboticDischarge
 	  // STU3
@@ -97,10 +89,13 @@ define "Encounter With No Antithrombotic At Discharge":
 		with "Antithrombotic Not Given at Discharge" NoDischargeAntithrombotic
 			such that NoDischargeAntithrombotic.authoredOn during IschemicStrokeEncounter.period
 
+/*
 define "Encounter With Ticagrelor During Hospitalization":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with ["MedicationAdministration": medication in TJC."Ticagrelor Therapy"] Ticagrelor
 			such that Ticagrelor.effective starts during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
+*/
+//Looking for Ticagrelor as discharge medication, include a corrected defintion in 2021 CQL based measure
 
 define "Denominator Exceptions":
 	"Encounter With No Antithrombotic At Discharge"
