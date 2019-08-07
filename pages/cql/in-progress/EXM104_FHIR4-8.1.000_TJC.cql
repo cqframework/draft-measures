@@ -1,8 +1,6 @@
 // for 2020 Reporting Year
 library "Discharged on Antithrombotic Therapy" version '8.1.000'
 
-using FHIR version '3.0.0'
-
 using FHIR version '4.0.0'
 
 include FHIRHelpers version '4.0.0'
@@ -31,6 +29,8 @@ code "Birth date": '21112-8' from "LOINC" display 'Birth date'
 code "Order": 'order' from "RequestIntent" display 'Order'
 code "Discharge": 'discharge' from "MedicationRequestCategory" display 'Discharge'
 
+parameter "Measurement Period" Interval<DateTime>
+
 context Patient
 
 define "SDE Ethnicity":
@@ -46,7 +46,7 @@ define "SDE Sex":
 	SDE."SDE Sex"
 
 define "Antithrombotic Therapy at Discharge":
-	["MedicationRequest": "Antithrombotic Therapy"] Antithrombotic
+	["MedicationRequest": medication in "Antithrombotic Therapy"] Antithrombotic
 	  where exists (Antithrombotic.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
 	    and Antithrombotic.intent = 'order'
 
@@ -67,11 +67,11 @@ define "Encounter With Procedure":
 			//  or (P.performed as Period) during E.period
 
 define "Antithrombotic Not Given at Discharge":
-	["MedicationRequest": "Antithrombotic Therapy"] NoAntithromboticDischarge
+	["MedicationRequest": medication in "Antithrombotic Therapy"] NoAntithromboticDischarge
 	  // STU3
-		where exists (NoAntithromboticDischarge.extension E where E.url = 'http://hl7.org/fhir/us/davinci-deqm/STU3/StructureDefinition/extension-doNotPerform' and E.value is true)
+		//where exists (NoAntithromboticDischarge.extension E where E.url = 'http://hl7.org/fhir/us/davinci-deqm/STU3/StructureDefinition/extension-doNotPerform' and E.value is true)
 		// R4
-		//where NoAntithromboticDischarge.doNotPerform is true
+		where NoAntithromboticDischarge.doNotPerform is true
 			and (singleton from NoAntithromboticDischarge.reasonCode in "Medical Reason"
 				or singleton from NoAntithromboticDischarge.reasonCode in "Patient Refusal")
 
