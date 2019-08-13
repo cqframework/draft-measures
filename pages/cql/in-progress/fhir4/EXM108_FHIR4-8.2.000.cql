@@ -362,12 +362,16 @@ define "Encounter With Principal Diagnosis of Mental Disorder or Stroke":
 			or Global."PrincipalDiagnosis"(QualifyingEncounter).code in "Ischemic Stroke"
 
 /* NOTE: Mapping table sugests Encounter.rank = 1. But rank is used for Encounter.Diagnosis
-  Need guidance on how to express a Principal Px
+  Need guidance on how to express a Principal Px -
+  1. in qicore-encounter, there is a URL for encounter Procedure. But proedure rank is as "extension"
+  2. Not Found Mapping Table suggestion of using "Encounter.procedure.code", "Encounter.procedure.sequence"
 */
 define "Encounter With Principal Procedure of SCIP VTE Selected Surgery":
 	"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter
 		with "SCIP VTE Selected Surgery" SelectedProcedure
-			such that FHIRHelpers.ToConcept(QualifyingEncounter.priority) = "elective"
+			such that  exists (SelectedProcedure.extension E where E.url = 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-encounter-procedure'
+      //and E.rank = 1 "rank" is not recognized
+      )
       and FHIRHelpers.ToInterval(SelectedProcedure.performed as Period) during  QualifyingEncounter.period
 
 define "Denominator Exclusions":
