@@ -6,7 +6,7 @@ Based on CMS159 - Depression Remission at Twelve Months
 
 using FHIR version '3.0.0'
 
-include MATGlobalCommonFunctions version '4.0.000' called Global
+include MATGlobalCommonFunctions_FHIR3 version '4.0.000' called Global
 
 codesystem "LOINC": 'urn:oid:2.16.840.1.113883.6.1'
 codesystem "SNOMEDCT": 'urn:oid:2.16.840.1.113883.6.96'

@@ -1,5 +1,5 @@
 // for 2020 Reporting Year
-library EXM105_FHIR3 version '8.0.0'
+library EXM105_FHIR3 version '8.0.000'
 
 /*
 Based on CMS105v8 - Discharged on Statin Medication

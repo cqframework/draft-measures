@@ -6,9 +6,9 @@ Based on CMS349v2 - HIV Screening
 
 using FHIR version '3.0.0'
 
-include MATGlobalCommonFunctions_FHIR version '2.0.000' called Global
+include MATGlobalCommonFunctions_FHIR3 version '2.0.000' called Global
 include FHIRHelpers version '3.0.0' called FHIRHelpers
-include SupplementalDataElements_FHIR version '1.0.0' called SDE
+include SupplementalDataElements_FHIR3 version '1.0.0' called SDE
 
 codesystem "LOINC": 'urn:oid:2.16.840.1.113883.6.1'
 

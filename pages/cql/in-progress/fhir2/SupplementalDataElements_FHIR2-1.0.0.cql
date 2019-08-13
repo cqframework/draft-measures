@@ -1,8 +1,8 @@
-library SupplementalDataElements_FHIR4 version '1.0.0'
+library SupplementalDataElements_FHIR2 version '1.0.0'
 
-using FHIR version '4.0.0'
+using FHIR version '1.0.2'
 
-include FHIRHelpers version '4.0.0' called FHIRHelpers
+include FHIRHelpers version '1.0.2' called FHIRHelpers
 
 valueset "ONC Administrative Sex": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1'
 valueset "Race": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.836'
@@ -14,12 +14,12 @@ context Patient
 define "SDE Ethnicity":
   (flatten (
     Patient.extension Extension
-      where Extension.url = 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity'
+      where Extension.url = 'http://fhir.org/guides/argonaut/StructureDefinition/argo-ethnicity'
         return Extension.extension
   )) E
     where E.url = 'ombCategory'
       or E.url = 'detailed'
-    return E.value as Coding
+    return E.valueCodeableConcept
     
 define "SDE Payer":
     [Coverage: type in "Payer"] Payer
@@ -31,12 +31,12 @@ define "SDE Payer":
 define "SDE Race":
   (flatten (
     Patient.extension Extension
-      where Extension.url = 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-race'
+      where Extension.url = 'http://fhir.org/guides/argonaut/StructureDefinition/argo-race'
         return Extension.extension
   )) E
     where E.url = 'ombCategory'
       or E.url = 'detailed'
-    return E.value as Coding
+    return E.valueCodeableConcept
 
 define "SDE Sex":
   case 

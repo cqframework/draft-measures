@@ -1,4 +1,4 @@
-library EXM111_FHIR3 version '8.0.0'
+library EXM111_FHIR3 version '8.0.000'
 
 /*
 Based on CMS111v8 - Median Admit Decision Time to ED Departure Time for Admitted Patients

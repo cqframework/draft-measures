@@ -1,7 +1,7 @@
 //For 2020 Reporting year Using FHIR R4
 library VTEICU_FHIR3 version '3.1.000'
 
-using FHIR version '4.0.0'
+using FHIR version '3.0.0'
 
 include FHIRHelpers version '3.0.0' called FHIRHelpers
 include MATGlobalCommonFunctions_FHIR3 version '4.0.000' called Global
