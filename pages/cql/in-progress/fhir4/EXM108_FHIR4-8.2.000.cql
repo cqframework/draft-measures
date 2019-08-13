@@ -366,13 +366,31 @@ define "Encounter With Principal Diagnosis of Mental Disorder or Stroke":
   1. in qicore-encounter, there is a URL for encounter Procedure. But proedure rank is as "extension"
   2. Not Found Mapping Table suggestion of using "Encounter.procedure.code", "Encounter.procedure.sequence"
 */
+
+//Option 1_using url
 define "Encounter With Principal Procedure of SCIP VTE Selected Surgery":
 	"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter
 		with "SCIP VTE Selected Surgery" SelectedProcedure
-			such that  exists (SelectedProcedure.extension E where E.url = 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-encounter-procedure'
+			such that exists (SelectedProcedure.extension E where E.url = 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-encounter-procedure'
       //and E.rank = 1 "rank" is not recognized
       )
       and FHIRHelpers.ToInterval(SelectedProcedure.performed as Period) during  QualifyingEncounter.period
+
+//Option 2_create function that returns the condition that is specified as the principal proedure for the encounter
+define function "GetId"(uri String):
+  Last(Split(uri, '/'))
+
+define function "PrincipalProcedure"(Encounter Encounter):
+	(singleton from (Encounter.diagnosis D where FHIRHelpers.ToInteger(D.rank) = 1)) PD
+		return singleton from ([Procedure: id in "GetId"(PD.condition.reference)])
+
+define "Encounter With Principal Procedure of SCIP VTE Selected Surgery_2":
+    "Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter
+    with "SCIP VTE Selected Surgery" SelectedProcedure
+    	such that PrincipalProcedure(QualifyingEncounter) in SelectedProcedure
+      and FHIRHelpers.ToInterval(SelectedProcedure.performed as Period) during  QualifyingEncounter.period
+
+
 
 define "Denominator Exclusions":
 	"Encounter Less Than 2 Days"
@@ -442,7 +460,8 @@ define "No VTE Prophylaxis Medication or Device Due to Patient Refusal":
 	( "No VTE Prophylaxis Medication Administered or Ordered" NoMed
       where NoMed.reasonCode in "Patient Refusal")
 		union ("No VTE Prophylaxis Device Applied or Ordered" NoVTEProphylaxis
-		    where NoVTEProphylaxis.reasonCode in "Patient Refusal" //NOTE: Mapping Table review,  review DeveiceRequest, DeviceUseStatement.reasonCode definition vs. Procedure.reasonCode
+		    where NoVTEProphylaxis.reasonCode in "Patient Refusal"
+        //NOTE: Mapping Table review - neither DeviceRequest nor DeviceUseStatement reasonCode could be used for not done reasonCode
     )
 
 define "No VTE Prophylaxis Due to Patient Refusal":
