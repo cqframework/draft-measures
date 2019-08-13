@@ -8,7 +8,7 @@ Childhood Immunization Screening (CIS)
 using FHIR version '3.0.0'
 
 include FHIRHelpers version '3.0.0' called FHIRHelpers
-include MATGlobalCommonFunctions_FHIR3 version 2.0.0 called Global
+include MATGlobalCommonFunctions_FHIR3 version '2.0.000' called Global
 
 /*
 Description
