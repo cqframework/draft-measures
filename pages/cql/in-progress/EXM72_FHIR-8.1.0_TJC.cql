@@ -112,8 +112,7 @@ define "Encounter with Thrombolytic Therapy Medication or Procedures":
 		with "Thrombolytic Therapy Medication or Procedures" ThrombolyticTherapy
 			such that ThrombolyticTherapy.effective starts 24 hours or less before start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 
-//Added "HospitalizationWithObservationLengthofStay" to the TJC library, still have errors
-//Requires adding "HospitalizationWithObservation" to Global library as well, still has errors
+//Done
 define "Encounter Less Than Two Days":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		where Global.HospitalizationWithObservationLengthofStay(IschemicStrokeEncounter)< 2

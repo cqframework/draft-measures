@@ -5,10 +5,8 @@ library EXM113 version '8.1.000'
 using FHIR version '4.0.0'
 
 include FHIRHelpers version '4.0.0'
-include MATGlobalCommonFunctions version '4.0.000' called Global
-include SupplementalDataElements_FHIR version '1.0.0' called SDE
-
-
+include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Global
+include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
 
 codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
@@ -25,16 +23,13 @@ valueset "Delivery Procedures": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.
 valueset "Dinoprostone": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1045.56'
 valueset "Encounter Inpatient": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.666.5.307'
 valueset "Estimated Gestational Age at Delivery": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1045.26'
-valueset "Ethnicity": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.837'
 valueset "Labor": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.281'
 valueset "Medical Induction of Labor": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.288'
 valueset "Metroplasty": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1110.25'
 valueset "Myomectomy": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.422'
 valueset "ONC Administrative Sex": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1'
 valueset "Oxytocin": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1045.55'
-valueset "Payer": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.3591'
 valueset "Perforation of Uterus": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1110.14'
-valueset "Race": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.836'
 valueset "Time of Delivery": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1045.28'
 valueset "Transabdominal Cerclage": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1110.18'
 valueset "Uterine Horn": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1110.24'
@@ -133,7 +128,7 @@ define "Last Gestational Age Prior To Or At the Same Time of Delivery":
       Last(["Observation": "Estimated Gestational Age at Delivery"] LastGestational
           with "Delivery Time" Delivery
                   such that LastGestational.status = 'final'
-                  and LastGestational.effective 1 day or less before or on Delivery.effective
+                  and FHIRHelpers.ToDateTime(LastGestational.effective as dateTime) 1 day or less before or on FHIRHelpers.ToDateTime(Delivery.effective as dateTime)
           sort by effective
             )
 
@@ -143,6 +138,7 @@ define "Delivery Time":
               ["Observation": "Time of Delivery"] DeliveryTime
               where DeliveryTime.status = 'final'
               and DeliveryTime.category C where FHIRHelpers.ToConcept(C) ~ "Exam"
+// Will bring up the issue of "ToConcept" errors on FHIR WG Call 8/6/19
 
 
 //define "Delivery Encounter With Cesarean Birth Without Labor or History of Uterine Surgery":
@@ -156,11 +152,12 @@ define "Delivery Time":
   define "Delivery Encounter With Cesarean Birth Without Labor or History of Uterine Surgery":
               "Delivery Encounter Near Term" DeliveryEncounter
                   with "Cesarean Birth While Not in Labor" CSectionNoLabor
-                    such that CSectionNoLabor.performed as period starts during DeliveryEncounter.period
+                    such that CSectionNoLabor.performed as Period starts during DeliveryEncounter.period
                   without "History of Uterine Surgery Procedure" PriorUterineProcedure
-                    such that PriorUterineProcedure.performed as period starts before start of DeliveryEncounter.period
+                    such that PriorUterineProcedure.performed as Period starts before start of DeliveryEncounter.period
                   without "History of Uterine Surgery Diagnosis" PriorUterineDiagnosis
-                    such that PriorUterineDiagnosis.onset as period starts before start of DeliveryEncounter.period
+                    such that PriorUterineDiagnosis.onset as Period starts before start of DeliveryEncounter.period
+//Changed lower case "P" period "as Period", resolved issues with red lined "period"
 
 //define "Cesarean Birth While Not in Labor":
 //    ["Procedure, Performed": "Cesarean Birth"] CSection
@@ -226,8 +223,8 @@ define "Medical Induction Medication Administered While Not In Labor":
             "Delivery Encounter Near Term" DeliveryEncounter,
             "Medical Induction Medication" InductionMedication,
             "Is In Labor" Labor
-            where Labor.issued during DeliveryEncounter.period
-              and InductionMedication.effective Period 24 hours or less before Labor.issued
+            where FHIRHelpers.ToDateTime(Labor.effective as dateTime) during DeliveryEncounter.period
+              and InductionMedication.effective as Period 24 hours or less before FHIRHelpers.ToInterval(Labor.effective)
             return DeliveryEncounter
 
 //Need additional constraints?

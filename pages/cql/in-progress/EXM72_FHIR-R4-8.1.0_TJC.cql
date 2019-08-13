@@ -1,16 +1,22 @@
 // for 2020 Reporting Year
 library AntithromboticTherapyByEndofHospitalDay2 version '8.1.000'
+//STK 5
 
 using FHIR version '4.0.0'
 
-include FHIRHelpers version '3.0.0' called FHIRHelpers
-include MATGlobalCommonFunctions version '4.0.000' called Global
-//include TJC_Overall version '3.6.000' called TJC
-include TJC_Overall_FHIR_R4 version '4.0.000' called TJC
-include SupplementalDataElements_FHIR version '1.0.0' called SDE
+include FHIRHelpers version '4.0.0'
+include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Global
+include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
+include TJC_Overall_FHIR4 version '4.0.000' called TJC
 
 codesystem "LOINC": 'http://loinc.org'
-codesystem "RequestIntent": 'http://hl7.org/fhir/request-intent'
+codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
+// NOTE: R4 code system URLs changed to be based on terminology.hl7.org...
+codesystem "Diagnosis Role": 'http://terminology.hl7.org/CodeSystem/diagnosis-role'
+//codesystem "Diagnosis Role": 'http://hl7.org/fhir/diagnosis-role'
+codesystem "RequestIntent": 'http://terminology.hl7.org/CodeSystem/request-intent'
+//codesystem "RequestIntent": 'http://hl7.org/fhir/request-intent'
+codesystem "MedicationRequestCategory": 'http://terminology.hl7.org/CodeSystem/medicationrequest-category'
 
 valueset "Antithrombotic Therapy": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.201'
 valueset "Ethnicity": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.837'
@@ -29,7 +35,8 @@ valueset "Emergency Department Visit": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.
 
 code "Birth date": '21112-8' from "LOINC" display 'Birth date'
 code "Order": 'order' from "RequestIntent" display 'Order'
-//Should this be added to the FHIRHelpers?
+code "Discharge": 'discharge' from "MedicationRequestCategory" display 'Discharge'
+
 
 context Patient
 
@@ -64,13 +71,12 @@ define "Thrombolytic Therapy Medication or Procedures":
 	"Thrombolytic Medication"
 		union ( ["Procedure": "Intravenous or Intra-arterial Thrombolytic (t-PA) Therapy"] ) ThrombolyticProcedure
 		where ThrombolyticProcedure.status = 'completed'
-		// Noticed we didn't use "procedure in" prior to the value set, as the medeication resource does. Why is that?
 
-//Done
+//Done: changed from "reasonNotDone" to "reasonCode"
 define "No Antithrombotic Administered":
 	["MedicationAdministration": medication in "Antithrombotic Therapy"] NoAntithromboticGiven
-		where NoAntithromboticGiven.reasonNotGiven in "Medical Reason"
-			or NoAntithromboticGiven.reasonNotGiven in "Patient Refusal"
+		where NoAntithromboticGiven.reasonCode in "Medical Reason"
+			or NoAntithromboticGiven.reasonCode in "Patient Refusal"
 				and NoAntithromboticGiven.status = 'completed'
 /*
 CQL definition below, following is FHIR
@@ -99,7 +105,7 @@ define "No Antithrombotic Ordered":
 define "Encounter with Comfort Measures":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with TJC."Intervention Comfort Measures" ComfortMeasures
-			such that Coalesce(start of ComfortMeasures.performed, ComfortMeasures.authoredOn)during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
+			such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasures.performed as dateTime, ComfortMeasures.authoredOn))during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
 
 //Done
 define "Encounter with Thrombolytic Medication":
@@ -113,8 +119,7 @@ define "Encounter with Thrombolytic Therapy Medication or Procedures":
 		with "Thrombolytic Therapy Medication or Procedures" ThrombolyticTherapy
 			such that ThrombolyticTherapy.effective starts 24 hours or less before start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 
-//Added "HospitalizationWithObservationLengthofStay" to the TJC library, still have errors
-//Requires adding "HospitalizationWithObservation" to Global library as well, still has errors
+//Done
 define "Encounter Less Than Two Days":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		where Global.HospitalizationWithObservationLengthofStay(IschemicStrokeEncounter)< 2
@@ -136,9 +141,10 @@ define "Denominator Exclusions":
 //Done
 define "Encounter With An INR Greater Than 3.5":
     TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-        with ["Observation": "INR"] INR
-          such that INR.issued in TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
+      with ["Observation": "INR"] INR
+          such that INR.issued during TJC."CalendarDayOfOrDayAfter" start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
                 and INR.value > 3.5
+//Double quotes are an identifier, and single quotes are a string.
 
 //Done
 define "Encounter with Antithrombotic Therapy":
@@ -150,7 +156,7 @@ define "Encounter with Antithrombotic Therapy":
 define "No Antithrombotic Ordered Day Of or Day After Hospital Arrival":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "No Antithrombotic Ordered" NoAntithrombotic
-			such that NoAntithrombotic.effective during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
+			such that FHIRHelpers.ToInterval(NoAntithrombotic.effective) during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
 
 //Done
 define "Encounter With Ticagrelor Therapy Given Day Of or Day After Hospital Arrival":
@@ -167,7 +173,8 @@ define "Denominator Exceptions":
 define "Encounter With Thrombolytic Therapy Documented As Already Given":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with [Condition: "Intravenous or Intra arterial Thrombolytic (tPA) Therapy Prior to Arrival"] PriorTPA
-			such that PriorTPA.onset during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
+			such that FHIRHelpers.ToDateTime(PriorTPA.onset) during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 			  and PriorTPA.clinicalStatus in { 'active', 'recurrence', 'relapse' }
 				// NOTE: Feedback at Digitial Quality Summit 2019 indicates verificationStatus may be difficult for implementers to retrieve
 				//and PriorTPA.verificationStatus = 'confirmed'
+        //issue is we are comparing a codeable concept with a string, are the code values on the list? cerate alias before "Prior" to validate.

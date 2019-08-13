@@ -1,18 +1,25 @@
 // for 2020 Reporting Year
-library "Discharged on Statin Medication" version '8.1.0'
+// NOTE: BTR 2019-07-30: Renamed for consistency
+library EXM105_FHIR4 version '8.1.000'
+//library "Discharged on Statin Medication" version '8.1.0'
+//STK 6
 
 using FHIR version '4.0.0'
 
-include FHIRHelpers version '3.0.0'
-include MATGlobalCommonFunctions_FHIR version '4.0.000' called Global
-include SupplementalDataElements_FHIR version '1.0.0' called SDE
-include TJC_Overall_FHIR_R4 version '4.0.000' called TJC
-//include TJC_Overall version '3.6.000' called TJC
+// NOTE: BTR 2019-07-30: Updated dependencies
+include FHIRHelpers version '4.0.0'
+include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Global
+include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
+include TJC_Overall_FHIR4 version '4.0.000' called TJC
 
 codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
-codesystem "Diagnosis Role": 'http://hl7.org/fhir/diagnosis-role'
-codesystem "RequestIntent": 'http://hl7.org/fhir/request-intent'
+// NOTE: R4 code system URLs changed to be based on terminology.hl7.org...
+codesystem "Diagnosis Role": 'http://terminology.hl7.org/CodeSystem/diagnosis-role'
+//codesystem "Diagnosis Role": 'http://hl7.org/fhir/diagnosis-role'
+codesystem "RequestIntent": 'http://terminology.hl7.org/CodeSystem/request-intent'
+//codesystem "RequestIntent": 'http://hl7.org/fhir/request-intent'
+codesystem "MedicationRequestCategory": 'http://terminology.hl7.org/CodeSystem/medicationrequest-category'
 
 valueset "Encounter Inpatient": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.666.5.307'
 valueset "Non-Elective Inpatient Encounter": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.424'
@@ -43,6 +50,7 @@ code "Dead": '419099009' from "SNOMEDCT" display 'Dead'
 
 code "Billing": 'billing' from "Diagnosis Role" display 'Billing'
 code "Order": 'order' from "RequestIntent" display 'Order'
+code "Discharge": 'discharge' from "MedicationRequestCategory" display 'Discharge'
 
 parameter "Measurement Period" Interval<DateTime>
 
@@ -79,11 +87,12 @@ define "Non Elective Inpatient Encounter":
 			and NonElectiveEncounter.period ends during "Measurement Period"
 
 define "Denominator":
-	"Initial Population"
+	TJC."Ischemic Stroke Encounter"
 
 define "Statin Allergy":
 	["AllergyIntolerance": "Statin Allergen"]
 
+// TODO: BTR 2019-07-30: Shouldn't need the FHIRHelpers.ToDateTime here, will investigate
 define "Numerator":
 	"Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Statin at Discharge" DischargeStatin
@@ -100,19 +109,21 @@ define "Statin at Discharge":
       and Statin.intent = 'order'
 
 //Modeled after EXM104 "Antithrombotic Not Given at Discharge" in the examples.md file.
+// TODO: BTR 2019-07-30: Should not need the ToBoolean here, will investigate
 define "Statin Not Given at Discharge":
   ["MedicationRequest": "Statin Grouper"] NoStatin
-    where NoStatin.doNotPerform is true
+    where FHIRHelpers.ToBoolean(NoStatin.doNotPerform) is true
     and (singleton from NoStatin.reasonCode in "Medical Reason"
       or singleton from NoStatin.reasonCode in "Patient Refusal")
 
 define "Encounter with Max LDL less than 70 mg per dL":
-  "Ischemic Stroke Encounter" IschemicStrokeEncounter
-    where Max(["Observation": "LDL-c"] Ldl
-      	where Ldl.issued during Interval[IschemicStrokeEncounter.period.start - 30 days,IschemicStrokeEncounter.period.end]
-      	return (Ldl.value as Quantity)
-    ) < 70
+	"Ischemic Stroke Encounter" IschemicStrokeEncounter
+		where Max(["Observation": "LDL-c"] Ldl
+				where FHIRHelpers.ToDateTime(Ldl.issued) during Interval[FHIRHelpers.ToDateTime(IschemicStrokeEncounter.period.start) - 30 days, FHIRHelpers.ToDateTime(IschemicStrokeEncounter.period.end)]
+				return (Ldl.value as Quantity)
+		) < 70
 
+// TODO: BTR 2019-07-30: Should not need ToDateTime here, will investigate...
 define "Denominator Exception":
 	("Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Statin Not Given at Discharge" NoDischargeStatin
@@ -149,6 +160,7 @@ define "Intervention Comfort Measures":
 		union
 		(["Procedure": "Comfort Measures"] IntervetionPerformed
 		where IntervetionPerformed.status = 'completed')
+    //Change to "in progress", add in progress
 
 //Following function copied from MATGlobalCommonFunctions 2.0 in cqf-measures github repo
 define function "Normalize Onset"(onset Choice<FHIR.dateTime, FHIR.Age, FHIR.Period, FHIR.Range, FHIR.string>):
