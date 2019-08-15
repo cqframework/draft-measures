@@ -162,3 +162,8 @@ define function "HospitalizationWithObservation"(TheEncounter FHIR.Encounter):
 
 define function "HospitalizationWithObservationLengthofStay"(Encounter FHIR.Encounter):
 	"LengthInDays"("HospitalizationWithObservation"(Encounter))
+
+// TODO: Consider inclusion of NormalizeDateTime function
+// Also look at NormalizeOnset
+define function NormalizeDateTime(Value Choice<dateTime, Period>):
+  if Value is dateTime then FHIRHelpers.ToDateTime(Value) else start of (Value as Period)
