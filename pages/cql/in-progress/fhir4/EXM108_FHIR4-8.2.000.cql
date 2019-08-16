@@ -1,6 +1,8 @@
 //for 2020 reporting year. QDM to QI-4
 //Venous Thromboembolism Prophylaxis
 library EXM108_FHIR4 version '8.2.000'
+//for reasonCode - http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-devicerequest-doNotPerformReason
+//for reasonCode - /http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDoneReason
 
 using FHIR version '4.0.0'
 
@@ -100,26 +102,6 @@ define "Encounter With Age Range and Without VTE Diagnosis or Obstetrical Condit
   intersect "Admission Without VTE or Obstetrical Conditions"
 
 
-/* Note1: confirm url is a right reference.
-  Note2: Code will not work without ToBoolean() in R4, while it works in STU3
-*/
-define "No VTE Prophylaxis Device Applied or Ordered":
-  // NOTE: Should be using device.code, but that requires CQL 1.4
-  ((["DeviceUseStatement": code in "Venous foot pumps (VFP)"]
-    union ["DeviceUseStatement": code in "Intermittent pneumatic compression devices (IPC)"]
-    union ["DeviceUseStatement": code in "Graduated compression stockings (GCS)"]
-  ) DeviceApplied
-    where exists (DeviceApplied.extension E where E.url = 'http://hl7.org/fhir/R4/extension-request-doNotPerform.html' and FHIRHelpers.ToBoolean(E.value) is true)
-    )
-  union ((
-    ["DeviceRequest": code in "Venous foot pumps (VFP)"]
-      union ["DeviceRequest": code in "Intermittent pneumatic compression devices (IPC)"]
-      union ["DeviceRequest": code in "Graduated compression stockings (GCS)"]
-  ) DeviceOrder
-    where DeviceOrder.intent = 'order' //Note: Need add all types of order as "in {" original-order",  "reflex-order",  "filler-order"}"" etc?
-      and exists (DeviceOrder.extension E where E.url = 'http://hl7.org/fhir/R4/extension-request-doNotPerform.html' and FHIRHelpers.ToBoolean(E.value) is true)
-      )
-
 define "Initial Population":
 	"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions"
 
@@ -183,12 +165,38 @@ define "Encounter With Intervention Comfort Measures From Day of Start of Hospit
 			such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
 
 
+/* Note1: confirm url is a right reference.
+    Note2: Code will not work without ToBoolean() in R4, while it works in STU3
+  */
+define "No VTE Prophylaxis Device Applied or Ordered":
+    // NOTE: Should be using device.code, but that requires CQL 1.4
+    ((["DeviceUseStatement": code in "Venous foot pumps (VFP)"]
+      union ["DeviceUseStatement": code in "Intermittent pneumatic compression devices (IPC)"]
+      union ["DeviceUseStatement": code in "Graduated compression stockings (GCS)"]
+    ) DeviceApplied
+      where exists (DeviceApplied.extension E where E.url = 'http://hl7.org/fhir/StructureDefinition/request-doNotPerform' and FHIRHelpers.ToBoolean(E.value) is true)
+      )
+    union ((
+      ["DeviceRequest": code in "Venous foot pumps (VFP)"]
+        union ["DeviceRequest": code in "Intermittent pneumatic compression devices (IPC)"]
+        union ["DeviceRequest": code in "Graduated compression stockings (GCS)"]
+    ) DeviceOrder
+      where DeviceOrder.intent = 'order' //Note: Need add all types of order as "in {" original-order",  "reflex-order",  "filler-order"}"" etc?
+        and exists (DeviceOrder.extension E where E.url = 'http://hl7.org/fhir/StructureDefinition/request-doNotPerform' and FHIRHelpers.ToBoolean(E.value) is true)
+        )
+
+//NOTE: Mapping Table review - neither DeviceRequest nor DeviceUseStatement reasonCode could be used for not done reasonCode
+//NOTE: R4 - Use Extensions to get Not done reason for DeviceRequest and DeviceUseStatement
+
 define "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hospitalization To Day After Admission":
 	from
 		"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter,
 		"No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
-		where (singleton from NoVTEDevice.reasonCode in "Medical Reason")
-			and FHIRHelpers.ToDateTime(Coalesce(NoVTEDevice.authoredOn, NoVTEDevice.recordedOn)) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
+		where (exists NoVTEDevice.extension E where E.url = 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-devicerequest-doNotPerformReason'
+          or exists NoVTEDevice.extension E where E.url = 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDoneReason'
+          )
+          and NoVTEDevice.reasonCode in  "Medical Reason"
+          and FHIRHelpers.ToDateTime(Coalesce(NoVTEDevice.authoredOn, NoVTEDevice.recordedOn)) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
 
 
 define "No VTE Prophylaxis Medication Due to Medical Reason From Day of Start of Hospitalization To Day After Admission":
@@ -204,10 +212,13 @@ define "No VTE Prophylaxis Device Due to Medical Reason on Day of or Day After P
 		"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter,
 		["Procedure": "General or Neuraxial Anesthesia"] AnesthesiaProcedure,
 		"No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
-		where NoVTEDevice.reasonCode in "Medical Reason"
-			and AnesthesiaProcedure.status = 'completed'
+		where  AnesthesiaProcedure.status = 'completed'
 			and AnesthesiaProcedure.performed as Period ends 1 day after day of start of QualifyingEncounter.period
-			and  FHIRHelpers.ToDateTime(Coalesce(NoVTEDevice.authoredOn, NoVTEDevice.recordedOn)) during TJC."CalendarDayOfOrDayAfter"(end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
+			and (exists NoVTEDevice.extension E where E.url = 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-devicerequest-doNotPerformReason'
+            or exists NoVTEDevice.extension E where E.url = 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDoneReason'
+          )
+          and NoVTEDevice.reasonCode in "Medical Reason"
+      and FHIRHelpers.ToDateTime(Coalesce(NoVTEDevice.authoredOn, NoVTEDevice.recordedOn)) during TJC."CalendarDayOfOrDayAfter"(end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
 		return QualifyingEncounter
 
 
@@ -238,7 +249,6 @@ define "SCIP VTE Selected Surgery":
 		union ["Procedure": "Knee Replacement Surgery"]
 		union ["Procedure": "Urological Surgery"] ) P
 		where P.status = 'completed'
-        //NOTE: Mapping Table states Procedure.category differentiates "intervention" from "procedure" from QDM. Do we need express in the logic?
 
 define "Intervention Comfort Measures on Day of or Day After Procedure":
 	from
@@ -337,7 +347,7 @@ define "Encounter With Principal Diagnosis of Mental Disorder or Stroke":
 			or Global."PrincipalDiagnosis"(QualifyingEncounter).code in "Hemorrhagic Stroke"
 			or Global."PrincipalDiagnosis"(QualifyingEncounter).code in "Ischemic Stroke"
 
-/* NOTE: Mapping table sugests Encounter.rank = 1. But rank is used for Encounter.Diagnosis
+/* NOTE:
   Need guidance on how to express a Principal Px -
   1. in qicore-encounter, there is a URL for encounter Procedure. But proedure rank is as "extension"
   2. Not Found Mapping Table suggestion of using "Encounter.procedure.code", "Encounter.procedure.sequence"
@@ -348,7 +358,7 @@ define "Encounter With Principal Procedure of SCIP VTE Selected Surgery":
 	"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter
 		with "SCIP VTE Selected Surgery" SelectedProcedure
 			such that exists (SelectedProcedure.extension E where E.url = 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-encounter-procedure'
-      //and E.rank = 1 "rank" is not recognized
+        and E.extension.rank.value = 1 //"rank" is not recognized - to use extension from E.url
       )
       and FHIRHelpers.ToInterval(SelectedProcedure.performed as Period) during  QualifyingEncounter.period
 
@@ -365,7 +375,6 @@ define "Encounter With Principal Procedure of SCIP VTE Selected Surgery_2":
     with "SCIP VTE Selected Surgery" SelectedProcedure
     	such that PrincipalProcedure(QualifyingEncounter) in SelectedProcedure
       and FHIRHelpers.ToInterval(SelectedProcedure.performed as Period) during  QualifyingEncounter.period
-
 
 
 define "Denominator Exclusions":
@@ -422,9 +431,11 @@ define "No VTE Prophylaxis Medication or Device Due to Patient Refusal":
 	( "No VTE Prophylaxis Medication Administered or Ordered" NoMed
       where NoMed.reasonCode in "Patient Refusal")
 		union ("No VTE Prophylaxis Device Applied or Ordered" NoVTEProphylaxis
-		    where NoVTEProphylaxis.reasonCode in "Patient Refusal"
-        //NOTE: Mapping Table review - neither DeviceRequest nor DeviceUseStatement reasonCode could be used for not done reasonCode
-    )
+		    where (exists NoVTEProphylaxis.extension E where E.url = 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-devicerequest-doNotPerformReason'
+                or exists NoVTEProphylaxis.extension E where E.url = 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDoneReason'
+              )
+              and NoVTEProphylaxis.reasonCode in  "Patient Refusal"
+            )
 
 define "Encounter With No VTE Prophylaxis Due to Patient Refusal":
 "No VTE Prophylaxis Due to Patient Refusal From Day of Start of Hospitalization To Day After Admission"
