@@ -1,8 +1,8 @@
 //for 2020 reporting year. QDM to QI-4
 //Venous Thromboembolism Prophylaxis
+//Author: TJC
 library EXM108_FHIR4 version '8.2.000'
-//for reasonCode - http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-devicerequest-doNotPerformReason
-//for reasonCode - /http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDoneReason
+
 
 using FHIR version '4.0.0'
 
@@ -174,7 +174,7 @@ define "No VTE Prophylaxis Device Applied or Ordered":
       union ["DeviceUseStatement": code in "Intermittent pneumatic compression devices (IPC)"]
       union ["DeviceUseStatement": code in "Graduated compression stockings (GCS)"]
     ) DeviceApplied
-      where exists (DeviceApplied.extension E where E.url = 'http://hl7.org/fhir/StructureDefinition/request-doNotPerform' and FHIRHelpers.ToBoolean(E.value) is true)
+      where exists (DeviceApplied.extension E where E.url = 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDone' and FHIRHelpers.ToBoolean(E.value) is true)
       )
     union ((
       ["DeviceRequest": code in "Venous foot pumps (VFP)"]
@@ -187,7 +187,6 @@ define "No VTE Prophylaxis Device Applied or Ordered":
 
 //NOTE: Mapping Table review - neither DeviceRequest nor DeviceUseStatement reasonCode could be used for not done reasonCode
 //NOTE: R4 - Use Extensions to get Not done reason for DeviceRequest and DeviceUseStatement
-
 define "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hospitalization To Day After Admission":
 	from
 		"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter,
@@ -199,11 +198,22 @@ define "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hos
           and FHIRHelpers.ToDateTime(Coalesce(NoVTEDevice.authoredOn, NoVTEDevice.recordedOn)) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
 
 
+define "No VTE Prophylaxis Medication or Device Due to Patient Refusal":
+  ( "No VTE Prophylaxis Medication Administered or Ordered" NoVTEMedication
+      where Coalesce(NoVTEMedication.statusReason,NoVTEMedication.reasonCode) in "Patient Refusal"
+    )
+  union ("No VTE Prophylaxis Device Applied or Ordered" NoVTEProphylaxis
+      	  where (exists NoVTEProphylaxis.extension E where E.url = 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-devicerequest-doNotPerformReason'
+                or exists NoVTEProphylaxis.extension E where E.url = 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDoneReason'
+                )
+              and NoVTEProphylaxis.reasonCode in  "Patient Refusal"
+              )
+
 define "No VTE Prophylaxis Medication Due to Medical Reason From Day of Start of Hospitalization To Day After Admission":
 	from
 		"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter,
 		"No VTE Prophylaxis Medication Administered or Ordered" NoVTEMedication
-		where (singleton from NoVTEMedication.reasonCode in "Medical Reason")
+		where Coalesce(NoVTEMedication.statusReason,NoVTEMedication.reasonCode) in "Medical Reason"
 			and FHIRHelpers.ToDateTime(Coalesce(NoVTEMedication.authoredOn, NoVTEMedication.effective as dateTime)) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
     return QualifyingEncounter
 
@@ -227,7 +237,7 @@ define "No VTE Prophylaxis Medication Due to Medical Reason on Day of or Day Aft
 		"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter,
 		["Procedure": "General or Neuraxial Anesthesia"] AnesthesiaProcedure,
 		"No VTE Prophylaxis Medication Administered or Ordered" NoVTEMedication
-		where NoVTEMedication.reasonCode in "Medical Reason"
+		where Coalesce(NoVTEMedication.statusReason,NoVTEMedication.reasonCode) in "Medical Reason"
 			and AnesthesiaProcedure.status = 'completed'
 			and AnesthesiaProcedure.performed as Period ends 1 day after day of start of FHIRHelpers.ToInterval(QualifyingEncounter.period as Period)
 			//Note - "start of NoVTEMedication.effective as Period" does not work
@@ -259,7 +269,7 @@ define "Intervention Comfort Measures on Day of or Day After Procedure":
 				and AnesthesiaProcedure.performed as Period ends 1 day after day of start of QualifyingEncounter.period
         //Note - "start of ComfortMeasure.performed as Period" does not work
         and FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.authoredOn, ComfortMeasure.performed as dateTime)) 1 day or less on or after day of end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period)
-
+return QualifyingEncounter
 
 define "VTE Prophylaxis by Medication Administered or Device Applied":
 	( ["MedicationAdministration": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"] VTEMedication
@@ -280,16 +290,16 @@ define "VTE Prophylaxis by Medication Administered or Device Applied":
 define "VTE Prophylaxis Received on Day of or Day After Admission or Procedure":
 	( from
 			"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter,
-			"VTE Prophylaxis by Medication Administered or Device Applied" HasVTEProphylaxis
-			where FHIRHelpers.ToDateTime(Coalesce(HasVTEProphylaxis.recordedOn, HasVTEProphylaxis.effective as dateTime)) during TJC."CalendarDayOfOrDayAfter"(start of QualifyingEncounter.period)
+			"VTE Prophylaxis by Medication Administered or Device Applied" VTEProphylaxis
+			where FHIRHelpers.ToDateTime(Coalesce(VTEProphylaxis.effective, VTEProphylaxis.timing as dateTime)) during TJC."CalendarDayOfOrDayAfter"(start of QualifyingEncounter.period)
 			return QualifyingEncounter
 	)
 	union ( from
 				"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter,
 				["Procedure": "General or Neuraxial Anesthesia"] AnesthesiaProcedure,
-				"VTE Prophylaxis by Medication Administered or Device Applied" HasVTEProphylaxis
+				"VTE Prophylaxis by Medication Administered or Device Applied" VTEProphylaxis
 				where AnesthesiaProcedure.performed as Period ends 1 day after day of start of QualifyingEncounter.period
-					and FHIRHelpers.ToDateTime(Coalesce(HasVTEProphylaxis.recordedOn, HasVTEProphylaxis.effective as dateTime)) during TJC."CalendarDayOfOrDayAfter"(end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
+					and FHIRHelpers.ToDateTime(Coalesce(VTEProphylaxis.effective, VTEProphylaxis.timing as dateTime)) during TJC."CalendarDayOfOrDayAfter"(end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
 				return QualifyingEncounter
 		)
 
@@ -358,7 +368,9 @@ define "Encounter With Principal Procedure of SCIP VTE Selected Surgery":
 	"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter
 		with "SCIP VTE Selected Surgery" SelectedProcedure
 			such that exists (SelectedProcedure.extension E where E.url = 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-encounter-procedure'
-        and E.extension.rank.value = 1 //"rank" is not recognized - to use extension from E.url
+      and E.url.rank.valuePositiveInt = 1
+
+        //and E.extension.rank.value = 1 //"rank" is not recognized - to use extension from E.url
       )
       and FHIRHelpers.ToInterval(SelectedProcedure.performed as Period) during  QualifyingEncounter.period
 
@@ -426,16 +438,6 @@ define "No VTE Prophylaxis Due to Patient Refusal on Day of or Day After Procedu
         during TJC."CalendarDayOfOrDayAfter"(end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
 		return QualifyingEncounter
 
-
-define "No VTE Prophylaxis Medication or Device Due to Patient Refusal":
-	( "No VTE Prophylaxis Medication Administered or Ordered" NoMed
-      where NoMed.reasonCode in "Patient Refusal")
-		union ("No VTE Prophylaxis Device Applied or Ordered" NoVTEProphylaxis
-		    where (exists NoVTEProphylaxis.extension E where E.url = 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-devicerequest-doNotPerformReason'
-                or exists NoVTEProphylaxis.extension E where E.url = 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDoneReason'
-              )
-              and NoVTEProphylaxis.reasonCode in  "Patient Refusal"
-            )
 
 define "Encounter With No VTE Prophylaxis Due to Patient Refusal":
 "No VTE Prophylaxis Due to Patient Refusal From Day of Start of Hospitalization To Day After Admission"
