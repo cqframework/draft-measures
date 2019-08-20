@@ -53,7 +53,8 @@ define "SDE Sex":
 define "Antithrombotic Therapy at Discharge":
 	["MedicationRequest": medication in "Antithrombotic Therapy"] Antithrombotic
 	  where exists (Antithrombotic.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
-	    and Antithrombotic.intent = 'order'
+	    and Antithrombotic.intent = 'plan'
+      //plan
 
 define "Denominator":
 	TJC."Ischemic Stroke Encounter"
@@ -65,9 +66,14 @@ define "Numerator":
 
 define "Antithrombotic Not Given at Discharge":
 	["MedicationRequest": medication in "Antithrombotic Therapy"] NoAntithromboticDischarge
-			where FHIRHelpers.ToBoolean(NoAntithromboticDischarge.doNotPerform) is true
+    where FHIRHelpers.ToBoolean(NoAntithromboticDischarge.doNotPerform) is true
 			and (singleton from NoAntithromboticDischarge.reasonCode in "Medical Reason"
 				or singleton from NoAntithromboticDischarge.reasonCode in "Patient Refusal")
+          and (NoAntithromboticDischarge.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+          //and FHIRHelpers.ToConcept(NoAntithromboticDischarge.category) ~ "Discharge"
+            and NoAntithromboticDischarge.intent = 'plan'
+          
+          //include plan? Need to resolve so that we are looking at discharge.
 
 // NOTE: On the assumption that status of not-taken is the closest to what the measure is looking for, this is the expression:
 // TODO: Request discussion w/ Pharmacy regarding how medications not prescribed at discharged would be documented
