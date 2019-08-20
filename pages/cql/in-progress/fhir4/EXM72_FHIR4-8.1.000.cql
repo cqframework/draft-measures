@@ -90,7 +90,7 @@ define "No Antithrombotic Ordered for Medical Reason or Patient Refusal":
 	["Medication, Not Ordered": "Antithrombotic Therapy"] NoAntithromboticOrder
 		where NoAntithromboticOrder.negationRationale in "Medical Reason"
 			or NoAntithromboticOrder.negationRationale in "Patient Refusal"
-*/
+
 
 	 // TODO: Tracker for QI-core to add doNotPerform extension for MedicationRequest and suggest to the base Resource
 define "No Antithrombotic Ordered for Medical Reason or Patient Refusal":
@@ -100,6 +100,11 @@ where MedicationOrder.intent = 'order'
 	and GetExtension(MedicationOrder.extension, 'http://example.org/fhir/extensions/doNotPerform').value is true
 	//MedicationOrder.doNotPerform is true // Needs a QI-Core extension to support, look at resource further, what is the tracker number so we can follow up on that extension.
 )
+*/
+
+define "No Antithrombotic Ordered for Medical Reason or Patient Refusal":
+  ["MedicationRequest": medication in "Antithrombotic Therapy"] MedicationOrder
+    where FHIRHelpers.ToBoolean(MedicationOrder.doNotPerform) is true
 
 
 define "No Antithrombotic Ordered":
@@ -179,7 +184,7 @@ define "Encounter With Thrombolytic Therapy Documented As Already Given":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with [Condition: "Intravenous or Intra arterial Thrombolytic (tPA) Therapy Prior to Arrival"] PriorTPA
 			such that FHIRHelpers.ToDateTime(PriorTPA.onset) during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
-			  and PriorTPA.clinicalStatus in { 'active', 'recurrence', 'relapse' }
+			  and FHIRHelpers.ToConcept(PriorTPA.clinicalStatus) in { "active", "recurrence", "relapse" }
 				// NOTE: Feedback at Digitial Quality Summit 2019 indicates verificationStatus may be difficult for implementers to retrieve
 				//and PriorTPA.verificationStatus = 'confirmed'
         //issue is we are comparing a codeable concept with a string, are the code values on the list? cerate alias before "Prior" to validate.
