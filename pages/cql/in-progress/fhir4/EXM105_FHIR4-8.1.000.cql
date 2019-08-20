@@ -109,17 +109,18 @@ define "Ischemic Stroke Encounter":
 
 //Modeled after EXM104 "Antithrombotic Therapy at Discharge" in the examples.md file.
 define "Statin at Discharge":
-  ["MedicationRequest": "Statin Grouper"] Statin
+  ["MedicationRequest": medication in "Statin Grouper"] Statin
     where exists (Statin.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
-      and Statin.intent = 'order'
+      and Statin.intent in {'order', 'plan'}
 
 //Modeled after EXM104 "Antithrombotic Not Given at Discharge" in the examples.md file.
 // TODO: BTR 2019-07-30: Should not need the ToBoolean here, will investigate
 define "Statin Not Given at Discharge":
-  ["MedicationRequest": "Statin Grouper"] NoStatin
+  ["MedicationRequest": medication in "Statin Grouper"] NoStatin
     where FHIRHelpers.ToBoolean(NoStatin.doNotPerform) is true
     and (singleton from NoStatin.reasonCode in "Medical Reason"
       or singleton from NoStatin.reasonCode in "Patient Refusal")
+       and exists (NoStatin.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
 
 define "Encounter with Max LDL less than 70 mg per dL":
 	"Ischemic Stroke Encounter" IschemicStrokeEncounter
