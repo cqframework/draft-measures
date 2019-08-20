@@ -22,6 +22,7 @@ codesystem "Diagnosis Role": 'http://terminology.hl7.org/CodeSystem/diagnosis-ro
 codesystem "RequestIntent": 'http://terminology.hl7.org/CodeSystem/request-intent'
 //codesystem "RequestIntent": 'http://hl7.org/fhir/request-intent'
 codesystem "MedicationRequestCategory": 'http://terminology.hl7.org/CodeSystem/medicationrequest-category'
+codesystem "ConditionClinicalStatusCodes": 'http://terminology.hl7.org/CodeSystem/condition-clinical'
 
 valueset "Antithrombotic Therapy": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.201'
 valueset "Ethnicity": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.837'
@@ -41,6 +42,14 @@ valueset "Emergency Department Visit": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.
 code "Birth date": '21112-8' from "LOINC" display 'Birth date'
 code "Order": 'order' from "RequestIntent" display 'Order'
 code "Discharge": 'discharge' from "MedicationRequestCategory" display 'Discharge'
+
+//NOTE: Created for condition.clinicalStatus which is codeableConcept
+code "active": 'active' from "ConditionClinicalStatusCodes"
+code "recurrence": 'recurrence' from "ConditionClinicalStatusCodes"
+code "relapse": 'relapse' from "ConditionClinicalStatusCodes"
+code "inactive": 'inactive' from "ConditionClinicalStatusCodes"
+code "remission": 'remission' from "ConditionClinicalStatusCodes"
+code "resolved": 'resolved' from "ConditionClinicalStatusCodes"
 
 
 context Patient
