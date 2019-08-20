@@ -86,6 +86,73 @@ define "SDE Race":
 define "SDE Sex":
 	SDE."SDE Sex"
 
+////////////////////////////////////////////////////////////////////////////////
+
+// Extensions discussion:
+
+// Simple Extensions:
+// Option 1: Define Generic extension functions 
+define function GetExtension(Resource FHIR.DomainResource, Url String):
+  First(
+		Resource.extension E
+	  	where E.url = Url
+	)
+  
+define function GetExtension(Element FHIR.Element, Url String):
+  First(
+		Element.extension E
+	  	where E.url = Url
+	)
+		
+define "No Venous Foot Pump Applied (Option 1: Generic Extension Functions)":
+  ["DeviceUseStatement": code in "Venous foot pumps (VFP)"] DeviceApplied
+	  where FHIRHelpers.ToBoolean(GetExtension(DeviceApplied, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDone').value)
+		  and FHIRHelpers.ToCode(GetExtension(DeviceApplied, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDoneReason').value)
+			  in "Medical Reason"
+
+// Option 2: Define Specific extension functions
+define function GetNotDone(deviceUseStatement DeviceUseStatement):
+  FHIRHelpers.ToBoolean(GetExtension(deviceUseStatement, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDone').value)
+	
+define function GetNotDoneReason(deviceUseStatement DeviceUseStatement):
+  FHIRHelpers.ToCode(GetExtension(deviceUseStatement, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDoneReason').value)
+	
+define "No Venous Foot Pump Applied (Option 2: Specific Extension Functions)":
+  ["DeviceUseStatement": code in "Venous foot pumps (VFP)"] DeviceApplied
+	  where GetNotDone(DeviceApplied) is true
+		  and GetNotDoneReason(DeviceApplied) in "Medical Reason"
+			
+
+// Complex Extensions:
+// Option 1: Generic extension functions
+define "Encounter With Principal Procedure of SCIP VTE Selected Surgery (Option 1: Generic Extension Functions)":
+  from
+  	"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter,
+		"SCIP VTE Selected Surgery" SelectedProcedure
+	let EncounterProcedure: GetExtension(QualifyingEncounter, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-encounter-procedure')
+	where FHIRHelpers.ToInteger(GetExtension(EncounterProcedure, 'rank').value as FHIR.positiveInt) = 1
+	  and GetId(FHIRHelpers.ToString((GetExtension(EncounterProcedure, 'procedure').value as FHIR.Reference).reference)) = SelectedProcedure.id
+		
+define function GetEncounterProcedure(encounter Encounter):
+  GetExtension(encounter, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-encounter-procedure')
+	
+define function GetRank(encounterProcedure Extension):
+  FHIRHelpers.ToInteger(GetExtension(encounterProcedure, 'rank').value as FHIR.positiveInt)
+	
+define function GetProcedureId(encounterProcedure Extension):
+  GetId(FHIRHelpers.ToString((GetExtension(encounterProcedure, 'procedure').value as FHIR.Reference).reference))
+	
+// Option 2: Specific extension functions
+define "Encounter With Principal Procedure of SCIP VTE Selected Surgery (Option 2: Specific Extension Functions)":
+  from
+  	"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter,
+		"SCIP VTE Selected Surgery" SelectedProcedure
+	let EncounterProcedure: GetEncounterProcedure(QualifyingEncounter)
+	where GetRank(EncounterProcedure) = 1
+	  and GetProcedureId(EncounterProcedure) = SelectedProcedure.id
+
+////////////////////////////////////////////////////////////////////////////////
+
 define "Admission Without VTE or Obstetrical Conditions":
 		Global."Inpatient Encounter" InpatientEncounter
 		where not (Global.EncounterDiagnosis(InpatientEncounter).code in "Obstetrics"
@@ -149,7 +216,6 @@ define "No VTE Prophylaxis Medication Administered or Ordered":
 	where	FHIRHelpers.ToBoolean(MedicationOrder.doNotPerform) is true
 	)
 
-
 define "Intervention Comfort Measures":
 	(["ServiceRequest": "Comfort Measures"] P
 		where P.intent = 'order')
@@ -163,7 +229,6 @@ define "Encounter With Intervention Comfort Measures From Day of Start of Hospit
 		with "Intervention Comfort Measures" ComfortMeasure
     	// Note: "start of performed as Period" doe not work - Noticed that it occurs within Coalesce() only
 			such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
-
 
 /* Note1: confirm url is a right reference.
     Note2: Code will not work without ToBoolean() in R4, while it works in STU3
@@ -469,3 +534,4 @@ define "Low Risk for VTE or Anticoagulant Administered on Day of or Day After Pr
 		where AnesthesiaProcedure.performed as Period ends 1 day after day of start of QualifyingEncounter.period
 			and FHIRHelpers.ToDateTime(VTERiskAssessment.effective as dateTime) during TJC."CalendarDayOfOrDayAfter"(end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
 		return QualifyingEncounter
+
