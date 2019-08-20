@@ -71,7 +71,6 @@ define "Antithrombotic Not Given at Discharge":
 				or singleton from NoAntithromboticDischarge.reasonCode in "Patient Refusal")
           and exists (NoAntithromboticDischarge.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
 
-
 // NOTE: On the assumption that status of not-taken is the closest to what the measure is looking for, this is the expression:
 // TODO: Request discussion w/ Pharmacy regarding how medications not prescribed at discharged would be documented
 //define "Antithrombotic Not Given at Discharge R4":
