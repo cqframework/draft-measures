@@ -19,6 +19,7 @@ codesystem "MedicationRequestCategory": 'http://terminology.hl7.org/CodeSystem/m
 valueset "Anticoagulant Therapy": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.200'
 valueset "Atrial Ablation": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.203'
 valueset "Atrial Fibrillation/Flutter": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.202'
+valueset "Comfort Measures": 'https://cts.nlm.nih.gov/fhir/ValueSet/1.3.6.1.4.1.33895.1.3.0.45'
 valueset "Discharge To Acute Care Facility": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.87'
 valueset "Discharged to Health Care Facility for Hospice Care": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.207'
 valueset "Discharged to Home for Hospice Care": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.209'
@@ -70,18 +71,20 @@ define "Initial Population":
 define "Encounter with Atrial Ablation Procedure":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with ["Procedure": "Atrial Ablation"] AtrialAblation
-			such that FHIRHelpers.ToDateTime(AtrialAblation.performed as dateTime) starts before start of FHIRHelpers.ToInterval(IschemicStrokeEncounter.period)
+			such that AtrialAblation.performed as Period starts before start of FHIRHelpers.ToInterval(IschemicStrokeEncounter.period)
+				and AtrialAblation.status = 'completed'
 
 define "Numerator":
 	"Denominator" Encounter
 		with "Anticoagulant Therapy at Discharge" DischargeAnticoagulant
-			such that DischargeAnticoagulant.authorDatetime during Encounter.relevantPeriod
+			such that FHIRHelpers.ToDateTime(DischargeAnticoagulant.authoredOn) during Encounter.period
 
 define "Current Diagnosis Atrial Fibrillation or Flutter":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-		where exists ( IschemicStrokeEncounter.diagnoses Diagnosis
-				where Diagnosis in "Atrial Fibrillation/Flutter"
-		)
+		where exists ( IschemicStrokeEncounter.diagnosis.condition Diagnosis1
+				where Diagnosis1 in "Atrial Fibrillation/Flutter"
+				and IschemicStrokeEncounter.status = 'completed'
+									)
 
 define "Denominator":
 	"Encounter with Atrial Ablation Procedure"
@@ -91,25 +94,32 @@ define "Denominator":
 define "Denominator Exceptions":
 	"Denominator" Encounter
 		with "Reason for Not Giving Anticoagulant at Discharge" NoDischargeAnticoagulant
-			such that NoDischargeAnticoagulant.authorDatetime during Encounter.relevantPeriod
+			such that FHIRHelpers.ToDateTime(NoDischargeAnticoagulant.authoredOn) during Encounter.period
 
 define "History of Atrial Fibrillation or Flutter":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-		with ["Diagnosis": "Atrial Fibrillation/Flutter"] AtrialFibrillationFlutter
-			such that AtrialFibrillationFlutter.prevalencePeriod starts on or before
-			end of IschemicStrokeEncounter.relevantPeriod
+		with ["Condition": "Atrial Fibrillation/Flutter"] AtrialFibrillationFlutter
+			such that FHIRHelpers.ToDateTime(AtrialFibrillationFlutter.onset as dateTime) on or before
+			end of FHIRHelpers.ToInterval(IschemicStrokeEncounter.period)
 
 define "Denominator Exclusions":
 	( "Denominator" Encounter
-			where Encounter.dischargeDisposition in "Discharge To Acute Care Facility"
-				or Encounter.dischargeDisposition in "Left Against Medical Advice"
-				or Encounter.dischargeDisposition in "Patient Expired"
-				or Encounter.dischargeDisposition in "Discharged to Home for Hospice Care"
-				or Encounter.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
+			where Encounter.hospitalization.dischargeDisposition in "Discharge To Acute Care Facility"
+				or Encounter.hospitalization.dischargeDisposition in "Left Against Medical Advice"
+				or Encounter.hospitalization.dischargeDisposition in "Patient Expired"
+				or Encounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
+				or Encounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
 	)
 		union "Comfort Measures during Hospitalization"
 
 define "Comfort Measures during Hospitalization":
-	"Denominator" Encounter
-		with TJC."Intervention Comfort Measures" ComfortMeasure
-			such that Coalesce(start of ComfortMeasure.relevantPeriod, ComfortMeasure.authorDatetime)during Global."HospitalizationWithObservation"(Encounter)
+	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
+   	with "Intervention Comfort Measures" ComfortMeasure
+    	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."Hospitalization"(IschemicStrokeEncounter)
+
+define "Intervention Comfort Measures":
+		(["ServiceRequest": "Comfort Measures"] P
+				where P.intent = 'order')
+				union
+				(["Procedure": "Comfort Measures"] IntervetionPerformed
+				where IntervetionPerformed.status = 'completed')
