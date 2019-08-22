@@ -21,12 +21,24 @@ codesystem "RequestIntent": 'http://hl7.org/fhir/request-intent'
 codesystem "MedicationRequestCategory": 'http://terminology.hl7.org/CodeSystem/medicationrequest-category'
 
 valueset "Antithrombotic Therapy": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.201'
+valueset "Comfort Measures": 'https://cts.nlm.nih.gov/fhir/ValueSet/1.3.6.1.4.1.33895.1.3.0.45'
+valueset "Discharge To Acute Care Facility": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.87'
+valueset "Discharged to Health Care Facility for Hospice Care": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.207'
+valueset "Discharged to Home for Hospice Care": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.209'
+valueset "Emergency Department Visit": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.292'
 valueset "Ethnicity": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.837'
+valueset "Hemorrhagic Stroke": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.212'
+valueset "Ischemic Stroke": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.247'
+valueset "Left Against Medical Advice": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.308'
 valueset "Medical Reason": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.473'
+valueset "Non-Elective Inpatient Encounter": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.424'
+valueset "Observation Services": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1111.143'
 valueset "ONC Administrative Sex": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1'
+valueset "Patient Expired": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.309'
 valueset "Patient Refusal": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.93'
 valueset "Payer": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.3591'
 valueset "Race": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.836'
+valueset "Ticagrelor Therapy": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1110.39'
 
 code "Birth date": '21112-8' from "LOINC" display 'Birth date'
 
@@ -101,7 +113,18 @@ define "Encounter With Ticagrelor During Hospitalization":
 			such that Ticagrelor.effective starts during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 */
 //Looking for Ticagrelor as discharge medication, include a corrected defintion in 2021 CQL based measure
+define "Encounter With Ticagrelor at Discharge":
+  TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
+    with "Ticagrelor Therapy at Discharge" DischargeTicagrelor
+      such that FHIRHelpers.ToDateTime(DischargeTicagrelor.authoredOn) during IschemicStrokeEncounter.period
+
+
+define "Ticagrelor Therapy at Discharge":
+  ["MedicationRequest": medication in TJC."Ticagrelor Therapy"] Ticagrelor
+    where exists (Ticagrelor.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+      and Ticagrelor.intent = 'order'
+
 
 define "Denominator Exceptions":
 	"Encounter With No Antithrombotic At Discharge"
-		union "Encounter With Ticagrelor During Hospitalization"
+		union "Encounter With Ticagrelor at Discharge"
