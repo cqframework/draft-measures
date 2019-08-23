@@ -165,8 +165,7 @@ define "Denominator Exceptions":
           with "Ticagrelor Therapy at Discharge" DischargeTicagrelor
             such that FHIRHelpers.ToDateTime(DischargeTicagrelor.authoredOn) during IschemicStrokeEncounter.period
 
-
-      define "Ticagrelor Therapy at Discharge":
-        ["MedicationRequest": medication in TJC."Ticagrelor Therapy"] Ticagrelor
-          where exists (Ticagrelor.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
-            and Ticagrelor.intent = 'order'
+            define "Ticagrelor Therapy at Discharge":
+              ["MedicationRequest": medication in TJC."Ticagrelor Therapy"] Ticagrelor
+                where exists (Ticagrelor.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+                  and Ticagrelor.intent = 'order'
