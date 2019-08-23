@@ -45,6 +45,8 @@ code "Birth date": '21112-8' from "LOINC" display 'Birth date'
 // NOTE: This is an R4 code
 code "Discharge": 'discharge' from "MedicationRequestCategory"
 
+parameter "Measurement Period" Interval<DateTime>
+
 context Patient
 
 define "SDE Ethnicity":
@@ -58,6 +60,24 @@ define "SDE Race":
 
 define "SDE Sex":
 	SDE."SDE Sex"
+
+define "Initial Population":
+	TJC."Encounter with Principal Diagnosis and Age"
+
+  define "Encounter with Principal Diagnosis and Age":
+  	"All Stroke Encounter" AllStrokeEncounter
+  		with ["Patient"] BirthDate
+  			such that AgeInYearsAt(AllStrokeEncounter.period.start) >= 18
+
+        define "All Stroke Encounter":
+        	"Non Elective Inpatient Encounter" NonElectiveEncounter
+        		where Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Hemorrhagic Stroke"
+        		or Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Ischemic Stroke"
+
+            define "Non Elective Inpatient Encounter":
+            	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
+            		where Global."LengthInDays"(FHIRHelpers.ToInterval(NonElectiveEncounter.period))<= 120
+            			and NonElectiveEncounter.period ends during "Measurement Period"  
 
 define "Antithrombotic Therapy at Discharge":
 	["MedicationRequest": "Antithrombotic Therapy"] Antithrombotic
@@ -94,8 +114,7 @@ define "Antithrombotic Not Given at Discharge":
 //  ["Observation": "Medication Not Given At Discharge"] O
 //	  where O.value in "Antithrombotic Therapy"
 
-define "Initial Population":
-	TJC."Encounter with Principal Diagnosis and Age"
+
 
 define "Denominator Exclusions":
 	TJC."Ischemic Stroke Encounters with Discharge Disposition"
