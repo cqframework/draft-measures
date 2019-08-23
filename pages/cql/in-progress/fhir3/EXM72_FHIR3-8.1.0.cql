@@ -39,6 +39,8 @@ code "Birth date": '21112-8' from "LOINC" display 'Birth date'
 code "Order": 'order' from "RequestIntent" display 'Order'
 //Should this be added to the FHIRHelpers?
 
+parameter "Measurement Period" Interval<DateTime>
+
 context Patient
 
 define "SDE Ethnicity":
@@ -61,6 +63,22 @@ define "Denominator":
 
 define "Initial Population":
 	TJC."Encounter with Principal Diagnosis and Age"
+
+  define "Encounter with Principal Diagnosis and Age":
+  	"All Stroke Encounter" AllStrokeEncounter
+  		with ["Patient"] BirthDate
+  			such that AgeInYearsAt(AllStrokeEncounter.period.start) >= 18
+
+        define "All Stroke Encounter":
+        	"Non Elective Inpatient Encounter" NonElectiveEncounter
+        		where Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Hemorrhagic Stroke"
+        		or Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Ischemic Stroke"
+
+            define "Non Elective Inpatient Encounter":
+            	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
+            		where Global."LengthInDays"(FHIRHelpers.ToInterval(NonElectiveEncounter.period))<= 120
+            			and NonElectiveEncounter.period ends during "Measurement Period"
+
 
 //Done
 define "Thrombolytic Medication":
