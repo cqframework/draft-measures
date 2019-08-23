@@ -79,7 +79,6 @@ define "Initial Population":
             		where Global."LengthInDays"(FHIRHelpers.ToInterval(NonElectiveEncounter.period))<= 120
             			and NonElectiveEncounter.period ends during "Measurement Period"
 
-
 //Done
 define "Thrombolytic Medication":
 	["MedicationAdministration": medication in "Thrombolytic (t-PA) Therapy"] ThrombolyticMedicationAdministration
@@ -116,35 +115,29 @@ where MedicationOrder.intent = 'order'
 	//MedicationOrder.doNotPerform is true // Needs a QI-Core extension to support, look at resource further, what is the tracker number so we can follow up on that extension.
 )
 
-
 define "No Antithrombotic Ordered":
 	"No Antithrombotic Ordered for Medical Reason or Patient Refusal"
 		union "No Antithrombotic Administered"
 
-//Done
 define "Encounter with Comfort Measures":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with TJC."Intervention Comfort Measures" ComfortMeasures
 			such that Coalesce(start of ComfortMeasures.performed, ComfortMeasures.authoredOn)during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
 
-//Done
 define "Encounter with Thrombolytic Medication":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Thrombolytic Medication" Thrombolytic
 			such that Thrombolytic.effective starts during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 
-//Done
 define "Encounter with Thrombolytic Therapy Medication or Procedures":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Thrombolytic Therapy Medication or Procedures" ThrombolyticTherapy
 			such that ThrombolyticTherapy.effective starts 24 hours or less before start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 
-//Done
 define "Encounter Less Than Two Days":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		where Global.HospitalizationWithObservationLengthofStay(IschemicStrokeEncounter)< 2
 
-//Done
 define "Encounter With Thrombolytic Therapy Prior to Arrival":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		where Global.EncounterDiagnosis(IschemicStrokeEncounter).code in "Intravenous or Intra arterial Thrombolytic (tPA) Therapy Prior to Arrival"
@@ -158,37 +151,31 @@ define "Denominator Exclusions":
 		union "Encounter With Thrombolytic Therapy Prior to Arrival"
 		union "Encounter With Thrombolytic Therapy Documented As Already Given"
 
-//Done
 define "Encounter With An INR Greater Than 3.5":
     TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
         with ["Observation": "INR"] INR
           such that INR.issued in TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
                 and INR.value > 3.5
 
-//Done
 define "Encounter with Antithrombotic Therapy":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with ["MedicationAdministration": medication in "Antithrombotic Therapy"] Antithrombotic
 			such that Antithrombotic.effective starts during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
 
-//Done
 define "No Antithrombotic Ordered Day Of or Day After Hospital Arrival":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "No Antithrombotic Ordered" NoAntithrombotic
 			such that NoAntithrombotic.effective during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
 
-//Done
 define "Encounter With Ticagrelor Therapy Given Day Of or Day After Hospital Arrival":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with ["MedicationAdministration": medication in "Ticagrelor Therapy"] Ticagrelor
 			such that Ticagrelor.effective starts during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
 
-//Done
 define "Denominator Exceptions":
 	"No Antithrombotic Ordered Day Of or Day After Hospital Arrival"
 		union "Encounter With Ticagrelor Therapy Given Day Of or Day After Hospital Arrival"
 
-//Done
 define "Encounter With Thrombolytic Therapy Documented As Already Given":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with [Condition: "Intravenous or Intra arterial Thrombolytic (tPA) Therapy Prior to Arrival"] PriorTPA
