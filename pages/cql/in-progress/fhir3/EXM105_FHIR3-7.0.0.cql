@@ -7,6 +7,9 @@ Based on CMS105v7 - Discharged on Statin Medication
 using FHIR version '3.0.0'
 
 include FHIRHelpers version '3.0.0'
+include MATGlobalCommonFunctions_FHIR3 version '4.0.000' called Global
+include TJC_Overall_FHIR3 version '3.6.000' called TJC
+include SupplementalDataElements_FHIR3 version '1.0.0' called SDE
 
 codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
