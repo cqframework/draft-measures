@@ -4,6 +4,7 @@ library EXM104_FHIR3 version '8.1.000'
 /*
 Based on CMS104v8 - Discharged on Antithrombotic Therapy
 Author: TJC
+STK 2
 */
 
 using FHIR version '3.0.0'
