@@ -62,70 +62,110 @@ define "SDE Race":
 define "SDE Sex":
 	SDE."SDE Sex"
 
-define "Antithrombotic Therapy at Discharge":
-	["MedicationRequest": medication in "Antithrombotic Therapy"] Antithrombotic
-	  where exists (Antithrombotic.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
-	    and Antithrombotic.intent in {'plan', 'order'}
-      //plan
+define "Initial Population":
+	TJC."Encounter with Principal Diagnosis and Age"
+
+  define "Encounter with Principal Diagnosis and Age":
+    "All Stroke Encounter" AllStrokeEncounter
+    	with ["Patient"] BirthDate
+    		such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of FHIRHelpers.ToInterval(AllStrokeEncounter.period)) >= 18
+
+        define "All Stroke Encounter":
+        	"Non Elective Inpatient Encounter" NonElectiveEncounter
+        		where Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Hemorrhagic Stroke"
+        		or Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Ischemic Stroke"
+
+              define "Non Elective Inpatient Encounter":
+              	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
+              		where Global."LengthInDays"(FHIRHelpers.ToInterval(NonElectiveEncounter.period))<= 120
+              			and NonElectiveEncounter.period ends during "Measurement Period"
 
 define "Denominator":
 	TJC."Ischemic Stroke Encounter"
+
+  define "Ischemic Stroke Encounter":
+    "Encounter with Principal Diagnosis and Age" EncounterWithAge
+      where Global.PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
+
+define "Denominator Exclusions":
+	TJC."Ischemic Stroke Encounters with Discharge Disposition"
+		union TJC."Comfort Measures during Hospitalization"
+
+    define "Ischemic Stroke Encounters with Discharge Status":
+    	("Ischemic Stroke Encounter" IschemicStrokeEncounter
+    		where IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharge To Acute Care Facility"
+    			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Left Against Medical Advice"
+    			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Patient Expired"
+    			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
+    			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
+    	)
+
+    define "Comfort Measures during Hospitalization":
+    	"Ischemic Stroke Encounter" IschemicStrokeEncounter
+       	with "Intervention Comfort Measures" ComfortMeasure
+        	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."Hospitalization"(IschemicStrokeEncounter)
+
+          define "Intervention Comfort Measures":
+          	(["ServiceRequest": "Comfort Measures"] P
+          		where P.intent = 'order')
+          		union
+          		(["Procedure": "Comfort Measures"] IntervetionPerformed
+          		where IntervetionPerformed.status = 'completed')
+              //Change to "in progress", add in progress
 
 define "Numerator":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Antithrombotic Therapy at Discharge" DischargeAntithrombotic
 			such that FHIRHelpers.ToDateTime(DischargeAntithrombotic.authoredOn) during IschemicStrokeEncounter.period
 
-define "Antithrombotic Not Given at Discharge":
-	["MedicationRequest": medication in "Antithrombotic Therapy"] NoAntithromboticDischarge
-    where FHIRHelpers.ToBoolean(NoAntithromboticDischarge.doNotPerform) is true
-			and (singleton from NoAntithromboticDischarge.reasonCode in "Medical Reason"
-				or singleton from NoAntithromboticDischarge.reasonCode in "Patient Refusal")
-          and exists (NoAntithromboticDischarge.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
-
-// NOTE: On the assumption that status of not-taken is the closest to what the measure is looking for, this is the expression:
-// TODO: Request discussion w/ Pharmacy regarding how medications not prescribed at discharged would be documented
-//define "Antithrombotic Not Given at Discharge R4":
-//  ["MedicationStatement": "Antithrombotic Therapy"] AntithromboticTherapy
-//	  where AntithromboticTherapy.status = 'not-taken'
-//		  and (AntithromboticTherapy.statusReason in "Medical Reason"
-//				or AntithrombtoicTherapy.statusReason in "Patient Refusal")
-
-// If it's documented as a checkbox, it may be represented as an observation
-//define "Antithrombotic Not Given at Discharge (Observation)":
-//  ["Observation": "Medication Not Given At Discharge"] O
-//	  where O.value in "Antithrombotic Therapy"
-
-define "Initial Population":
-	TJC."Encounter with Principal Diagnosis and Age"
-
-define "Denominator Exclusions":
-	TJC."Ischemic Stroke Encounters with Discharge Disposition"
-		union TJC."Comfort Measures during Hospitalization"
-
-define "Encounter With No Antithrombotic At Discharge":
-	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-		with "Antithrombotic Not Given at Discharge" NoDischargeAntithrombotic
-			such that FHIRHelpers.ToDateTime(NoDischargeAntithrombotic.authoredOn) during IschemicStrokeEncounter.period
-
-/*define "Encounter With Ticagrelor During Hospitalization":
-	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-		with ["MedicationAdministration": medication in TJC."Ticagrelor Therapy"] Ticagrelor
-			such that Ticagrelor.effective starts during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)*/
-//Looking for Ticagrelor as discharge medication, include a corrected defintion in 2021 CQL based measure
-
-define "Encounter With Ticagrelor at Discharge":
-  TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-    with "Ticagrelor Therapy at Discharge" DischargeTicagrelor
-      such that FHIRHelpers.ToDateTime(DischargeTicagrelor.authoredOn) during IschemicStrokeEncounter.period
-
-
-define "Ticagrelor Therapy at Discharge":
-  ["MedicationRequest": medication in TJC."Ticagrelor Therapy"] Ticagrelor
-    where exists (Ticagrelor.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
-      and Ticagrelor.intent = 'order'
-
+      define "Antithrombotic Therapy at Discharge":
+      	["MedicationRequest": medication in "Antithrombotic Therapy"] Antithrombotic
+      	  where exists (Antithrombotic.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+      	    and Antithrombotic.intent in {'plan', 'order'}
+            //plan
 
 define "Denominator Exceptions":
 	"Encounter With No Antithrombotic At Discharge"
 		union "Encounter With Ticagrelor at Discharge"
+
+    define "Encounter With No Antithrombotic At Discharge":
+    	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
+    		with "Antithrombotic Not Given at Discharge" NoDischargeAntithrombotic
+    			such that FHIRHelpers.ToDateTime(NoDischargeAntithrombotic.authoredOn) during IschemicStrokeEncounter.period
+
+          define "Antithrombotic Not Given at Discharge":
+          	["MedicationRequest": medication in "Antithrombotic Therapy"] NoAntithromboticDischarge
+              where FHIRHelpers.ToBoolean(NoAntithromboticDischarge.doNotPerform) is true
+          			and (singleton from NoAntithromboticDischarge.reasonCode in "Medical Reason"
+          				or singleton from NoAntithromboticDischarge.reasonCode in "Patient Refusal")
+                    and exists (NoAntithromboticDischarge.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+
+          // NOTE: On the assumption that status of not-taken is the closest to what the measure is looking for, this is the expression:
+          // TODO: Request discussion w/ Pharmacy regarding how medications not prescribed at discharged would be documented
+          //define "Antithrombotic Not Given at Discharge R4":
+          //  ["MedicationStatement": "Antithrombotic Therapy"] AntithromboticTherapy
+          //	  where AntithromboticTherapy.status = 'not-taken'
+          //		  and (AntithromboticTherapy.statusReason in "Medical Reason"
+          //				or AntithrombtoicTherapy.statusReason in "Patient Refusal")
+
+          // If it's documented as a checkbox, it may be represented as an observation
+          //define "Antithrombotic Not Given at Discharge (Observation)":
+          //  ["Observation": "Medication Not Given At Discharge"] O
+          //	  where O.value in "Antithrombotic Therapy"
+
+    define "Encounter With Ticagrelor at Discharge":
+      TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
+        with "Ticagrelor Therapy at Discharge" DischargeTicagrelor
+          such that FHIRHelpers.ToDateTime(DischargeTicagrelor.authoredOn) during IschemicStrokeEncounter.period
+
+          /*define "Encounter With Ticagrelor During Hospitalization":
+            TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
+              with ["MedicationAdministration": medication in TJC."Ticagrelor Therapy"] Ticagrelor
+                such that Ticagrelor.effective starts during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)*/
+          //Looking for Ticagrelor as discharge medication, include a corrected defintion in 2021 CQL based measure
+
+
+          define "Ticagrelor Therapy at Discharge":
+            ["MedicationRequest": medication in TJC."Ticagrelor Therapy"] Ticagrelor
+              where exists (Ticagrelor.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+                and Ticagrelor.intent = 'order'
