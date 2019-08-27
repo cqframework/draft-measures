@@ -110,7 +110,7 @@ define "Denominator Exclusions":
           		where P.intent = 'order')
           		union
           		(["Procedure": "Comfort Measures"] IntervetionPerformed
-          		where IntervetionPerformed.status = 'completed')
+          		where IntervetionPerformed.status = 'in progress')
               //Change to "in progress", add in progress
 
 define "Numerator":
@@ -163,7 +163,6 @@ define "Denominator Exceptions":
               with ["MedicationAdministration": medication in TJC."Ticagrelor Therapy"] Ticagrelor
                 such that Ticagrelor.effective starts during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)*/
           //Looking for Ticagrelor as discharge medication, include a corrected defintion in 2021 CQL based measure
-
 
           define "Ticagrelor Therapy at Discharge":
             ["MedicationRequest": medication in TJC."Ticagrelor Therapy"] Ticagrelor
