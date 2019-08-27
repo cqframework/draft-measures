@@ -175,9 +175,8 @@ define "Delivery Time":
 define "Cesarean Birth While Not in Labor":
   ["Procedure": "Cesarean Birth"] Csection
   without "Is In Labor" Labor
-  //not sure about "issued"
-  such that Csection.status = 'completed' and
-  FHIRHelpers.ToDateTime(Labor.issued) 24 hours or less before FHIRHelpers.ToDateTime(Csection.performed as dateTime)
+    such that Csection.status = 'completed' and
+    FHIRHelpers.ToDateTime(Labor.effective as dateTime) 24 hours or less before FHIRHelpers.ToDateTime(Csection.performed as dateTime)
 
 //define "Is In Labor":
 //  ["Assessment, Performed": "Labor"]
@@ -199,7 +198,7 @@ define "History of Uterine Surgery Procedure":
     union ["Procedure": "Metroplasty"]
     union ["Procedure": "Uterine Horn"]
 
-//do these conditions need to be constrained to clinical status, verificationstatus, category?
+//**do these conditions need to be constrained to clinical status, verificationstatus, category?  verificationstatus = confirmed seems to be only relevan choice
 //define "History of Uterine Surgery Diagnosis":
 //  ["Diagnosis": "Perforation of Uterus"]
 //    union ["Diagnosis": "Uterine Window"]
@@ -233,10 +232,11 @@ define "Medical Induction Medication Administered While Not In Labor":
             "Medical Induction Medication" InductionMedication,
             "Is In Labor" Labor
             where FHIRHelpers.ToDateTime(Labor.effective as dateTime) during DeliveryEncounter.period
-              and InductionMedication.effective as Period 24 hours or less before FHIRHelpers.ToInterval(Labor.effective)
+  //**why don't we need as dateTime after Labor.effective here?
+             and InductionMedication.effective as Period 24 hours or less before FHIRHelpers.ToInterval(Labor.effective)
             return DeliveryEncounter
 
-//Need additional constraints?
+//**Need additional constraints?  status=in-progress or completed.
 //define "Medical Induction Medication":
 //  ["Medication, Administered": "Oxytocin"]
 //    union ["Medication, Administered": "Dinoprostone"]
@@ -257,8 +257,8 @@ define "Medical Induction Procedure Performed While Not In Labor":
                     "Delivery Encounter Near Term" DeliveryEncounter,
                     "Medical Induction Procedure" InductionProcedure,
                     "Is In Labor" Labor
-                    where FHIRHelpers.ToDateTime(Labor.issued) during DeliveryEncounter.period
-                      and InductionProcedure.performed as Period 24 hours or less before FHIRHelpers.ToDateTime(Labor.issued)
+                    where FHIRHelpers.ToDateTime(Labor.effective as dateTime) during DeliveryEncounter.period
+                      and InductionProcedure.performed as Period 24 hours or less before FHIRHelpers.ToDateTime(Labor.effective as dateTime)
                     return DeliveryEncounter
 
 //define "Medical Induction Procedure":
