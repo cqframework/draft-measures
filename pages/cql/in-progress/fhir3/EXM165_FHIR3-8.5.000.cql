@@ -9,6 +9,7 @@ using FHIR version '3.0.0'
 include FHIRHelpers version '3.0.0'
 include MATGlobalCommonFunctions_FHIR3 version '2.0.000' called Common
 include AdultOutpatientEncounters_FHIR3 version '1.1.000' called AdultOutpatientEncounters
+include AdvancedIllnessandFrailtyExclusion_FHIR3 version '4.0.000' called FrailtyLTI
 //include NCQACommon_FHIR version '3.10.000' called Common
 //include Participation_FHIR version '1.0.0'
 
@@ -89,18 +90,18 @@ define "Blood Pressure Days":
 					return date from SBPExam.effective
 			)
 	)
-	
+
 define "Most Recent Blood Pressure Day":
 	Max("Blood Pressure Days")
 
 define "Qualifying Diastolic Blood Pressure Reading":
-	["Observation": "Blood pressure"] BloodPressure 
-	  where BloodPressure.status in {'final', 'amended'} 
+	["Observation": "Blood pressure"] BloodPressure
+	  where BloodPressure.status in {'final', 'amended'}
       and BloodPressure.effective during "Measurement Period"
       // TODO: Turn this into a value set
 	    //and not (GetEncounter(BloodPressure."context").class.code in { 'EMER', 'IMP', 'ACUTE', 'NONAC', 'PRENC', 'SS' })
       and exists (
-        BloodPressure.component DiastolicBP 
+        BloodPressure.component DiastolicBP
           where FHIRHelpers.ToConcept(DiastolicBP.code) ~ "Diastolic blood pressure"
             and DiastolicBP.value.unit = 'mm[Hg]'
       )
@@ -109,20 +110,20 @@ define "Qualifying Diastolic Blood Pressure Reading":
 // TODO: Move to Common Functions
 define function GetEncounter(reference Reference):
   singleton from ( [Encounter: id in Common.GetId(reference.reference)] )
-		
+
 define "Qualifying Systolic Blood Pressure Reading":
-	["Observation": "Blood pressure"] BloodPressure 
-	  where BloodPressure.status in {'final', 'amended'} 
+	["Observation": "Blood pressure"] BloodPressure
+	  where BloodPressure.status in {'final', 'amended'}
       and BloodPressure.effective during "Measurement Period"
       // TODO: Turn this into a value set
 	    and not (GetEncounter(BloodPressure."context").class.code in { 'EMER', 'IMP', 'ACUTE', 'NONAC', 'PRENC', 'SS'})
       and exists (
-        BloodPressure.component SystolicBP 
+        BloodPressure.component SystolicBP
           where FHIRHelpers.ToConcept(SystolicBP.code) ~ "Systolic blood pressure"
             and SystolicBP.value.unit = 'mm[Hg]'
       )
 //Note: Once we can specify that the FHIR BP Profile must be used, then status, code, and unit will not be required
-           
+
 define "Numerator":
 	"Has Diastolic Blood Pressure Less Than 90"
 		and "Has Systolic Blood Pressure Less Than 140"

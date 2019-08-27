@@ -10,6 +10,7 @@ include FHIRHelpers version '4.0.0'
 include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Common
 include AdultOutpatientEncounters_FHIR4 version '1.1.000' called AdultOutpatientEncounters
 include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
+include AdvancedIllnessandFrailtyExclusion_FHIR4 version '4.0.000' called FrailtyLTI
 //include NCQACommon_FHIR version '3.10.000' called Common
 //include Participation_FHIR version '1.0.0'
 
@@ -116,7 +117,7 @@ define "Qualifying Systolic Blood Pressure Reading":
 	  where BloodPressure.status in {'final', 'amended'}
       and BloodPressure.effective during "Measurement Period"
       // TODO: Turn this into a value set
-	    and not (GetEncounter(BloodPressure."encounter").class.code in { 'EMER', 'IMP', 'ACUTE', 'NONAC', 'PRENC', 'SS'})
+	    and not (GetEncounter(BloodPressure.encounter).class.code in { 'EMER', 'IMP', 'ACUTE', 'NONAC', 'PRENC', 'SS'})
       and exists (
         BloodPressure.component SystolicBP
           where FHIRHelpers.ToConcept(SystolicBP.code) ~ "Systolic blood pressure"
@@ -138,7 +139,7 @@ define "Pregnancy Or Renal Diagnosis Exclusions":
 		union ["Condition": "End Stage Renal Disease"]
 		union ["Condition": "Kidney Transplant Recipient"]
 		union ["Condition": "Chronic Kidney Disease, Stage 5"] ) PregnancyESRDDiagnosis
-      where 'confirmed' in PregnancyESRDDiagnosis.verificationStatus.coding.code
+      where PregnancyESRDDiagnosis.verificationStatus.coding.code contains 'confirmed'
         and PregnancyESRDDiagnosis.recordedDate before end of "Measurement Period"
 
 define "Denominator":
@@ -158,7 +159,7 @@ define "End Stage Renal Disease Procedures":
 
 define "Essential Hypertension Diagnosis":
 	["Condition": "Essential Hypertension"] Hypertension
-    where 'confirmed' in Hypertension.verificationStatus.coding.code
+    where Hypertension.verificationStatus.coding.code contains 'confirmed'
      and (Hypertension.recordedDate 6 months or less on or after start of "Measurement Period"
       or Hypertension.recordedDate before end of "Measurement Period"
     )
