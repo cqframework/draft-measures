@@ -116,7 +116,7 @@ define "Qualifying Systolic Blood Pressure Reading":
 	  where BloodPressure.status in {'final', 'amended'}
       and BloodPressure.effective during "Measurement Period"
       // TODO: Turn this into a value set
-	    and not (GetEncounter(BloodPressure."context").class.code in { 'EMER', 'IMP', 'ACUTE', 'NONAC', 'PRENC', 'SS'})
+	    and not (GetEncounter(BloodPressure."encounter").class.code in { 'EMER', 'IMP', 'ACUTE', 'NONAC', 'PRENC', 'SS'})
       and exists (
         BloodPressure.component SystolicBP
           where FHIRHelpers.ToConcept(SystolicBP.code) ~ "Systolic blood pressure"
@@ -138,8 +138,8 @@ define "Pregnancy Or Renal Diagnosis Exclusions":
 		union ["Condition": "End Stage Renal Disease"]
 		union ["Condition": "Kidney Transplant Recipient"]
 		union ["Condition": "Chronic Kidney Disease, Stage 5"] ) PregnancyESRDDiagnosis
-      where PregnancyESRDDiagnosis.verificationStatus = 'confirmed'
-        and PregnancyESRDDiagnosis.reportedDate before end of "Measurement Period"
+      where 'confirmed' in PregnancyESRDDiagnosis.verificationStatus.coding.code
+        and PregnancyESRDDiagnosis.recordedDate before end of "Measurement Period"
 
 define "Denominator":
 	"Initial Population"
@@ -154,13 +154,13 @@ define "End Stage Renal Disease Procedures":
 		union ["Procedure": "Kidney Transplant"]
 		union ["Procedure": "Dialysis Services"] ) ESRDProcedure
 		where ESRDProcedure.status = 'completed'
-      and ESRDProcedure.performed starts before end of "Measurement Period"
+      and FHIRHelpers.ToInterval(ESRDProcedure.performed as Period) starts before end of "Measurement Period"
 
 define "Essential Hypertension Diagnosis":
 	["Condition": "Essential Hypertension"] Hypertension
-    where Hypertension.verificationStatus = 'confirmed'
-     and (Hypertension.reportedDate 6 months or less on or after start of "Measurement Period"
-      or Hypertension.reportedDate before end of "Measurement Period"
+    where 'confirmed' in Hypertension.verificationStatus.coding.code
+     and (Hypertension.recordedDate 6 months or less on or after start of "Measurement Period"
+      or Hypertension.recordedDate before end of "Measurement Period"
     )
 
 /*
@@ -176,4 +176,3 @@ define "Denominator Exclusions":
 		    									and FrailtyLTI."Has Spent More Than 90 Days in Long Term Care")
 								or FrailtyLTI."Advanced Illness and Frailty Exclusion Including Over Age 80"
 */
-
