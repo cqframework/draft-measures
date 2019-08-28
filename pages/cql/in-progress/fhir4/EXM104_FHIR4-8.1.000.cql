@@ -99,6 +99,7 @@ define "Denominator Exclusions":
     			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
     			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
     	)
+      union "Comfort Measures during Hospitalization"
 
     define "Comfort Measures during Hospitalization":
     	"Ischemic Stroke Encounter" IschemicStrokeEncounter
@@ -167,4 +168,4 @@ define "Denominator Exceptions":
           define "Ticagrelor Therapy at Discharge":
             ["MedicationRequest": medication in TJC."Ticagrelor Therapy"] Ticagrelor
               where exists (Ticagrelor.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
-                and Ticagrelor.intent = 'order'
+                and Ticagrelor.intent in {'order', 'plan'}
