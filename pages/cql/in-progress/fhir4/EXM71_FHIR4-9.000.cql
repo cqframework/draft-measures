@@ -59,45 +59,53 @@ define "SDE Race":
 define "SDE Sex":
 	SDE."SDE Sex"
 
+//QA
 define "Initial Population":
 	TJC."Encounter with Principal Diagnosis and Age"
 
+//QA
   define "Encounter with Principal Diagnosis and Age":
     "All Stroke Encounter" AllStrokeEncounter
     	with ["Patient"] BirthDate
     		such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of FHIRHelpers.ToInterval(AllStrokeEncounter.period)) >= 18
 
+//QA
         define "All Stroke Encounter":
         	"Non Elective Inpatient Encounter" NonElectiveEncounter
         		where Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Hemorrhagic Stroke"
         		or Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Ischemic Stroke"
 
+//QA
               define "Non Elective Inpatient Encounter":
               	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
               		where Global."LengthInDays"(FHIRHelpers.ToInterval(NonElectiveEncounter.period))<= 120
               			and NonElectiveEncounter.period ends during "Measurement Period"
 
+//QA
 define "Denominator":
 	"Encounter with Atrial Ablation Procedure"
 		union "History of Atrial Fibrillation or Flutter"
 		union "Current Diagnosis Atrial Fibrillation or Flutter"
 
+//QA
     define "Encounter with Atrial Ablation Procedure":
     	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
     		with ["Procedure": "Atrial Ablation"] AtrialAblation
     			such that AtrialAblation.performed as Period starts before start of FHIRHelpers.ToInterval(IschemicStrokeEncounter.period)
     				and AtrialAblation.status = 'completed'
 
+//QA
             define "History of Atrial Fibrillation or Flutter":
             	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
             		with ["Condition": "Atrial Fibrillation/Flutter"] AtrialFibrillationFlutter
             			such that FHIRHelpers.ToDateTime(AtrialFibrillationFlutter.onset as dateTime) on or before
             			end of FHIRHelpers.ToInterval(IschemicStrokeEncounter.period)
 
+//
             define "Current Diagnosis Atrial Fibrillation or Flutter":
             	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-            		where exists ( IschemicStrokeEncounter.diagnosis.condition Diagnosis1
-            				where Diagnosis1 in "Atrial Fibrillation/Flutter"
+            		where exists ( IschemicStrokeEncounter.diagnosis.condition Diagnosis
+            				where Diagnoses in "Atrial Fibrillation/Flutter"
             				and IschemicStrokeEncounter.status = 'completed'
             									)
 
@@ -115,6 +123,7 @@ define "Denominator Exclusions":
     	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
        	with "Intervention Comfort Measures" ComfortMeasure
         	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."Hospitalization"(IschemicStrokeEncounter)
+//Examine CQL measures to determine issue with this definition.
 
     define "Intervention Comfort Measures":
     		(["ServiceRequest": "Comfort Measures"] P
