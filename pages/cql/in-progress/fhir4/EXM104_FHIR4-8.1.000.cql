@@ -94,12 +94,13 @@ define "Denominator":
     "Encounter with Principal Diagnosis and Age" EncounterWithAge
       where Global.PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
 
-
+//QA
 define "Denominator Exclusions":
 	TJC."Ischemic Stroke Encounters with Discharge Disposition"
 		union TJC."Comfort Measures during Hospitalization"
 
-    define "Ischemic Stroke Encounters with Discharge Status":
+//QA - wrong definition below, so why don't we see an error in "Denominator Exclusions"? Because it is already referenced in the TJC library? It is not, so why aren't we seeing an error?
+/*    define "Ischemic Stroke Encounters with Discharge Status":
     	("Ischemic Stroke Encounter" IschemicStrokeEncounter
     		where IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharge To Acute Care Facility"
     			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Left Against Medical Advice"
@@ -107,7 +108,17 @@ define "Denominator Exclusions":
     			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
     			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
     	)
-      union "Comfort Measures during Hospitalization"
+*/
+
+      define "TJC.Ischemic Stroke Encounters with Discharge Disposition":
+      ( ( "Ischemic Stroke Encounter" IschemicStrokeEncounter
+          where IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharge To Acute Care Facility"
+            or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Left Against Medical Advice"
+            or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Patient Expired"
+            or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
+            or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
+            )
+      )
 
     define "Comfort Measures during Hospitalization":
     	"Ischemic Stroke Encounter" IschemicStrokeEncounter
@@ -120,7 +131,7 @@ define "Denominator Exclusions":
           		union
           		(["Procedure": "Comfort Measures"] IntervetionPerformed
           		where IntervetionPerformed.status = 'in progress')
-              //Change to "in progress", add in progress. Feedback from Peter regarding clinical intent from FHIR Collaboration call. 
+              //Change to "in progress", add in progress. Feedback from Peter regarding clinical intent from FHIR Collaboration call.
 
 define "Numerator":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
