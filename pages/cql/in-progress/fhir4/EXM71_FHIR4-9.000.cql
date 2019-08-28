@@ -128,11 +128,12 @@ define "Denominator Exclusions":
 	)
 		union "Comfort Measures during Hospitalization"
 
+//QA
     define "Comfort Measures during Hospitalization":
     	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
        	with "Intervention Comfort Measures" ComfortMeasure
         	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."Hospitalization"(IschemicStrokeEncounter)
-
+//QA
     define "Intervention Comfort Measures":
     		(["ServiceRequest": "Comfort Measures"] P
     				where P.intent = 'order')
@@ -140,6 +141,7 @@ define "Denominator Exclusions":
     				(["Procedure": "Comfort Measures"] IntervetionPerformed
     				where IntervetionPerformed.status = 'completed')
 
+//QA
 define "Numerator":
 	"Denominator" Encounter
 		with "Anticoagulant Therapy at Discharge" DischargeAnticoagulant
@@ -149,12 +151,13 @@ define "Numerator":
       	["MedicationRequest": medication in "Anticoagulant Therapy"] AnticoagulantDischarge
       		where exists (AnticoagulantDischarge.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
       			and AnticoagulantDischarge.intent in {'order', 'plan'}
-
+//QA
 define "Denominator Exceptions":
 	"Denominator" Encounter
 		with "Reason for Not Giving Anticoagulant at Discharge" NoDischargeAnticoagulant
 			such that FHIRHelpers.ToDateTime(NoDischargeAnticoagulant.authoredOn) during Encounter.period
 
+//QA
       define "Reason for Not Giving Anticoagulant at Discharge":
       	["MedicationRequest": medication in "Anticoagulant Therapy"] NoAnticoagulant
       		where FHIRHelpers.ToBoolean(NoAnticoagulant.doNotPerform) is true
