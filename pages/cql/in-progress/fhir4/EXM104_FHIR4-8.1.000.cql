@@ -22,6 +22,7 @@ codesystem "RequestIntent": 'http://terminology.hl7.org/CodeSystem/request-inten
 //codesystem "RequestIntent": 'http://hl7.org/fhir/request-intent'
 codesystem "MedicationRequestCategory": 'http://terminology.hl7.org/CodeSystem/medicationrequest-category'
 
+//QA
 valueset "Antithrombotic Therapy": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.201'
 valueset "Comfort Measures": 'https://cts.nlm.nih.gov/fhir/ValueSet/1.3.6.1.4.1.33895.1.3.0.45'
 valueset "Discharge To Acute Care Facility": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.87'
@@ -62,30 +63,37 @@ define "SDE Race":
 define "SDE Sex":
 	SDE."SDE Sex"
 
+//QA
 define "Initial Population":
 	TJC."Encounter with Principal Diagnosis and Age"
 
+//QA
   define "Encounter with Principal Diagnosis and Age":
     "All Stroke Encounter" AllStrokeEncounter
     	with ["Patient"] BirthDate
     		such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of FHIRHelpers.ToInterval(AllStrokeEncounter.period)) >= 18
 
+//QA
         define "All Stroke Encounter":
         	"Non Elective Inpatient Encounter" NonElectiveEncounter
         		where Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Hemorrhagic Stroke"
         		or Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Ischemic Stroke"
 
+//QA
               define "Non Elective Inpatient Encounter":
               	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
               		where Global."LengthInDays"(FHIRHelpers.ToInterval(NonElectiveEncounter.period))<= 120
               			and NonElectiveEncounter.period ends during "Measurement Period"
 
+//QA
 define "Denominator":
 	TJC."Ischemic Stroke Encounter"
 
+//QA
   define "Ischemic Stroke Encounter":
     "Encounter with Principal Diagnosis and Age" EncounterWithAge
       where Global.PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
+
 
 define "Denominator Exclusions":
 	TJC."Ischemic Stroke Encounters with Discharge Disposition"
@@ -112,7 +120,7 @@ define "Denominator Exclusions":
           		union
           		(["Procedure": "Comfort Measures"] IntervetionPerformed
           		where IntervetionPerformed.status = 'in progress')
-              //Change to "in progress", add in progress
+              //Change to "in progress", add in progress. Feedback from Peter regarding clinical intent from FHIR Collaboration call. 
 
 define "Numerator":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
