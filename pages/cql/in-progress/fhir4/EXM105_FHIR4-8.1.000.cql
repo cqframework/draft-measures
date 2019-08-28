@@ -97,6 +97,21 @@ define "Denominator":
     "Encounter with Principal Diagnosis and Age" EncounterWithAge
       where Global.PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
 
+define "Denominator Exclusions":
+	TJC."Ischemic Stroke Encounters with Discharge Disposition"
+		union TJC."Comfort Measures during Hospitalization"
+
+      define "TJC.Ischemic Stroke Encounters with Discharge Disposition":
+      ( ( "Ischemic Stroke Encounter" IschemicStrokeEncounter
+          where IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharge To Acute Care Facility"
+            or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Left Against Medical Advice"
+            or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Patient Expired"
+            or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
+            or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
+            )
+      )
+
+/*
 define "Denominator Exclusion":
 	"Ischemic Stroke Encounters with Discharge Status"
 	union
@@ -111,7 +126,7 @@ define "Denominator Exclusion":
     			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
     	)
       union "Comfort Measures during Hospitalization"
-
+*/
     define "Comfort Measures during Hospitalization":
     	"Ischemic Stroke Encounter" IschemicStrokeEncounter
        	with "Intervention Comfort Measures" ComfortMeasure
