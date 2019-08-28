@@ -117,6 +117,7 @@ define "Denominator":
                 such that FHIRHelpers.ToConcept(AtrialFibrillationFlutter.clinicalStatus) in {"active", "recurrence", "relapse"}
                   and FHIRHelpers.ToDateTime(AtrialFibrillationFlutter.onset as dateTime) on or before end of IschemicStrokeEncounter.period
 
+//QA: added the missing union "Comfort Measures during Hospitalization".
 define "Denominator Exclusions":
 	( "Denominator" Encounter
 			where Encounter.hospitalization.dischargeDisposition in "Discharge To Acute Care Facility"
@@ -131,7 +132,6 @@ define "Denominator Exclusions":
     	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
        	with "Intervention Comfort Measures" ComfortMeasure
         	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."Hospitalization"(IschemicStrokeEncounter)
-//Examine CQL measures to determine issue with this definition.
 
     define "Intervention Comfort Measures":
     		(["ServiceRequest": "Comfort Measures"] P
