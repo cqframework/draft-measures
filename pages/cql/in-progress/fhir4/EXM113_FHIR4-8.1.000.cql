@@ -264,7 +264,8 @@ define "Medical Induction Procedure Performed While Not In Labor":
                     "Medical Induction Procedure" InductionProcedure,
                     "Is In Labor" Labor
                     where FHIRHelpers.ToDateTime(Labor.effective as dateTime) during DeliveryEncounter.period
-                      and InductionProcedure.performed as Period 24 hours or less before FHIRHelpers.ToDateTime(Labor.effective as dateTime)
+                    // ***** and InductionProcedure.performed as Period 24 hours or less before FHIRHelpers.ToDateTime(Labor.effective as dateTime)
+and FHIRHelpers.ToInterval(InductionProcedure.performed as Period) 24 hours or less before FHIRHelpers.ToDateTime(Labor.effective as dateTime)
                     return DeliveryEncounter
 
 //define "Medical Induction Procedure":
