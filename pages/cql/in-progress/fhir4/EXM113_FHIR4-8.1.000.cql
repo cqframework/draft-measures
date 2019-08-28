@@ -52,33 +52,33 @@ define "SDE Race":
 define "SDE Sex":
 	SDE."SDE Sex"
 
-  //define "Initial Population":
-  //      "Delivery Encounter with Age Range"
-  define "Initial Population":
-      "Delivery Encounter with Age Range"
+//define "Initial Population":
+//      "Delivery Encounter with Age Range"
+define "Initial Population":
+  "Delivery Encounter with Age Range"
 
   //**Should Procedure Category = Surgical procedure be used?
   //define "Delivery Encounter with Age Range":
   //  "Encounter with Age Range" EncounterWithQualifyingAge
   //    with ["Procedure, Performed": "Delivery Procedures"] DeliveryProcedure
   //      such that DeliveryProcedure.relevantPeriod starts during EncounterWithQualifyingAge.relevantPeriod
-  define "Delivery Encounter with Age Range":
-      "Encounter with Age Range" EncounterWithQualifyingAge
-        with ["Procedure": "Delivery Procedures"] DeliveryProcedure
-            such that DeliveryProcedure.status = 'completed'
-              and DeliveryProcedure.performed as Period starts during EncounterWithQualifyingAge.period
+define "Delivery Encounter with Age Range":
+  "Encounter with Age Range" EncounterWithQualifyingAge
+    with ["Procedure": "Delivery Procedures"] DeliveryProcedure
+      such that DeliveryProcedure.status = 'completed'
+        and (DeliveryProcedure.performed as Period) starts during EncounterWithQualifyingAge.period
 
 
-  //define "Encounter with Age Range":
-  //  Global."Inpatient Encounter" EncounterInpatient
-  //    with ["Patient Characteristic Birthdate": "Birth date"] BirthDate
-  //      such that Global."CalendarAgeInYearsAt"(BirthDate.birthDatetime, start of EncounterInpatient.relevantPeriod)>= 8
-  //        and Global."CalendarAgeInYearsAt"(BirthDate.birthDatetime, start of EncounterInpatient.relevantPeriod)< 65
-  define "Encounter with Age Range":
-        Global."Inpatient Encounter" EncounterInpatient
-              with ["Patient"] BirthDate
-                such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of EncounterInpatient.period)>= 8
-                  and Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of EncounterInpatient.period)< 65
+//define "Encounter with Age Range":
+//  Global."Inpatient Encounter" EncounterInpatient
+//    with ["Patient Characteristic Birthdate": "Birth date"] BirthDate
+//      such that Global."CalendarAgeInYearsAt"(BirthDate.birthDatetime, start of EncounterInpatient.relevantPeriod)>= 8
+//        and Global."CalendarAgeInYearsAt"(BirthDate.birthDatetime, start of EncounterInpatient.relevantPeriod)< 65
+define "Encounter with Age Range":
+  Global."Inpatient Encounter" EncounterInpatient
+    with ["Patient"] BirthDate
+      such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of EncounterInpatient.period)>= 8
+        and Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of EncounterInpatient.period)< 65
 
 
 //define "Denominator":
@@ -96,14 +96,14 @@ define "Denominator":
 //             and GestationalAge.result < 39 weeks
 //         return QualifyingEncounter
 define "Delivery Encounter Near Term":
-    from
-      "Delivery Encounter with Age Range" QualifyingEncounter,
-      "Last Gestational Age Prior To Or At the Same Time of Delivery" GestationalAge,
-      "Delivery Time" Delivery
-            where FHIRHelpers.ToDateTime(Delivery.effective as dateTime) during QualifyingEncounter.period
-                and FHIRHelpers.ToInteger(GestationalAge.value) >= 37 weeks
-                and FHIRHelpers.ToInteger(GestationalAge.value) < 39 weeks
-            return QualifyingEncounter
+  from
+    "Delivery Encounter with Age Range" QualifyingEncounter,
+    "Last Gestational Age Prior To Or At the Same Time of Delivery" GestationalAge,
+    "Delivery Time" Delivery
+      where FHIRHelpers.ToDateTime(Delivery.effective as dateTime) during QualifyingEncounter.period
+          and FHIRHelpers.ToInteger(GestationalAge.value) >= 37 weeks
+          and FHIRHelpers.ToInteger(GestationalAge.value) < 39 weeks
+      return QualifyingEncounter
 
 //define "Last Gestational Age Prior To Or At the Same Time of Delivery":
 //   Last(["Assessment, Performed": "Estimated Gestational Age at Delivery"] LastGestational
@@ -113,26 +113,28 @@ define "Delivery Encounter Near Term":
 //            )
 
 define "Last Gestational Age Prior To Or At the Same Time of Delivery":
-    Last(["Observation": "Estimated Gestational Age at Delivery"] LastGestational
-          with "Delivery Time" Delivery
-                  such that FHIRHelpers.ToConcept(LastGestational.category) = "exam" and
-                  LastGestational.status = 'final'
-                  and FHIRHelpers.ToDateTime(LastGestational.effective as dateTime) 1 day or less before or on FHIRHelpers.ToDateTime(Delivery.effective as dateTime)
-          sort by FHIRHelpers.ToDateTime(effective as dateTime))
+  Last(
+    ["Observation": "Estimated Gestational Age at Delivery"] LastGestational
+      with "Delivery Time" Delivery
+        such that exists(LastGestational.category categories where FHIRHelpers.ToConcept(categories) ~ "exam")
+        and LastGestational.status = 'final'
+        and FHIRHelpers.ToDateTime(LastGestational.effective as dateTime) 1 day or less before or on FHIRHelpers.ToDateTime(Delivery.effective as dateTime)
+          sort by FHIRHelpers.ToDateTime(effective as dateTime)
+  )
 
 
 //**Is procedure the correct category for Delivery Time?  Exam does not seem to fit.
 //define "Delivery Time":
 //              ["Assessment, Performed": "Time of Delivery"]
 define "Delivery Time":
-              ["Observation": "Time of Delivery"] DeliveryTime
-              where DeliveryTime.status = 'final'
-              and FHIRHelpers.ToConcept(DeliveryTime.category) = "procedure"
+  ["Observation": "Time of Delivery"] DeliveryTime
+    where DeliveryTime.status = 'final'
+      and exists(DeliveryTime.category categories where FHIRHelpers.ToConcept(categories) ~ "procedure")
 
 //define "Denominator Exclusion":
 //  "Delivery Encounter with Justifying Conditions"
 define "Denominator Exclusions":
-"Delivery Encounter with Justifying Conditions"
+  "Delivery Encounter with Justifying Conditions"
 
 //define "Delivery Encounter with Justifying Conditions":
 //         ( "Delivery Encounter Near Term" DeliveryEncounter
@@ -145,19 +147,22 @@ define "Denominator Exclusions":
 //                                    )
 //                                )
 define "Delivery Encounter with Justifying Conditions":
-        ( "Delivery Encounter Near Term" DeliveryEncounter
-          with ["Condition": "Conditions Possibly Justifying Elective Delivery Prior to 39 Weeks Gestation"] DiagnosisElectiveDelivery
-                    such that DiagnosisElectiveDelivery.onset PeriodRange overlaps DeliveryEncounter.period
-              )
-                union ( "Delivery Encounter Near Term" DeliveryEncounter
-                    where Global.EncounterDiagnosis(DeliveryEncounter).code in "Conditions Possibly Justifying Elective Delivery Prior to 39 Weeks Gestation")
+  (
+    "Delivery Encounter Near Term" DeliveryEncounter
+      with ["Condition": "Conditions Possibly Justifying Elective Delivery Prior to 39 Weeks Gestation"] DiagnosisElectiveDelivery
+        such that DiagnosisElectiveDelivery.onset PeriodRange overlaps DeliveryEncounter.period
+  )
+  union (
+    "Delivery Encounter Near Term" DeliveryEncounter
+      where Global.EncounterDiagnosis(DeliveryEncounter).code in "Conditions Possibly Justifying Elective Delivery Prior to 39 Weeks Gestation"
+  )
 
 //define "Numerator":
 //    "Delivery Encounter With Cesarean Birth Without Labor or History of Uterine Surgery"
 //      union "Delivery Encounter With Medical Induction While Not In Labor"
 define "Numerator":
-"Delivery Encounter With Cesarean Birth Without Labor or History of Uterine Surgery"
- union "Delivery Encounter With Medical Induction While Not In Labor"
+  "Delivery Encounter With Cesarean Birth Without Labor or History of Uterine Surgery"
+   union "Delivery Encounter With Medical Induction While Not In Labor"
 //define "Delivery Encounter With Cesarean Birth Without Labor or History of Uterine Surgery":
 //            "Delivery Encounter Near Term" DeliveryEncounter
 //                  with "Cesarean Birth While Not in Labor" CSectionNoLabor
@@ -166,14 +171,14 @@ define "Numerator":
 //                    such that PriorUterineProcedure.relevantPeriod starts before start of DeliveryEncounter.relevantPeriod
 //                  without "History of Uterine Surgery Diagnosis" PriorUterineDiagnosis
 //                    such that PriorUterineDiagnosis.prevalencePeriod starts before start of DeliveryEncounter.relevantPeriod
-  define "Delivery Encounter With Cesarean Birth Without Labor or History of Uterine Surgery":
-              "Delivery Encounter Near Term" DeliveryEncounter
-                  with "Cesarean Birth While Not in Labor" CSectionNoLabor
-                    such that CSectionNoLabor.performed as Period starts during DeliveryEncounter.period
-                  without "History of Uterine Surgery Procedure" PriorUterineProcedure
-                    such that PriorUterineProcedure.performed as Period starts before start of DeliveryEncounter.period
-                  without "History of Uterine Surgery Diagnosis" PriorUterineDiagnosis
-                    such that PriorUterineDiagnosis.onset as Period starts before start of DeliveryEncounter.period
+define "Delivery Encounter With Cesarean Birth Without Labor or History of Uterine Surgery":
+  "Delivery Encounter Near Term" DeliveryEncounter
+      with "Cesarean Birth While Not in Labor" CSectionNoLabor
+        such that CSectionNoLabor.performed as Period starts during DeliveryEncounter.period
+      without "History of Uterine Surgery Procedure" PriorUterineProcedure
+        such that PriorUterineProcedure.performed as Period starts before start of DeliveryEncounter.period
+      without "History of Uterine Surgery Diagnosis" PriorUterineDiagnosis
+        such that PriorUterineDiagnosis.onset as Period starts before start of DeliveryEncounter.period
 
 //define "Cesarean Birth While Not in Labor":
 //    ["Procedure, Performed": "Cesarean Birth"] CSection
@@ -190,7 +195,7 @@ define "Cesarean Birth While Not in Labor":
 define "Is In Labor":
   ["Observation": "Labor"] Labor
   where Labor.status = 'final'
-  and FHIRHelpers.ToConcept(Labor.category) = "exam"
+  and exists(Labor.category categories where FHIRHelpers.ToConcept(categories) ~ "exam")
 
 //define "History of Uterine Surgery Procedure":
 //  ["Procedure, Performed": "Classical Cesarean Birth"]
@@ -212,17 +217,17 @@ define "History of Uterine Surgery Procedure":
 //    union ["Diagnosis": "Uterine Rupture"]
 //    union ["Diagnosis": "Cornual Ectopic Pregnancy"]
 define "History of Uterine Surgery Diagnosis":
-      ["Condition": "Perforation of Uterus"]
-        union ["Condition": "Uterine Window"]
-        union ["Condition": "Uterine Rupture"]
-        union ["Condition": "Cornual Ectopic Pregnancy"]
+  ["Condition": "Perforation of Uterus"]
+    union ["Condition": "Uterine Window"]
+    union ["Condition": "Uterine Rupture"]
+    union ["Condition": "Cornual Ectopic Pregnancy"]
 
 //define "Delivery Encounter With Medical Induction While Not In Labor":
 //          "Medical Induction Medication Administered While Not In Labor"
 //            union "Medical Induction Procedure Performed While Not In Labor"
 define "Delivery Encounter With Medical Induction While Not In Labor":
-          "Medical Induction Medication Administered While Not In Labor"
-            union "Medical Induction Procedure Performed While Not In Labor"
+  "Medical Induction Medication Administered While Not In Labor"
+    union "Medical Induction Procedure Performed While Not In Labor"
 
 //define "Medical Induction Medication Administered While Not In Labor":
 //          from
@@ -233,22 +238,22 @@ define "Delivery Encounter With Medical Induction While Not In Labor":
 //              and InductionMedication.relevantPeriod 24 hours or less before Labor.authorDatetime
 //            return DeliveryEncounter
 define "Medical Induction Medication Administered While Not In Labor":
-            from
-            "Delivery Encounter Near Term" DeliveryEncounter,
-            "Medical Induction Medication" InductionMedication,
-            "Is In Labor" Labor
-            where FHIRHelpers.ToDateTime(Labor.effective as dateTime) during DeliveryEncounter.period
-  //**why don't we need as dateTime after Labor.effective here?
-             and InductionMedication.effective as Period 24 hours or less before FHIRHelpers.ToInterval(Labor.effective)
-            return DeliveryEncounter
+  from
+  "Delivery Encounter Near Term" DeliveryEncounter,
+  "Medical Induction Medication" InductionMedication,
+  "Is In Labor" Labor
+    where FHIRHelpers.ToDateTime(Labor.effective as dateTime) during DeliveryEncounter.period
+      //**why don't we need as dateTime after Labor.effective here?
+      and InductionMedication.effective 24 hours or less before FHIRHelpers.ToInterval(Labor.effective)
+    return DeliveryEncounter
 
 //**Need additional constraints?  status=in-progress or completed.
 //define "Medical Induction Medication":
 //  ["Medication, Administered": "Oxytocin"]
 //    union ["Medication, Administered": "Dinoprostone"]
 define "Medical Induction Medication":
-              ["MedicationAdministration": "Oxytocin"]
-                union ["MedicationAdministration": "Dinoprostone"]
+  ["MedicationAdministration": "Oxytocin"]
+    union ["MedicationAdministration": "Dinoprostone"]
 
 //define "Medical Induction Procedure Performed While Not In Labor":
 //                from
@@ -259,14 +264,13 @@ define "Medical Induction Medication":
 //                      and InductionProcedure.relevantPeriod 24 hours or less before Labor.authorDatetime
 //                    return DeliveryEncounter
 define "Medical Induction Procedure Performed While Not In Labor":
-                  from
-                    "Delivery Encounter Near Term" DeliveryEncounter,
-                    "Medical Induction Procedure" InductionProcedure,
-                    "Is In Labor" Labor
-                    where FHIRHelpers.ToDateTime(Labor.effective as dateTime) during DeliveryEncounter.period
-                    // ***** and InductionProcedure.performed as Period 24 hours or less before FHIRHelpers.ToDateTime(Labor.effective as dateTime)
-and FHIRHelpers.ToInterval(InductionProcedure.performed as Period) 24 hours or less before FHIRHelpers.ToDateTime(Labor.effective as dateTime)
-                    return DeliveryEncounter
+  from
+    "Delivery Encounter Near Term" DeliveryEncounter,
+    "Medical Induction Procedure" InductionProcedure,
+    "Is In Labor" Labor
+      where FHIRHelpers.ToDateTime(Labor.effective as dateTime) during DeliveryEncounter.period
+        and FHIRHelpers.ToInterval(InductionProcedure.performed as Period) 24 hours or less before FHIRHelpers.ToDateTime(Labor.effective as dateTime)
+      return DeliveryEncounter
 
 //define "Medical Induction Procedure":
 //   ["Procedure, Performed": "Artificial Rupture of Membranes"]
