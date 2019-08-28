@@ -85,12 +85,9 @@ define "SDE Race":
 define "SDE Sex":
 	SDE."SDE Sex"
 
-define "Admission Without VTE or Obstetrical Conditions":
-		Global."Inpatient Encounter" InpatientEncounter
-		where not (Global.EncounterDiagnosis(InpatientEncounter).code in "Obstetrics"
-								or Global.EncounterDiagnosis(InpatientEncounter).code in "Venous Thromboembolism"
-								or Global.EncounterDiagnosis(InpatientEncounter).code in "Obstetrics VTE"
-							)
+define "Initial Population":
+  	"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions"
+
 
 // Note: added FHIRHelpers.ToDate() in R4
 define "Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions":
@@ -100,10 +97,16 @@ define "Encounter With Age Range and Without VTE Diagnosis or Obstetrical Condit
   )
   intersect "Admission Without VTE or Obstetrical Conditions"
 
+  define "Admission Without VTE or Obstetrical Conditions":
+  		Global."Inpatient Encounter" InpatientEncounter
+  		where not (Global.EncounterDiagnosis(InpatientEncounter).code in "Obstetrics"
+  								or Global.EncounterDiagnosis(InpatientEncounter).code in "Venous Thromboembolism"
+  								or Global.EncounterDiagnosis(InpatientEncounter).code in "Obstetrics VTE"
+  							)
 
-define "Initial Population":
-	"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions"
 
+define "Denominator":
+    "Encounter With ICU Location"
 
 define "Encounter With ICU Location":
   "Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter
@@ -112,23 +115,18 @@ define "Encounter With ICU Location":
   			and Location.period during QualifyingEncounter.period
   	)
 
-define "Denominator":
-  "Encounter With ICU Location"
+
+define "Denominator Exclusions":
+  "Encounter With ICU Location And Encounter Less Than 2 Days"
+  union "Encounter With First ICU Stay With Principal Procedure of SCIP VTE Selected Surgery"
+	union "Encounter With Intervention Comfort Measures From Day Of Start of Hospitalization To Day After First ICU Stay"
+	union "Encounter With Intervention Comfort Measures on Day of or Day After Procedure"
 
 
 define "Encounter With ICU Location And Encounter Less Than 2 Days":
   "Encounter With ICU Location"QualifyingEncounterICU
   	where Global."LengthInDays"(QualifyingEncounterICU.period)< 2
 
-define "SCIP VTE Selected Surgery":
-	(	["Procedure": "General Surgery"]
-		union ["Procedure": "Gynecological Surgery"]
-		union ["Procedure": "Hip Fracture Surgery"]
-		union ["Procedure": "Hip Replacement Surgery"]
-		union ["Procedure": "Intracranial Neurosurgery"]
-		union ["Procedure": "Knee Replacement Surgery"]
-		union ["Procedure": "Urological Surgery"] ) P
-		where P.status = 'completed'
 
 
 define function GetExtension(Resource FHIR.DomainResource, Url String):
@@ -167,12 +165,16 @@ where GetRank(EncounterProcedure) = 1
   and GetProcedureId(EncounterProcedure) = SelectedProcedure.id
   and FHIRHelpers.ToInterval(SelectedProcedure.performed as Period) ends during TJC."CalendarDayOfOrDayAfter"(VTEICU."StartOfFirstICU"(QualifyingEncounterICU))
 
-define "Intervention Comfort Measures":
-	(["ServiceRequest": "Comfort Measures"] P
-		where P.intent = 'order')
-	union
-    	(["Procedure": "Comfort Measures"] IntervetionPerformed
-      	where IntervetionPerformed.status in {'completed', 'in-progress'})
+  define "SCIP VTE Selected Surgery":
+  	(	["Procedure": "General Surgery"]
+  		union ["Procedure": "Gynecological Surgery"]
+  		union ["Procedure": "Hip Fracture Surgery"]
+  		union ["Procedure": "Hip Replacement Surgery"]
+  		union ["Procedure": "Intracranial Neurosurgery"]
+  		union ["Procedure": "Knee Replacement Surgery"]
+  		union ["Procedure": "Urological Surgery"] ) P
+  		where P.status = 'completed'
+
 
 //TODO - need "as Period" replace "as dateTime in Coalesce(start of ComfortMeasure.performed as Period). Noticed that it occurs within Coalesce() only
 define "Encounter With Intervention Comfort Measures From Day Of Start of Hospitalization To Day After First ICU Stay":
@@ -181,6 +183,12 @@ define "Encounter With Intervention Comfort Measures From Day Of Start of Hospit
     	// Note: "start of performed as Period" doe not work - Noticed that it occurs within Coalesce() only
     	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterFirstICU"(QualifyingEncounterICU)
 
+    define "Intervention Comfort Measures":
+      	(["ServiceRequest": "Comfort Measures"] P
+      		where P.intent = 'order')
+      	union
+          	(["Procedure": "Comfort Measures"] IntervetionPerformed
+            	where IntervetionPerformed.status in {'completed', 'in-progress'})
 
 define "Encounter With Intervention Comfort Measures on Day of or Day After Procedure":
   from
@@ -194,28 +202,18 @@ define "Encounter With Intervention Comfort Measures on Day of or Day After Proc
     			end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
     	return QualifyingEncounterICU
 
-define "Denominator Exclusions":
-  "Encounter With ICU Location And Encounter Less Than 2 Days"
-  union "Encounter With First ICU Stay With Principal Procedure of SCIP VTE Selected Surgery"
-	union "Encounter With Intervention Comfort Measures From Day Of Start of Hospitalization To Day After First ICU Stay"
-	union "Encounter With Intervention Comfort Measures on Day of or Day After Procedure"
 
+define "Numerator":
+"Encounter With VTE Prophylaxis Received on Day of or Day After First ICU Stay or Procedure"
+	union ( "Encounter With Medication Oral Factor Xa Inhibitor Administered on Day of or Day After First ICU Stay or Procedure"
+			intersect ( "Encounter With Prior or Present Diagnosis of Atrial Fibrillation or VTE"
+					union "Encounter With Prior or Present Procedure of Hip or Knee Replacement Surgery"
+			)
+	)
+	union "Encounter With Low Risk for VTE or Anticoagulant Administered"
+	union "Encounter With No VTE Prophylaxis Due to Medical Reason"
+	union "Encounter With No VTE Prophylaxis Due to Patient Refusal"
 
-define "VTE Prophylaxis by Medication Administered or Device Applied":
-  ( ["MedicationAdministration": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"] VTEMedication
-  		where VTEMedication.status ='completed' //'in-progress' is okay to meet
-  					and VTEMedication.dosage.route in "Subcutaneous route"
-  )
-  	union (["MedicationAdministration": medication in "Low Molecular Weight Heparin for VTE Prophylaxis"] LMWH where LMWH.status = 'completed')
-  	union (["MedicationAdministration": medication in "Injectable Factor Xa Inhibitor for VTE Prophylaxis"] FactorXa where FactorXa.status = 'completed')
-  	union (["MedicationAdministration": medication in "Warfarin"] Warfarin where Warfarin.status = 'completed')
-  	union ((
-  			["DeviceUseStatement": code in "Intermittent pneumatic compression devices (IPC)"]
-  			union ["DeviceUseStatement": code in "Venous foot pumps (VFP)"]
-  			union ["DeviceUseStatement": code in "Graduated compression stockings (GCS)"]
-      ) DeviceApplied
-  			where DeviceApplied.status = 'active'
-    )
 
 //TODO - need "as Period" replace "as dateTime in Coalesce(start of VTEProphylaxis.timing as Period, start of VTEProphylaxis.effective as Period)
 define "Encounter With VTE Prophylaxis Received on Day of or Day After First ICU Stay or Procedure":
@@ -234,6 +232,23 @@ define "Encounter With VTE Prophylaxis Received on Day of or Day After First ICU
   				end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
             return QualifyingEncounterICU
         )
+
+  define "VTE Prophylaxis by Medication Administered or Device Applied":
+    ( ["MedicationAdministration": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"] VTEMedication
+  		where VTEMedication.status ='completed' //'in-progress' is okay to meet
+  					and VTEMedication.dosage.route in "Subcutaneous route"
+   )
+   	union (["MedicationAdministration": medication in "Low Molecular Weight Heparin for VTE Prophylaxis"] LMWH where LMWH.status = 'completed')
+   	union (["MedicationAdministration": medication in "Injectable Factor Xa Inhibitor for VTE Prophylaxis"] FactorXa where FactorXa.status = 'completed')
+   	union (["MedicationAdministration": medication in "Warfarin"] Warfarin where Warfarin.status = 'completed')
+  	union ((
+  			["DeviceUseStatement": code in "Intermittent pneumatic compression devices (IPC)"]
+  			union ["DeviceUseStatement": code in "Venous foot pumps (VFP)"]
+  			union ["DeviceUseStatement": code in "Graduated compression stockings (GCS)"]
+      ) DeviceApplied
+  			where DeviceApplied.status = 'active'
+    )
+
 
 define "Encounter With Medication Oral Factor Xa Inhibitor Administered on Day of or Day After First ICU Stay or Procedure":
 ( from
@@ -280,29 +295,36 @@ define "Encounter With Prior or Present Procedure of Hip or Knee Replacement Sur
 	such that HipKneeProcedure.status = 'completed'
 			and FHIRHelpers.ToInterval(HipKneeProcedure.performed as Period) starts on or before end of QualifyingEncounterICU.period
 
-// TODO: start of AnticoagulantMedication.effective as Period doe not work
-define "Is In Low Risk for VTE or On Anticoagulant":
-	( ["Observation": "Risk for venous thromboembolism"] VTERiskAssessment
-		where VTERiskAssessment.value in "Low Risk"
-        and VTERiskAssessment.status in {'final','amended', 'corrected'}
-  	)
-  union ( ["Observation": "INR"] INRLabTest
-          where INRLabTest.value as Quantity > 3.0
-              and INRLabTest.status in {'final','amended', 'corrected'}
-              return "Observation" { id: INRLabTest.id, effective: INRLabTest.issued }
-        )
-  union ((( ["MedicationAdministration": "Unfractionated Heparin"] UnfractionatedHeparin
-          where UnfractionatedHeparin.dosage.route in "Intravenous route"
-          )
-        union ["MedicationAdministration": "Direct Thrombin Inhibitor"]
-        union ["MedicationAdministration": "Glycoprotein IIb/IIIa Inhibitors"] ) AnticoagulantMedication
-        return "Observation" { id: AnticoagulantMedication.id, effective: AnticoagulantMedication.effective as dateTime}
-        )
+
+
+define "Encounter With Low Risk for VTE or Anticoagulant Administered":
+  "Low Risk for VTE or Anticoagulant Administered From Day of Start of Hospitalization To Day After First ICU Stay"
+  union "Low Risk for VTE or Anticoagulant Administered on Day of or Day After Procedure"
+
 
 define "Low Risk for VTE or Anticoagulant Administered From Day of Start of Hospitalization To Day After First ICU Stay":
   "Encounter With ICU Location" QualifyingEncounterICU
   with "Is In Low Risk for VTE or On Anticoagulant" VTERiskAssessment
   such that FHIRHelpers.ToDateTime(VTERiskAssessment.effective as dateTime) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterFirstICU"(QualifyingEncounterICU)
+
+  // TODO: start of AnticoagulantMedication.effective as Period doe not work
+  define "Is In Low Risk for VTE or On Anticoagulant":
+  	( ["Observation": "Risk for venous thromboembolism"] VTERiskAssessment
+  		where VTERiskAssessment.value in "Low Risk"
+          and VTERiskAssessment.status in {'final','amended', 'corrected'}
+    	)
+    union ( ["Observation": "INR"] INRLabTest
+            where INRLabTest.value as Quantity > 3.0
+                and INRLabTest.status in {'final','amended', 'corrected'}
+                return "Observation" { id: INRLabTest.id, effective: INRLabTest.issued }
+          )
+    union ((( ["MedicationAdministration": "Unfractionated Heparin"] UnfractionatedHeparin
+            where UnfractionatedHeparin.dosage.route in "Intravenous route"
+            )
+          union ["MedicationAdministration": "Direct Thrombin Inhibitor"]
+          union ["MedicationAdministration": "Glycoprotein IIb/IIIa Inhibitors"] ) AnticoagulantMedication
+          return "Observation" { id: AnticoagulantMedication.id, effective: AnticoagulantMedication.effective as dateTime}
+          )
 
 define "Low Risk for VTE or Anticoagulant Administered on Day of or Day After Procedure":
   from
@@ -314,9 +336,22 @@ define "Low Risk for VTE or Anticoagulant Administered on Day of or Day After Pr
   return QualifyingEncounterICU
 
 
-define "Encounter With Low Risk for VTE or Anticoagulant Administered":
-  "Low Risk for VTE or Anticoagulant Administered From Day of Start of Hospitalization To Day After First ICU Stay"
-  union "Low Risk for VTE or Anticoagulant Administered on Day of or Day After Procedure"
+define "Encounter With No VTE Prophylaxis Due to Medical Reason":
+  ( "No VTE Prophylaxis Medication Due to Medical Reason From Day Of Start of Hospitalization To Day After First ICU Stay"
+    intersect "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hospitalization To Day After First ICU Stay"
+  )
+  union ( "No VTE Prophylaxis Medication Due to Medical Reason on Day of or Day After Procedure"
+      intersect "No VTE Prophylaxis Device Due to Medical Reason on Day of or Day After Procedure"
+  )
+
+
+define "No VTE Prophylaxis Medication Due to Medical Reason From Day Of Start of Hospitalization To Day After First ICU Stay":
+	from
+		"Encounter With ICU Location" QualifyingEncounterICU,
+		"No VTE Prophylaxis Medication Administered or Ordered" NoVTEMedication
+		where Coalesce(NoVTEMedication.statusReason,NoVTEMedication.reasonCode) in "Medical Reason"
+			and FHIRHelpers.ToDateTime(Coalesce(NoVTEMedication.authoredOn, NoVTEMedication.effective as dateTime)) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterFirstICU"(QualifyingEncounterICU)
+    return QualifyingEncounterICU
 
   define "No VTE Prophylaxis Medication Administered or Ordered":
   	((	["MedicationAdministration": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"]
@@ -342,14 +377,6 @@ define "Encounter With Low Risk for VTE or Anticoagulant Administered":
   	)
 
 
-define "No VTE Prophylaxis Medication Due to Medical Reason From Day Of Start of Hospitalization To Day After First ICU Stay":
-	from
-		"Encounter With ICU Location" QualifyingEncounterICU,
-		"No VTE Prophylaxis Medication Administered or Ordered" NoVTEMedication
-		where Coalesce(NoVTEMedication.statusReason,NoVTEMedication.reasonCode) in "Medical Reason"
-			and FHIRHelpers.ToDateTime(Coalesce(NoVTEMedication.authoredOn, NoVTEMedication.effective as dateTime)) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterFirstICU"(QualifyingEncounterICU)
-    return QualifyingEncounterICU
-
 //Note - "start of NoVTEMedication.effective as Period" does not work
 define "No VTE Prophylaxis Medication Due to Medical Reason on Day of or Day After Procedure":
 	from
@@ -362,6 +389,14 @@ define "No VTE Prophylaxis Medication Due to Medical Reason on Day of or Day Aft
   		and FHIRHelpers.ToDateTime(Coalesce(NoVTEMedication.authoredOn, NoVTEMedication.effective as dateTime)) during TJC."CalendarDayOfOrDayAfter"(
         end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
   return QualifyingEncounterICU
+
+
+define "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hospitalization To Day After First ICU Stay":
+  	"Encounter With ICU Location" QualifyingEncounterICU
+    with "No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
+    such that (GetNotDoneReason(NoVTEDevice) in "Medical Reason"
+                or GetNotPerformReason(NoVTEDevice) in "Medical Reason")
+        and FHIRHelpers.ToDateTime(Coalesce(NoVTEDevice.authoredOn, NoVTEDevice.recordedOn)) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterFirstICU"(QualifyingEncounterICU)
 
 
   /*: TODO: Mapping Table review - neither DeviceRequest nor DeviceUseStatement reasonCode could be used for not done reasonCode
@@ -405,14 +440,6 @@ define "No VTE Prophylaxis Medication Due to Medical Reason on Day of or Day Aft
           )
 
 
-define "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hospitalization To Day After First ICU Stay":
-  	"Encounter With ICU Location" QualifyingEncounterICU
-    with "No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
-    such that (GetNotDoneReason(NoVTEDevice) in "Medical Reason"
-                or GetNotPerformReason(NoVTEDevice) in "Medical Reason")
-        and FHIRHelpers.ToDateTime(Coalesce(NoVTEDevice.authoredOn, NoVTEDevice.recordedOn)) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterFirstICU"(QualifyingEncounterICU)
-
-
 define "No VTE Prophylaxis Device Due to Medical Reason on Day of or Day After Procedure":
 	from
 		"Encounter With ICU Location" QualifyingEncounterICU,
@@ -425,32 +452,26 @@ define "No VTE Prophylaxis Device Due to Medical Reason on Day of or Day After P
         and FHIRHelpers.ToDateTime(Coalesce(NoVTEDevice.authoredOn, NoVTEDevice.recordedOn)) during TJC."CalendarDayOfOrDayAfter"(
 			         end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
 		return QualifyingEncounterICU
+    
 
-
-define "Encounter With No VTE Prophylaxis Due to Medical Reason":
-  ( "No VTE Prophylaxis Medication Due to Medical Reason From Day Of Start of Hospitalization To Day After First ICU Stay"
-    intersect "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hospitalization To Day After First ICU Stay"
-  )
-  union ( "No VTE Prophylaxis Medication Due to Medical Reason on Day of or Day After Procedure"
-      intersect "No VTE Prophylaxis Device Due to Medical Reason on Day of or Day After Procedure"
-  )
-
-
-define "No VTE Prophylaxis Medication or Device Due to Patient Refusal":
-  ( "No VTE Prophylaxis Medication Administered or Ordered" NoVTEMedication
-      where  Coalesce(NoVTEMedication.statusReason,NoVTEMedication.reasonCode) in "Patient Refusal"
-    )
-  union ("No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
-         where GetNotDoneReason(NoVTEDevice) in "Patient Refusal"
-             or GetNotPerformReason(NoVTEDevice) in "Patient Refusal"
-        )
+define "Encounter With No VTE Prophylaxis Due to Patient Refusal":
+"No VTE Prophylaxis Due to Patient Refusal From Day of Start of Hospitalization To Day After First ICU Stay"
+	union "No VTE Prophylaxis Due to Patient Refusal on Day of or Day After Procedure"
 
 define "No VTE Prophylaxis Due to Patient Refusal From Day of Start of Hospitalization To Day After First ICU Stay":
 	"Encounter With ICU Location" QualifyingEncounterICU
 		with "No VTE Prophylaxis Medication or Device Due to Patient Refusal" PatientRefusal
     such that FHIRHelpers.ToDateTime(Coalesce(PatientRefusal.effective, PatientRefusal.authoredOn, PatientRefusal.recordedOn))
-      during VTEICU.FromDayOfStartOfHospitalizationToDayAfterFirstICU(QualifyingEncounterICU)
+        during VTEICU.FromDayOfStartOfHospitalizationToDayAfterFirstICU(QualifyingEncounterICU)
 
+  define "No VTE Prophylaxis Medication or Device Due to Patient Refusal":
+      ( "No VTE Prophylaxis Medication Administered or Ordered" NoVTEMedication
+          where  Coalesce(NoVTEMedication.statusReason,NoVTEMedication.reasonCode) in "Patient Refusal"
+      )
+      union ("No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
+              where GetNotDoneReason(NoVTEDevice) in "Patient Refusal"
+                or GetNotPerformReason(NoVTEDevice) in "Patient Refusal"
+            )
 
 define "No VTE Prophylaxis Due to Patient Refusal on Day of or Day After Procedure":
 	from
@@ -464,26 +485,10 @@ define "No VTE Prophylaxis Due to Patient Refusal on Day of or Day After Procedu
 		return QualifyingEncounterICU
 
 
-define "Encounter With No VTE Prophylaxis Due to Patient Refusal":
-"No VTE Prophylaxis Due to Patient Refusal From Day of Start of Hospitalization To Day After First ICU Stay"
-	union "No VTE Prophylaxis Due to Patient Refusal on Day of or Day After Procedure"
 
-
-define "Numerator":
-"Encounter With VTE Prophylaxis Received on Day of or Day After First ICU Stay or Procedure"
-	union ( "Encounter With Medication Oral Factor Xa Inhibitor Administered on Day of or Day After First ICU Stay or Procedure"
-			intersect ( "Encounter With Prior or Present Diagnosis of Atrial Fibrillation or VTE"
-					union "Encounter With Prior or Present Procedure of Hip or Knee Replacement Surgery"
-			)
-	)
-	union "Encounter With Low Risk for VTE or Anticoagulant Administered"
-	union "Encounter With No VTE Prophylaxis Due to Medical Reason"
-	union "Encounter With No VTE Prophylaxis Due to Patient Refusal"
-
+define "Denominator Exceptions":
+  "Encounter With First ICU Location Stay Less Than 1 day"
 
 define "Encounter With First ICU Location Stay Less Than 1 day":
   "Encounter With ICU Location" QualifyingEncounterICU
 	 where Global."LengthInDays"(VTEICU."FirstICULocationPeriod"(QualifyingEncounterICU))< 1
-
-define "Denominator Exceptions":
-  "Encounter With First ICU Location Stay Less Than 1 day"
