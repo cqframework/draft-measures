@@ -16,7 +16,9 @@ codesystem "Diagnosis Role": 'http://terminology.hl7.org/CodeSystem/diagnosis-ro
 codesystem "RequestIntent": 'http://terminology.hl7.org/CodeSystem/request-intent'
 //codesystem "RequestIntent": 'http://hl7.org/fhir/request-intent'
 codesystem "MedicationRequestCategory": 'http://terminology.hl7.org/CodeSystem/medicationrequest-category'
+codesystem "ConditionClinicalStatusCodes": 'http://terminology.hl7.org/CodeSystem/condition-clinical'
 
+//QA
 valueset "Anticoagulant Therapy": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.200'
 valueset "Atrial Ablation": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.203'
 valueset "Atrial Fibrillation/Flutter": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.202'
@@ -42,6 +44,13 @@ code "Birthdate": '21112-8' from "LOINC" display 'Birth date'
 code "Dead": '419099009' from "SNOMEDCT" display 'Dead'
 code "Discharge": 'discharge' from "MedicationRequestCategory" display 'Discharge'
 code "Order": 'order' from "RequestIntent" display 'Order'
+//NOTE: Created for condition.clinicalStatus which is codeableConcept
+code "active": 'active' from "ConditionClinicalStatusCodes"
+code "recurrence": 'recurrence' from "ConditionClinicalStatusCodes"
+code "relapse": 'relapse' from "ConditionClinicalStatusCodes"
+code "inactive": 'inactive' from "ConditionClinicalStatusCodes"
+code "remission": 'remission' from "ConditionClinicalStatusCodes"
+code "resolved": 'resolved' from "ConditionClinicalStatusCodes"
 
 parameter "Measurement Period" Interval<DateTime>
 
@@ -97,17 +106,16 @@ define "Denominator":
 //QA
             define "History of Atrial Fibrillation or Flutter":
             	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-            		with ["Condition": "Atrial Fibrillation/Flutter"] AtrialFibrillationFlutter
+            		with ["Condition": code in "Atrial Fibrillation/Flutter"] AtrialFibrillationFlutter
             			such that FHIRHelpers.ToDateTime(AtrialFibrillationFlutter.onset as dateTime) on or before
             			end of FHIRHelpers.ToInterval(IschemicStrokeEncounter.period)
 
-//
+//QA
             define "Current Diagnosis Atrial Fibrillation or Flutter":
             	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-            		where exists ( IschemicStrokeEncounter.diagnosis.condition Diagnosis
-            				where Diagnoses in "Atrial Fibrillation/Flutter"
-            				and IschemicStrokeEncounter.status = 'completed'
-            									)
+            	 with ["Condition": code in "Atrial Fibrillation/Flutter"] AtrialFibrillationFlutter
+                such that FHIRHelpers.ToConcept(AtrialFibrillationFlutter.clinicalStatus) in {"active", "recurrence", "relapse"}
+                  and FHIRHelpers.ToDateTime(AtrialFibrillationFlutter.onset as dateTime) on or before end of IschemicStrokeEncounter.period
 
 define "Denominator Exclusions":
 	( "Denominator" Encounter
