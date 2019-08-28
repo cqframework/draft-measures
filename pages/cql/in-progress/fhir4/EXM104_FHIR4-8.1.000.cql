@@ -109,22 +109,24 @@ define "Denominator Exclusions":
     			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
     	)
 */
+//QA
+    define "TJC.Ischemic Stroke Encounters with Discharge Disposition":
+    ( ( "Ischemic Stroke Encounter" IschemicStrokeEncounter
+        where IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharge To Acute Care Facility"
+          or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Left Against Medical Advice"
+          or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Patient Expired"
+          or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
+          or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
+          )
+    )
 
-      define "TJC.Ischemic Stroke Encounters with Discharge Disposition":
-      ( ( "Ischemic Stroke Encounter" IschemicStrokeEncounter
-          where IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharge To Acute Care Facility"
-            or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Left Against Medical Advice"
-            or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Patient Expired"
-            or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
-            or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
-            )
-      )
-
+//QA
     define "Comfort Measures during Hospitalization":
     	"Ischemic Stroke Encounter" IschemicStrokeEncounter
        	with "Intervention Comfort Measures" ComfortMeasure
         	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 
+//QA
           define "Intervention Comfort Measures":
           	(["ServiceRequest": "Comfort Measures"] P
           		where P.intent = 'order')
@@ -133,6 +135,7 @@ define "Denominator Exclusions":
           		where IntervetionPerformed.status = 'in progress')
               //Change to "in progress", add in progress. Feedback from Peter regarding clinical intent from FHIR Collaboration call.
 
+//QA
 define "Numerator":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Antithrombotic Therapy at Discharge" DischargeAntithrombotic
