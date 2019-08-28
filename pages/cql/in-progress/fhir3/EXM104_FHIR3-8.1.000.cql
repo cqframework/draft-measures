@@ -120,7 +120,7 @@ define "Numerator":
 
       define "Antithrombotic Therapy at Discharge":
       	["MedicationRequest": "Antithrombotic Therapy"] Antithrombotic
-      	  where exists (Antithrombotic.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+      	  where exists (Antithrombotic.category C where FHIRHelpers.ToConcept(C) ~ 'discharge')
       	    and Antithrombotic.intent = 'order'
 
 define "Denominator Exceptions":
