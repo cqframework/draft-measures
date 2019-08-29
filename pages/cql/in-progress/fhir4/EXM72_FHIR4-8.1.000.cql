@@ -176,14 +176,16 @@ define "Denominator Exceptions":
           		union "No Antithrombotic Administered"
 
               define "No Antithrombotic Ordered for Medical Reason or Patient Refusal":
-                ["MedicationRequest": medication in "Antithrombotic Therapy"] MedicationOrder
-                  where FHIRHelpers.ToBoolean(MedicationOrder.doNotPerform) is true
+                ["MedicationRequest": medication in "Antithrombotic Therapy"] NoAntithromboticOrder
+                  where FHIRHelpers.ToBoolean(NoAntithromboticOrder.doNotPerform) is true
+                    and NoAntithromboticOrder.reasonCode in "Medical Reason"
+                			or NoAntithromboticOrder.reasonCode in "Patient Refusal"
 
-                  define "No Antithrombotic Administered":
-                  	["MedicationAdministration": medication in "Antithrombotic Therapy"] NoAntithromboticGiven
-                  		where NoAntithromboticGiven.reasonCode in "Medical Reason"
-                  			or NoAntithromboticGiven.reasonCode in "Patient Refusal"
-                  				and NoAntithromboticGiven.status = 'completed'
+              define "No Antithrombotic Administered":
+              	["MedicationAdministration": medication in "Antithrombotic Therapy"] NoAntithromboticGiven
+              		where NoAntithromboticGiven.reasonCode in "Medical Reason"
+              			or NoAntithromboticGiven.reasonCode in "Patient Refusal"
+              				and NoAntithromboticGiven.status = 'completed'
 
     define "Encounter With Ticagrelor Therapy Given Day Of or Day After Hospital Arrival":
     	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
