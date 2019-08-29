@@ -126,13 +126,14 @@ define "Denominator Exclusions":
 				or Encounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
 				or Encounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
 	)
-		union "Comfort Measures during Hospitalization"
+		union "AFIB Encounters with Comfort Measures during Hospitalization"
 
-//QA
-    define "Comfort Measures during Hospitalization":
-    	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
+//QA - renamed definition to avoid issue with confusing other Comfort Meausure definitions that are associated with Ischemic Stroke Encounters
+    define "AFIB Encounters with Comfort Measures during Hospitalization":
+    	"Denominator" Encounter
        	with "Intervention Comfort Measures" ComfortMeasure
-        	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."Hospitalization"(IschemicStrokeEncounter)
+        	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."HospitalizationWithObservation"(Encounter)
+
 //QA
     define "Intervention Comfort Measures":
     		(["ServiceRequest": "Comfort Measures"] P
