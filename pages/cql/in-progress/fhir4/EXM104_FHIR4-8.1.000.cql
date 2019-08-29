@@ -131,27 +131,31 @@ define "Numerator":
 		with "Antithrombotic Therapy at Discharge" DischargeAntithrombotic
 			such that FHIRHelpers.ToDateTime(DischargeAntithrombotic.authoredOn) during IschemicStrokeEncounter.period
 
+//QA
       define "Antithrombotic Therapy at Discharge":
       	["MedicationRequest": medication in "Antithrombotic Therapy"] Antithrombotic
       	  where exists (Antithrombotic.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
       	    and Antithrombotic.intent in {'plan', 'order'}
-            //plan
 
+//QA
 define "Denominator Exceptions":
 	"Encounter With No Antithrombotic At Discharge"
 		union "Encounter With Ticagrelor at Discharge"
 
+//QA
     define "Encounter With No Antithrombotic At Discharge":
     	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
     		with "Antithrombotic Not Given at Discharge" NoDischargeAntithrombotic
     			such that FHIRHelpers.ToDateTime(NoDischargeAntithrombotic.authoredOn) during IschemicStrokeEncounter.period
 
+//QA - added "and NoAntithromboticDischarge.intent in {'plan', 'order'}"
           define "Antithrombotic Not Given at Discharge":
           	["MedicationRequest": medication in "Antithrombotic Therapy"] NoAntithromboticDischarge
               where FHIRHelpers.ToBoolean(NoAntithromboticDischarge.doNotPerform) is true
           			and (singleton from NoAntithromboticDischarge.reasonCode in "Medical Reason"
           				or singleton from NoAntithromboticDischarge.reasonCode in "Patient Refusal")
                     and exists (NoAntithromboticDischarge.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+                      and NoAntithromboticDischarge.intent in {'plan', 'order'}
 
           // NOTE: On the assumption that status of not-taken is the closest to what the measure is looking for, this is the expression:
           // TODO: Request discussion w/ Pharmacy regarding how medications not prescribed at discharged would be documented
@@ -166,6 +170,7 @@ define "Denominator Exceptions":
           //  ["Observation": "Medication Not Given At Discharge"] O
           //	  where O.value in "Antithrombotic Therapy"
 
+//QA
     define "Encounter With Ticagrelor at Discharge":
       TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
         with "Ticagrelor Therapy at Discharge" DischargeTicagrelor
@@ -177,6 +182,7 @@ define "Denominator Exceptions":
                 such that Ticagrelor.effective starts during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)*/
           //Looking for Ticagrelor as discharge medication, include a corrected defintion in 2021 CQL based measure
 
+//QA
           define "Ticagrelor Therapy at Discharge":
             ["MedicationRequest": medication in TJC."Ticagrelor Therapy"] Ticagrelor
               where exists (Ticagrelor.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
