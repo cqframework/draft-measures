@@ -88,8 +88,8 @@ define "Denominator Exceptions":
 
 define "History of Atrial Fibrillation or Flutter":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-		with ["Diagnosis": "Atrial Fibrillation/Flutter"] AtrialFibrillationFlutter
-			such that AtrialFibrillationFlutter.prevalencePeriod starts on or before
+		with ["Condition": "Atrial Fibrillation/Flutter"] AtrialFibrillationFlutter
+			such that FHIRHelpers.ToDateTime(AtrialFibrillationFlutter.Period as dateTime) starts on or before
 			end of IschemicStrokeEncounter.relevantPeriod
 
 define "Denominator Exclusions":
