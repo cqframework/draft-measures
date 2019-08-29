@@ -184,7 +184,8 @@ define "Encounter With Intervention Comfort Measures From Day of Start of Hospit
 
   define "Intervention Comfort Measures":
   	(["ServiceRequest": "Comfort Measures"] P
-      		where P.intent = 'order')
+      		where P.intent in {'order', 'plan'}
+    )
     	union
       	(["Procedure": "Comfort Measures"] IntervetionPerformed
         	where IntervetionPerformed.status in {'completed', 'in-progress'})
@@ -200,7 +201,19 @@ define "Encounter With Intervention Comfort Measures on Day of or Day After Proc
           and FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.authoredOn, ComfortMeasure.performed as dateTime)) during TJC."CalendarDayOfOrDayAfter"(end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
       return QualifyingEncounter
 
-/******************/
+
+define "Numerator":
+    "Encounter With VTE Prophylaxis Received on Day of or Day After Admission or Procedure"
+    union ( "Encounter With Medication Oral Factor Xa Inhibitor Administered on Day of or Day After Admission or Procedure"
+    			  intersect ( "Encounter With Prior or Present Diagnosis of Atrial Fibrillation or VTE"
+    						    union "Encounter With Prior or Present Procedure of Hip or Knee Replacement Surgery"
+    			            )
+          )
+    union "Encounter With Low Risk for VTE or Anticoagulant Administered"
+    union "Encounter With No VTE Prophylaxis Due to Medical Reason"
+    union "Encounter With No VTE Prophylaxis Due to Patient Refusal"
+
+
 //TODO - need "as Period" replace "as dateTime in Coalesce(start of VTEProphylaxis.timing as Period, start of VTEProphylaxis.effective as Period)
 define "Encounter With VTE Prophylaxis Received on Day of or Day After Admission or Procedure":
  	( from
@@ -220,7 +233,7 @@ define "Encounter With VTE Prophylaxis Received on Day of or Day After Admission
 
     define "VTE Prophylaxis by Medication Administered or Device Applied":
  	      ( ["MedicationAdministration": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"] VTEMedication
- 			      where VTEMedication.status ='completed' //'in-progress' is okay to meet
+ 			      where VTEMedication.status ='completed'
  						     and VTEMedication.dosage.route in "Subcutaneous route"
  	      )
  		     union (["MedicationAdministration": medication in "Low Molecular Weight Heparin for VTE Prophylaxis"] LMWH where LMWH.status = 'completed')
@@ -231,22 +244,24 @@ define "Encounter With VTE Prophylaxis Received on Day of or Day After Admission
   				         union ["DeviceUseStatement": code in "Venous foot pumps (VFP)"]
   				         union ["DeviceUseStatement": code in "Graduated compression stockings (GCS)"]
                    ) DeviceApplied
-   				            where DeviceApplied.status = 'active' //	'actie' - The device is still being used. 'completed' - no longer being used
+   				            where DeviceApplied.status = 'active' //	'completed' - no longer used
                   )
 
 define "Encounter With Medication Oral Factor Xa Inhibitor Administered on Day of or Day After Admission or Procedure":
 	( from
     		"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter,
   			["MedicationAdministration": medication in "Oral Factor Xa Inhibitor for VTE Prophylaxis or VTE Treatment"] FactorXaMedication
-    where FactorXaMedication.effective as Period starts during TJC."CalendarDayOfOrDayAfter"(start of QualifyingEncounter.period)
+    where FactorXaMedication.status = 'completed'
+      and FactorXaMedication.effective as Period starts during TJC."CalendarDayOfOrDayAfter"(start of QualifyingEncounter.period)
     return QualifyingEncounter
     )
     union ( from
     				  "Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter,
       				["Procedure": "General or Neuraxial Anesthesia"] AnesthesiaProcedure,
       				["MedicationAdministration": medication in "Oral Factor Xa Inhibitor for VTE Prophylaxis or VTE Treatment"] FactorXaMedication
-      			where AnesthesiaProcedure.status = 'completed'
-      			   and AnesthesiaProcedure.performed as Period ends 1 day after day of start of QualifyingEncounter.period
+      			where FactorXaMedication.status = 'completed'
+                and AnesthesiaProcedure.status = 'completed'
+      			    and AnesthesiaProcedure.performed as Period ends 1 day after day of start of QualifyingEncounter.period
       					and FactorXaMedication.effective as Period starts during TJC."CalendarDayOfOrDayAfter"(end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
       			return QualifyingEncounter
       		)
@@ -304,6 +319,7 @@ define "Low Risk for VTE or Anticoagulant Administered From Day of Start of Hosp
            )
            union ["MedicationAdministration": "Direct Thrombin Inhibitor"]
            union ["MedicationAdministration": "Glycoprotein IIb/IIIa Inhibitors"] ) AnticoagulantMedication
+           where AnticoagulantMedication.status = 'complete'
        	   // Note: start of NoVTEMedication.effective as Period doe not work
            return "Observation" { id: AnticoagulantMedication.id, effective: AnticoagulantMedication.effective as dateTime}
         )
@@ -318,21 +334,33 @@ define "Low Risk for VTE or Anticoagulant Administered on Day of or Day After Pr
 	return QualifyingEncounter
 
 
-/*****************/
+define "Encounter With No VTE Prophylaxis Due to Medical Reason":
+   ( "No VTE Prophylaxis Medication Due to Medical Reason From Day of Start of Hospitalization To Day After Admission"
+     intersect "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hospitalization To Day After Admission"
+   )
+   union ( "No VTE Prophylaxis Medication Due to Medical Reason on Day of or Day After Procedure"
+       intersect "No VTE Prophylaxis Device Due to Medical Reason on Day of or Day After Procedure"
+       )
 
-define "No VTE Prophylaxis Medication Administered or Ordered":
-	((	["MedicationAdministration": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"]
-  	union
-    	["MedicationAdministration": medication in "Low Molecular Weight Heparin for VTE Prophylaxis"]
-  	union
-    	["MedicationAdministration": medication in "Injectable Factor Xa Inhibitor for VTE Prophylaxis"]
-  	union
-    	["MedicationAdministration": medication in "Warfarin"]
-  	) MedicationAdm
-      where MedicationAdm.status = 'not-done'
-  	)
-  union
-    	((	["MedicationRequest": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"]
+define "No VTE Prophylaxis Medication Due to Medical Reason From Day of Start of Hospitalization To Day After Admission":
+   	"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter
+       with	"No VTE Prophylaxis Medication Administered or Ordered" NoVTEMedication
+     	such that Coalesce(NoVTEMedication.statusReason,NoVTEMedication.reasonCode) in "Medical Reason"
+      			and FHIRHelpers.ToDateTime(Coalesce(NoVTEMedication.authoredOn, NoVTEMedication.effective as dateTime)) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
+
+    define "No VTE Prophylaxis Medication Administered or Ordered":
+	     ((	["MedicationAdministration": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"]
+  	     union
+    	    ["MedicationAdministration": medication in "Low Molecular Weight Heparin for VTE Prophylaxis"]
+  	     union
+    	    ["MedicationAdministration": medication in "Injectable Factor Xa Inhibitor for VTE Prophylaxis"]
+  	     union
+    	    ["MedicationAdministration": medication in "Warfarin"]
+  	       ) MedicationAdm
+           where MedicationAdm.status = 'not-done'
+  	        )
+      union
+    	   ((	["MedicationRequest": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"]
       	union
       	 ["MedicationRequest": medication in "Low Molecular Weight Heparin for VTE Prophylaxis"]
         union
@@ -342,12 +370,6 @@ define "No VTE Prophylaxis Medication Administered or Ordered":
         ) MedicationOrder
         	where	FHIRHelpers.ToBoolean(MedicationOrder.doNotPerform) is true
       )
-
-define "No VTE Prophylaxis Medication Due to Medical Reason From Day of Start of Hospitalization To Day After Admission":
-	"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter
-    with	"No VTE Prophylaxis Medication Administered or Ordered" NoVTEMedication
-  	such that Coalesce(NoVTEMedication.statusReason,NoVTEMedication.reasonCode) in "Medical Reason"
-       			and FHIRHelpers.ToDateTime(Coalesce(NoVTEMedication.authoredOn, NoVTEMedication.effective as dateTime)) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
 
 //TODO - "start of NoVTEMedication.effective as Period" does not work
 define "No VTE Prophylaxis Medication Due to Medical Reason on Day of or Day After Procedure":
@@ -361,6 +383,13 @@ define "No VTE Prophylaxis Medication Due to Medical Reason on Day of or Day Aft
 			and FHIRHelpers.ToDateTime(Coalesce(NoVTEMedication.authoredOn, NoVTEMedication.effective as dateTime)) during TJC."CalendarDayOfOrDayAfter"(end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
   return QualifyingEncounter
 
+
+define "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hospitalization To Day After Admission":
+	"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter
+	with "No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
+  such that (GetNotDoneReason(NoVTEDevice) in "Medical Reason"
+              or GetNotPerformReason(NoVTEDevice) in "Medical Reason")
+        and FHIRHelpers.ToDateTime(Coalesce(NoVTEDevice.authoredOn, NoVTEDevice.recordedOn)) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
 
 /*: TODO: Mapping Table review - neither DeviceRequest nor DeviceUseStatement reasonCode could be used for not done reasonCode
    In R4 - Use Extensions to get Not done reason for DeviceRequest and DeviceUseStatement
@@ -387,8 +416,8 @@ define function GetDoNotPerfom(deviceRequest DeviceRequest):
 define function GetNotPerformReason(deviceRequest DeviceRequest):
     FHIRHelpers.ToCode(GetExtension(deviceRequest, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-devicerequest-doNotPerformReason').value)
 
-define "No VTE Prophylaxis Device Applied or Ordered":
-    ((["DeviceUseStatement": code in "Venous foot pumps (VFP)"]
+  define "No VTE Prophylaxis Device Applied or Ordered":
+     ((["DeviceUseStatement": code in "Venous foot pumps (VFP)"]
       union ["DeviceUseStatement": code in "Intermittent pneumatic compression devices (IPC)"]
       union ["DeviceUseStatement": code in "Graduated compression stockings (GCS)"]
       ) DeviceApplied
@@ -402,12 +431,6 @@ define "No VTE Prophylaxis Device Applied or Ordered":
           where GetDoNotPerfom(DeviceOrder) is true
         )
 
-define "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hospitalization To Day After Admission":
-	"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter
-	with "No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
-  such that (GetNotDoneReason(NoVTEDevice) in "Medical Reason"
-              or GetNotPerformReason(NoVTEDevice) in "Medical Reason")
-        and FHIRHelpers.ToDateTime(Coalesce(NoVTEDevice.authoredOn, NoVTEDevice.recordedOn)) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
 
 define "No VTE Prophylaxis Device Due to Medical Reason on Day of or Day After Procedure":
   from
@@ -422,23 +445,9 @@ define "No VTE Prophylaxis Device Due to Medical Reason on Day of or Day After P
   return QualifyingEncounter
 
 
-define "Encounter With No VTE Prophylaxis Due to Medical Reason":
-   ( "No VTE Prophylaxis Medication Due to Medical Reason From Day of Start of Hospitalization To Day After Admission"
-     intersect "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hospitalization To Day After Admission"
-   )
-   union ( "No VTE Prophylaxis Medication Due to Medical Reason on Day of or Day After Procedure"
-       intersect "No VTE Prophylaxis Device Due to Medical Reason on Day of or Day After Procedure"
-       )
-
-
-define "No VTE Prophylaxis Medication or Device Due to Patient Refusal":
-   ( "No VTE Prophylaxis Medication Administered or Ordered" NoVTEMedication
-       where Coalesce(NoVTEMedication.statusReason,NoVTEMedication.reasonCode) in "Patient Refusal"
-   )
-   union ("No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
-          where GetNotDoneReason(NoVTEDevice) in "Patient Refusal"
-              or GetNotPerformReason(NoVTEDevice) in "Patient Refusal"
-          )
+define "Encounter With No VTE Prophylaxis Due to Patient Refusal":
+ "No VTE Prophylaxis Due to Patient Refusal From Day of Start of Hospitalization To Day After Admission"
+ 	union "No VTE Prophylaxis Due to Patient Refusal on Day of or Day After Procedure"
 
 
 define "No VTE Prophylaxis Due to Patient Refusal From Day of Start of Hospitalization To Day After Admission":
@@ -447,6 +456,15 @@ define "No VTE Prophylaxis Due to Patient Refusal From Day of Start of Hospitali
    such that FHIRHelpers.ToDateTime(Coalesce(PatientRefusal.effective, PatientRefusal.authoredOn, PatientRefusal.recordedOn))
          during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
 
+
+  define "No VTE Prophylaxis Medication or Device Due to Patient Refusal":
+      ( "No VTE Prophylaxis Medication Administered or Ordered" NoVTEMedication
+          where Coalesce(NoVTEMedication.statusReason,NoVTEMedication.reasonCode) in "Patient Refusal"
+      )
+    union ("No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
+             where GetNotDoneReason(NoVTEDevice) in "Patient Refusal"
+                 or GetNotPerformReason(NoVTEDevice) in "Patient Refusal"
+           )
 
 define "No VTE Prophylaxis Due to Patient Refusal on Day of or Day After Procedure":
  	from
@@ -457,20 +475,3 @@ define "No VTE Prophylaxis Due to Patient Refusal on Day of or Day After Procedu
  			and FHIRHelpers.ToDateTime(Coalesce(PatientRefusal.effective as dateTime, PatientRefusal.authoredOn, PatientRefusal.recordedOn))
              during TJC."CalendarDayOfOrDayAfter"(end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
 	return QualifyingEncounter
-
-
-define "Encounter With No VTE Prophylaxis Due to Patient Refusal":
- "No VTE Prophylaxis Due to Patient Refusal From Day of Start of Hospitalization To Day After Admission"
- 	union "No VTE Prophylaxis Due to Patient Refusal on Day of or Day After Procedure"
-
-
-define "Numerator":
-	"Encounter With VTE Prophylaxis Received on Day of or Day After Admission or Procedure"
-	 union ( "Encounter With Medication Oral Factor Xa Inhibitor Administered on Day of or Day After Admission or Procedure"
-				  intersect ( "Encounter With Prior or Present Diagnosis of Atrial Fibrillation or VTE"
-						    union "Encounter With Prior or Present Procedure of Hip or Knee Replacement Surgery"
-				            )
-	        )
-  union "Encounter With Low Risk for VTE or Anticoagulant Administered"
-  union "Encounter With No VTE Prophylaxis Due to Medical Reason"
-  union "Encounter With No VTE Prophylaxis Due to Patient Refusal"

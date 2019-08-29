@@ -185,7 +185,8 @@ define "Encounter With Intervention Comfort Measures From Day Of Start of Hospit
 
     define "Intervention Comfort Measures":
       	(["ServiceRequest": "Comfort Measures"] P
-      		where P.intent = 'order')
+      		where P.intent in {'order', 'plan'} //NOTE: Mapping table states "Constrain to "order" (include children)"". Should be all listed (original, reflex....)?
+        )
       	union
           	(["Procedure": "Comfort Measures"] IntervetionPerformed
             	where IntervetionPerformed.status in {'completed', 'in-progress'})
@@ -235,7 +236,7 @@ define "Encounter With VTE Prophylaxis Received on Day of or Day After First ICU
 
   define "VTE Prophylaxis by Medication Administered or Device Applied":
     ( ["MedicationAdministration": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"] VTEMedication
-  		where VTEMedication.status ='completed' //'in-progress' is okay to meet
+  		where VTEMedication.status ='completed'
   					and VTEMedication.dosage.route in "Subcutaneous route"
    )
    	union (["MedicationAdministration": medication in "Low Molecular Weight Heparin for VTE Prophylaxis"] LMWH where LMWH.status = 'completed')
@@ -254,14 +255,16 @@ define "Encounter With Medication Oral Factor Xa Inhibitor Administered on Day o
 ( from
     "Encounter With ICU Location" QualifyingEncounterICU,
      ["MedicationAdministration": medication in "Oral Factor Xa Inhibitor for VTE Prophylaxis or VTE Treatment"] FactorXaMedication
-      where FactorXaMedication.effective as Period starts during TJC."CalendarDayOfOrDayAfter"(VTEICU."StartOfFirstICU"(QualifyingEncounterICU))
+      where FactorXaMedication.status = 'complete'
+          and FactorXaMedication.effective as Period starts during TJC."CalendarDayOfOrDayAfter"(VTEICU."StartOfFirstICU"(QualifyingEncounterICU))
       return QualifyingEncounterICU
    )
   union ( from
     			 "Encounter With ICU Location" QualifyingEncounterICU,
     			["Procedure": "General or Neuraxial Anesthesia"] AnesthesiaProcedure,
     			["MedicationAdministration": medication in "Oral Factor Xa Inhibitor for VTE Prophylaxis or VTE Treatment"] FactorXaMedication
-    			where AnesthesiaProcedure.status = 'completed'
+    			where FactorXaMedication.status = 'complete'
+            and AnesthesiaProcedure.status = 'completed'
     				and AnesthesiaProcedure.performed as Period ends 1 day after day of VTEICU."StartOfFirstICU"(QualifyingEncounterICU)
     					and FactorXaMedication.effective as Period starts during TJC."CalendarDayOfOrDayAfter"(
       				end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
@@ -311,7 +314,7 @@ define "Low Risk for VTE or Anticoagulant Administered From Day of Start of Hosp
   define "Is In Low Risk for VTE or On Anticoagulant":
   	( ["Observation": "Risk for venous thromboembolism"] VTERiskAssessment
   		where VTERiskAssessment.value in "Low Risk"
-          and VTERiskAssessment.status in {'final','amended', 'corrected'}
+          and VTERiskAssessment.status in {'final','amended', 'corrected'} //Note: due to Mapping table as constrain. Needed?
     	)
     union ( ["Observation": "INR"] INRLabTest
             where INRLabTest.value as Quantity > 3.0
@@ -323,6 +326,7 @@ define "Low Risk for VTE or Anticoagulant Administered From Day of Start of Hosp
             )
           union ["MedicationAdministration": "Direct Thrombin Inhibitor"]
           union ["MedicationAdministration": "Glycoprotein IIb/IIIa Inhibitors"] ) AnticoagulantMedication
+          where AnticoagulantMedication.status = 'complete'
           return "Observation" { id: AnticoagulantMedication.id, effective: AnticoagulantMedication.effective as dateTime}
           )
 
@@ -452,7 +456,7 @@ define "No VTE Prophylaxis Device Due to Medical Reason on Day of or Day After P
         and FHIRHelpers.ToDateTime(Coalesce(NoVTEDevice.authoredOn, NoVTEDevice.recordedOn)) during TJC."CalendarDayOfOrDayAfter"(
 			         end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
 		return QualifyingEncounterICU
-    
+
 
 define "Encounter With No VTE Prophylaxis Due to Patient Refusal":
 "No VTE Prophylaxis Due to Patient Refusal From Day of Start of Hospitalization To Day After First ICU Stay"
