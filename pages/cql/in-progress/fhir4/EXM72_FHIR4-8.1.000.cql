@@ -14,6 +14,7 @@ include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Global
 include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
 include TJC_Overall_FHIR4 version '4.0.000' called TJC
 
+//QA
 codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
 // NOTE: R4 code system URLs changed to be based on terminology.hl7.org...
@@ -24,6 +25,7 @@ codesystem "RequestIntent": 'http://terminology.hl7.org/CodeSystem/request-inten
 codesystem "MedicationRequestCategory": 'http://terminology.hl7.org/CodeSystem/medicationrequest-category'
 codesystem "ConditionClinicalStatusCodes": 'http://terminology.hl7.org/CodeSystem/condition-clinical'
 
+//QA
 valueset "Antithrombotic Therapy": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.201'
 valueset "Comfort Measures": 'https://cts.nlm.nih.gov/fhir/ValueSet/1.3.6.1.4.1.33895.1.3.0.45'
 valueset "Emergency Department Visit": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.292'
@@ -43,12 +45,12 @@ valueset "Race": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.8
 valueset "Thrombolytic (t-PA) Therapy": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.226'
 valueset "Ticagrelor Therapy": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1110.39'
 
-
-
+//QA
 code "Birth date": '21112-8' from "LOINC" display 'Birth date'
 code "Order": 'order' from "RequestIntent" display 'Order'
 code "Discharge": 'discharge' from "MedicationRequestCategory" display 'Discharge'
 
+//QA
 //NOTE: Created for condition.clinicalStatus which is codeableConcept
 code "active": 'active' from "ConditionClinicalStatusCodes"
 code "recurrence": 'recurrence' from "ConditionClinicalStatusCodes"
@@ -73,6 +75,7 @@ define "SDE Race":
 define "SDE Sex":
 	SDE."SDE Sex"
 
+//QA
 define "Initial Population":
 	TJC."Encounter with Principal Diagnosis and Age"
 
@@ -90,14 +93,16 @@ define "Initial Population":
               	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
               		where Global."LengthInDays"(FHIRHelpers.ToInterval(NonElectiveEncounter.period))<= 120
               			and NonElectiveEncounter.period ends during "Measurement Period"
-
+//QA
 define "Denominator":
 	TJC."Ischemic Stroke Encounter"
 
+//QA
   define "Ischemic Stroke Encounter":
     "Encounter with Principal Diagnosis and Age" EncounterWithAge
       where Global.PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
 
+//QA
 define "Denominator Exclusions":
 	"Encounter Less Than Two Days"
 		union "Encounter with Thrombolytic Therapy Medication or Procedures"
@@ -107,44 +112,53 @@ define "Denominator Exclusions":
 		union "Encounter With Thrombolytic Therapy Prior to Arrival"
 		union "Encounter With Thrombolytic Therapy Documented As Already Given"
 
+//QA
     define "Encounter Less Than Two Days":
     	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
     		where Global.HospitalizationWithObservationLengthofStay(IschemicStrokeEncounter)< 2
 
+//QA
         define "Encounter with Thrombolytic Therapy Medication or Procedures":
         	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
         		with "Thrombolytic Therapy Medication or Procedures" ThrombolyticTherapy
         			such that ThrombolyticTherapy.effective starts 24 hours or less before start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 
+//QA
               define "Thrombolytic Therapy Medication or Procedures":
               	"Thrombolytic Medication"
               		union ( ["Procedure": "Intravenous or Intra-arterial Thrombolytic (t-PA) Therapy"] ) ThrombolyticProcedure
               		where ThrombolyticProcedure.status = 'completed'
 
+//QA
         define "Encounter with Thrombolytic Medication":
         	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
         		with "Thrombolytic Medication" Thrombolytic
         			such that Thrombolytic.effective starts during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 
+//QA
               define "Thrombolytic Medication":
               	["MedicationAdministration": medication in "Thrombolytic (t-PA) Therapy"] ThrombolyticMedicationAdministration
               	where ThrombolyticMedicationAdministration.status = 'completed'
 
+//QA
         define "Encounter with Comfort Measures":
         	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
         		with TJC."Intervention Comfort Measures" ComfortMeasures
         			such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasures.performed as dateTime, ComfortMeasures.authoredOn))during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
 
+//QA
         define "Encounter With An INR Greater Than 3.5":
             TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
               with ["Observation": "INR"] INR
                   such that FHIRHelpers.ToDateTime(INR.issued) during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
                         and FHIRHelpers.ToQuantity(INR.value) > 3.5
 
+//QA
         define "Encounter With Thrombolytic Therapy Prior to Arrival":
         	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
         		where Global.EncounterDiagnosis(IschemicStrokeEncounter).code in "Intravenous or Intra arterial Thrombolytic (tPA) Therapy Prior to Arrival"
 
+//QA
         define "Encounter With Thrombolytic Therapy Documented As Already Given":
         	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
         		with [Condition: "Intravenous or Intra arterial Thrombolytic (tPA) Therapy Prior to Arrival"] PriorTPA
@@ -154,40 +168,51 @@ define "Denominator Exclusions":
         				//and PriorTPA.verificationStatus = 'confirmed'
                 //issue is we are comparing a codeable concept with a string, are the code values on the list? cerate alias before "Prior" to validate.
 
+//QA
 define "Numerator":
 	"Encounter with Antithrombotic Therapy"
 
+//QA - added "and Antithrombotic.status = 'completed'"
   define "Encounter with Antithrombotic Therapy":
   	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
   		with ["MedicationAdministration": medication in "Antithrombotic Therapy"] Antithrombotic
   			such that Antithrombotic.effective starts during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
+          and Antithrombotic.status = 'completed'
 
+//QA
 define "Denominator Exceptions":
 	"No Antithrombotic Ordered Day Of or Day After Hospital Arrival"
 		union "Encounter With Ticagrelor Therapy Given Day Of or Day After Hospital Arrival"
 
+//QA
     define "No Antithrombotic Ordered Day Of or Day After Hospital Arrival":
     	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
     		with "No Antithrombotic Ordered" NoAntithrombotic
     			such that FHIRHelpers.ToInterval(NoAntithrombotic.effective) during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
 
+//QA
           define "No Antithrombotic Ordered":
           	"No Antithrombotic Ordered for Medical Reason or Patient Refusal"
           		union "No Antithrombotic Administered"
 
+//QA - added "NoAntithromboticOrder.status = 'completed'"
               define "No Antithrombotic Ordered for Medical Reason or Patient Refusal":
                 ["MedicationRequest": medication in "Antithrombotic Therapy"] NoAntithromboticOrder
                   where FHIRHelpers.ToBoolean(NoAntithromboticOrder.doNotPerform) is true
                     and NoAntithromboticOrder.reasonCode in "Medical Reason"
                 			or NoAntithromboticOrder.reasonCode in "Patient Refusal"
+                        and NoAntithromboticOrder.intent = 'order'
 
+//QA
               define "No Antithrombotic Administered":
               	["MedicationAdministration": medication in "Antithrombotic Therapy"] NoAntithromboticGiven
               		where NoAntithromboticGiven.reasonCode in "Medical Reason"
               			or NoAntithromboticGiven.reasonCode in "Patient Refusal"
               				and NoAntithromboticGiven.status = 'completed'
 
+//QA - added "and Ticagrelor.status = 'completed'"
     define "Encounter With Ticagrelor Therapy Given Day Of or Day After Hospital Arrival":
     	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
     		with ["MedicationAdministration": medication in "Ticagrelor Therapy"] Ticagrelor
     			such that Ticagrelor.effective starts during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
+            and Ticagrelor.status = 'completed'
