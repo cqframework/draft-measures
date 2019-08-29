@@ -107,7 +107,7 @@ define "Denominator Exclusions":
 	TJC."Ischemic Stroke Encounters with Discharge Disposition"
 		union TJC."Comfort Measures during Hospitalization"
 
-
+//QA
     define "TJC.Ischemic Stroke Encounters with Discharge Disposition":
     ( ( "Ischemic Stroke Encounter" IschemicStrokeEncounter
         where IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharge To Acute Care Facility"
@@ -157,13 +157,14 @@ define "Denominator Exception":
 			such that "Normalize Onset"(StatinAllergy.onset) starts on or before end of FHIRHelpers.ToInterval(IschemicStrokeEncounter.period))
   union "Encounter with Max LDL less than 70 mg per dL"
 
-//QA
+//QA - added and NoStatin.intent = 'order'
       define "Statin Not Given at Discharge":
         ["MedicationRequest": medication in "Statin Grouper"] NoStatin
           where FHIRHelpers.ToBoolean(NoStatin.doNotPerform) is true
           and (singleton from NoStatin.reasonCode in "Medical Reason"
             or singleton from NoStatin.reasonCode in "Patient Refusal")
              and exists (NoStatin.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+              and NoStatin.intent = 'order'
 
 //QA
       define "Statin Allergy":
