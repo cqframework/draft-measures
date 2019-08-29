@@ -158,10 +158,11 @@ define "Denominator Exceptions":
 		with "Reason for Not Giving Anticoagulant at Discharge" NoDischargeAnticoagulant
 			such that FHIRHelpers.ToDateTime(NoDischargeAnticoagulant.authoredOn) during Encounter.period
 
-//QA
+//QA - and NoAnticoagulant.intent in {'order', 'plan'}
       define "Reason for Not Giving Anticoagulant at Discharge":
       	["MedicationRequest": medication in "Anticoagulant Therapy"] NoAnticoagulant
       		where FHIRHelpers.ToBoolean(NoAnticoagulant.doNotPerform) is true
       			and (singleton from NoAnticoagulant.reasonCode in "Medical Reason"
       				or singleton from NoAnticoagulant.reasonCode in "Patient Refusal")
       					and exists (NoAnticoagulant.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+                 and NoAnticoagulant.intent in {'order', 'plan'}
