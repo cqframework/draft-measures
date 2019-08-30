@@ -34,10 +34,10 @@ context Patient
 //Changed "ProcedureRequest" to "ServiceRequest"
 define "Intervention Comfort Measures":
 	(["ServiceRequest": "Comfort Measures"] P
-		where P.intent = 'order')
+		where P.intent in {'order', 'plan'})
 		union
-		(["Procedure": "Comfort Measures"] InterventionPerformed
-		where InterventionPerformed.status = 'completed')
+		(["Procedure": "Comfort Measures"] IntervetionPerformed
+		where IntervetionPerformed.status in {'in progress', 'complete'})
 
 define "All Stroke Encounter":
 	"Non Elective Inpatient Encounter" NonElectiveEncounter
@@ -54,15 +54,12 @@ define "Non Elective Inpatient Encounter":
 			and NonElectiveEncounter.period ends during "Measurement Period"
 
 define "Ischemic Stroke Encounters with Discharge Disposition":
-	( ( "Ischemic Stroke Encounter" IschemicStrokeEncounter
+	 "Ischemic Stroke Encounter" IschemicStrokeEncounter
 				where IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharge To Acute Care Facility"
 					or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Left Against Medical Advice"
 					or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Patient Expired"
 					or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
 					or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
-		)
-	)
-
 
 	define "Comfort Measures during Hospitalization":
 		"Ischemic Stroke Encounter" IschemicStrokeEncounter
