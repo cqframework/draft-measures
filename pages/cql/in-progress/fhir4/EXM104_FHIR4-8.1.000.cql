@@ -99,16 +99,18 @@ define "Denominator Exclusions":
 	TJC."Ischemic Stroke Encounters with Discharge Disposition"
 		union TJC."Comfort Measures during Hospitalization"
 
-//QA
-    define "TJC.Ischemic Stroke Encounters with Discharge Disposition":
-    ( ( "Ischemic Stroke Encounter" IschemicStrokeEncounter
+//QA - defined in the TJC_Overall_FHIR4, for reading purposes
+/*
+   define "TJC.Ischemic Stroke Encounters with Discharge Disposition":
+     "Ischemic Stroke Encounter" IschemicStrokeEncounter
         where IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharge To Acute Care Facility"
           or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Left Against Medical Advice"
           or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Patient Expired"
           or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
           or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
-          )
-    )
+
+
+
 
 //QA
     define "Comfort Measures during Hospitalization":
@@ -119,11 +121,11 @@ define "Denominator Exclusions":
 //QA
           define "Intervention Comfort Measures":
           	(["ServiceRequest": "Comfort Measures"] P
-          		where P.intent = 'order')
+          		where P.intent in {'order', 'plan'})
           		union
           		(["Procedure": "Comfort Measures"] IntervetionPerformed
-          		where IntervetionPerformed.status = 'in progress')
-              //Change to "in progress", add in progress. Feedback from Peter regarding clinical intent from FHIR Collaboration call.
+          		where IntervetionPerformed.status in {'in progress', 'complete'})
+*/
 
 //QA
 define "Numerator":
@@ -148,14 +150,13 @@ define "Denominator Exceptions":
     		with "Antithrombotic Not Given at Discharge" NoDischargeAntithrombotic
     			such that FHIRHelpers.ToDateTime(NoDischargeAntithrombotic.authoredOn) during IschemicStrokeEncounter.period
 
-//QA - added "and NoAntithromboticDischarge.intent in {'plan', 'order'}"
+//QA - removed singleton
           define "Antithrombotic Not Given at Discharge":
           	["MedicationRequest": medication in "Antithrombotic Therapy"] NoAntithromboticDischarge
               where FHIRHelpers.ToBoolean(NoAntithromboticDischarge.doNotPerform) is true
-          			and (singleton from NoAntithromboticDischarge.reasonCode in "Medical Reason"
-          				or singleton from NoAntithromboticDischarge.reasonCode in "Patient Refusal")
+          			and (NoAntithromboticDischarge.reasonCode in "Medical Reason"
+          				or NoAntithromboticDischarge.reasonCode in "Patient Refusal")
                     and exists (NoAntithromboticDischarge.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
-                      and NoAntithromboticDischarge.intent in {'plan', 'order'}
 
           // NOTE: On the assumption that status of not-taken is the closest to what the measure is looking for, this is the expression:
           // TODO: Request discussion w/ Pharmacy regarding how medications not prescribed at discharged would be documented
