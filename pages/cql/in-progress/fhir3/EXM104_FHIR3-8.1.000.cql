@@ -44,7 +44,7 @@ valueset "Ticagrelor Therapy": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1
 code "Birth date": '21112-8' from "LOINC" display 'Birth date'
 
 // NOTE: This is an R4 code
-code "Discharge": 'discharge' from "MedicationRequestCategory"
+code "Discharge": 'discharge' from "MedicationRequestCategory" display 'Discharge'
 
 parameter "Measurement Period" Interval<DateTime>
 
@@ -120,7 +120,7 @@ define "Numerator":
 
       define "Antithrombotic Therapy at Discharge":
       	["MedicationRequest": "Antithrombotic Therapy"] Antithrombotic
-      	  where exists (Antithrombotic.category C where FHIRHelpers.ToConcept(C) ~ 'discharge')
+      	  where (Antithrombotic.medication as CodeableConcept) in "Antithrombotic Therapy"
       	    and Antithrombotic.intent = 'order'
 
 define "Denominator Exceptions":
@@ -168,5 +168,5 @@ define "Denominator Exceptions":
 
             define "Ticagrelor Therapy at Discharge":
               ["MedicationRequest": medication in TJC."Ticagrelor Therapy"] Ticagrelor
-                where exists (Ticagrelor.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+                where (Ticagrelor.medication as CodeableConcept) in TJC."Ticagrelor Therapy"
                   and Ticagrelor.intent = 'order'

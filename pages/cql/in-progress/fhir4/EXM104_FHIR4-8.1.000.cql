@@ -99,26 +99,18 @@ define "Denominator Exclusions":
 	TJC."Ischemic Stroke Encounters with Discharge Disposition"
 		union TJC."Comfort Measures during Hospitalization"
 
-//QA - wrong definition below, so why don't we see an error in "Denominator Exclusions"? Because it is already referenced in the TJC library? It is not, so why aren't we seeing an error?
-/*    define "Ischemic Stroke Encounters with Discharge Status":
-    	("Ischemic Stroke Encounter" IschemicStrokeEncounter
-    		where IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharge To Acute Care Facility"
-    			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Left Against Medical Advice"
-    			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Patient Expired"
-    			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
-    			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
-    	)
-*/
-//QA
-    define "TJC.Ischemic Stroke Encounters with Discharge Disposition":
-    ( ( "Ischemic Stroke Encounter" IschemicStrokeEncounter
+//QA - defined in the TJC_Overall_FHIR4, for reading purposes
+/*
+   define "TJC.Ischemic Stroke Encounters with Discharge Disposition":
+     "Ischemic Stroke Encounter" IschemicStrokeEncounter
         where IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharge To Acute Care Facility"
           or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Left Against Medical Advice"
           or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Patient Expired"
           or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
           or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
-          )
-    )
+
+
+
 
 //QA
     define "Comfort Measures during Hospitalization":
@@ -129,11 +121,11 @@ define "Denominator Exclusions":
 //QA
           define "Intervention Comfort Measures":
           	(["ServiceRequest": "Comfort Measures"] P
-          		where P.intent = 'order')
+          		where P.intent in {'order', 'plan'})
           		union
           		(["Procedure": "Comfort Measures"] IntervetionPerformed
-          		where IntervetionPerformed.status = 'in progress')
-              //Change to "in progress", add in progress. Feedback from Peter regarding clinical intent from FHIR Collaboration call.
+          		where IntervetionPerformed.status in {'in progress', 'complete'})
+*/
 
 //QA
 define "Numerator":
@@ -141,26 +133,29 @@ define "Numerator":
 		with "Antithrombotic Therapy at Discharge" DischargeAntithrombotic
 			such that FHIRHelpers.ToDateTime(DischargeAntithrombotic.authoredOn) during IschemicStrokeEncounter.period
 
+//QA
       define "Antithrombotic Therapy at Discharge":
       	["MedicationRequest": medication in "Antithrombotic Therapy"] Antithrombotic
       	  where exists (Antithrombotic.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
       	    and Antithrombotic.intent in {'plan', 'order'}
-            //plan
 
+//QA
 define "Denominator Exceptions":
 	"Encounter With No Antithrombotic At Discharge"
 		union "Encounter With Ticagrelor at Discharge"
 
+//QA
     define "Encounter With No Antithrombotic At Discharge":
     	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
     		with "Antithrombotic Not Given at Discharge" NoDischargeAntithrombotic
     			such that FHIRHelpers.ToDateTime(NoDischargeAntithrombotic.authoredOn) during IschemicStrokeEncounter.period
 
+//QA - removed singleton
           define "Antithrombotic Not Given at Discharge":
           	["MedicationRequest": medication in "Antithrombotic Therapy"] NoAntithromboticDischarge
               where FHIRHelpers.ToBoolean(NoAntithromboticDischarge.doNotPerform) is true
-          			and (singleton from NoAntithromboticDischarge.reasonCode in "Medical Reason"
-          				or singleton from NoAntithromboticDischarge.reasonCode in "Patient Refusal")
+          			and (NoAntithromboticDischarge.reasonCode in "Medical Reason"
+          				or NoAntithromboticDischarge.reasonCode in "Patient Refusal")
                     and exists (NoAntithromboticDischarge.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
 
           // NOTE: On the assumption that status of not-taken is the closest to what the measure is looking for, this is the expression:
@@ -176,6 +171,7 @@ define "Denominator Exceptions":
           //  ["Observation": "Medication Not Given At Discharge"] O
           //	  where O.value in "Antithrombotic Therapy"
 
+//QA
     define "Encounter With Ticagrelor at Discharge":
       TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
         with "Ticagrelor Therapy at Discharge" DischargeTicagrelor
@@ -187,6 +183,7 @@ define "Denominator Exceptions":
                 such that Ticagrelor.effective starts during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)*/
           //Looking for Ticagrelor as discharge medication, include a corrected defintion in 2021 CQL based measure
 
+//QA
           define "Ticagrelor Therapy at Discharge":
             ["MedicationRequest": medication in TJC."Ticagrelor Therapy"] Ticagrelor
               where exists (Ticagrelor.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")

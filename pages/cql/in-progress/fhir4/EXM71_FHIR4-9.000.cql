@@ -73,6 +73,7 @@ define "Initial Population":
 	TJC."Encounter with Principal Diagnosis and Age"
 
 //QA
+/*
   define "Encounter with Principal Diagnosis and Age":
     "All Stroke Encounter" AllStrokeEncounter
     	with ["Patient"] BirthDate
@@ -89,6 +90,7 @@ define "Initial Population":
               	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
               		where Global."LengthInDays"(FHIRHelpers.ToInterval(NonElectiveEncounter.period))<= 120
               			and NonElectiveEncounter.period ends during "Measurement Period"
+*/
 
 //QA
 define "Denominator":
@@ -126,20 +128,21 @@ define "Denominator Exclusions":
 				or Encounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
 				or Encounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
 	)
-		union "Comfort Measures during Hospitalization"
+		union "AFIB Encounters with Comfort Measures during Hospitalization"
+
+//QA - renamed definition to avoid issue with confusing other Comfort Meausure definitions that are associated with Ischemic Stroke Encounters
+    define "AFIB Encounters with Comfort Measures during Hospitalization":
+    	"Denominator" Encounter
+       	with "Intervention Comfort Measures" ComfortMeasure
+        	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."HospitalizationWithObservation"(Encounter)
 
 //QA
-    define "Comfort Measures during Hospitalization":
-    	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-       	with "Intervention Comfort Measures" ComfortMeasure
-        	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."Hospitalization"(IschemicStrokeEncounter)
-//QA
-    define "Intervention Comfort Measures":
-    		(["ServiceRequest": "Comfort Measures"] P
-    				where P.intent = 'order')
-    				union
-    				(["Procedure": "Comfort Measures"] IntervetionPerformed
-    				where IntervetionPerformed.status = 'completed')
+        define "Intervention Comfort Measures":
+        	(["ServiceRequest": "Comfort Measures"] P
+        		where P.intent in {'order', 'plan'})
+        		union
+        		(["Procedure": "Comfort Measures"] IntervetionPerformed
+        		where IntervetionPerformed.status in {'in progress', 'complete'})
 
 //QA
 define "Numerator":
@@ -157,10 +160,10 @@ define "Denominator Exceptions":
 		with "Reason for Not Giving Anticoagulant at Discharge" NoDischargeAnticoagulant
 			such that FHIRHelpers.ToDateTime(NoDischargeAnticoagulant.authoredOn) during Encounter.period
 
-//QA
+//QA - removed singleton
       define "Reason for Not Giving Anticoagulant at Discharge":
       	["MedicationRequest": medication in "Anticoagulant Therapy"] NoAnticoagulant
       		where FHIRHelpers.ToBoolean(NoAnticoagulant.doNotPerform) is true
-      			and (singleton from NoAnticoagulant.reasonCode in "Medical Reason"
-      				or singleton from NoAnticoagulant.reasonCode in "Patient Refusal")
+      			and (NoAnticoagulant.reasonCode in "Medical Reason"
+      				or NoAnticoagulant.reasonCode in "Patient Refusal")
       					and exists (NoAnticoagulant.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
