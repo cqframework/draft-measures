@@ -102,22 +102,22 @@ define "Denominator":
     define "Encounter with Atrial Ablation Procedure":
     	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
     		with ["Procedure": "Atrial Ablation"] AtrialAblation
-    			such that AtrialAblation.performed as Period starts before start of FHIRHelpers.ToInterval(IschemicStrokeEncounter.period)
+    			such that AtrialAblation.performed as Period starts before start of IschemicStrokeEncounter.period
     				and AtrialAblation.status = 'completed'
 
 //QA
             define "History of Atrial Fibrillation or Flutter":
             	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
             		with ["Condition": code in "Atrial Fibrillation/Flutter"] AtrialFibrillationFlutter
-            			such that FHIRHelpers.ToDateTime(AtrialFibrillationFlutter.onset as dateTime) on or before
-            			end of FHIRHelpers.ToInterval(IschemicStrokeEncounter.period)
+            			such that AtrialFibrillationFlutter.onset as dateTime on or before
+            			end of IschemicStrokeEncounter.period
 
 //QA
             define "Current Diagnosis Atrial Fibrillation or Flutter":
             	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
             	 with ["Condition": code in "Atrial Fibrillation/Flutter"] AtrialFibrillationFlutter
                 such that FHIRHelpers.ToConcept(AtrialFibrillationFlutter.clinicalStatus) in {"active", "recurrence", "relapse"}
-                  and FHIRHelpers.ToDateTime(AtrialFibrillationFlutter.onset as dateTime) on or before end of IschemicStrokeEncounter.period
+                  and AtrialFibrillationFlutter.onset as dateTime on or before end of IschemicStrokeEncounter.period
 
 //QA: added the missing union "Comfort Measures during Hospitalization".
 define "Denominator Exclusions":
@@ -134,7 +134,7 @@ define "Denominator Exclusions":
     define "AFIB Encounters with Comfort Measures during Hospitalization":
     	"Denominator" Encounter
        	with "Intervention Comfort Measures" ComfortMeasure
-        	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."HospitalizationWithObservation"(Encounter)
+        	such that Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn) during Global."HospitalizationWithObservation"(Encounter)
 
 //QA
         define "Intervention Comfort Measures":
@@ -148,7 +148,7 @@ define "Denominator Exclusions":
 define "Numerator":
 	"Denominator" Encounter
 		with "Anticoagulant Therapy at Discharge" DischargeAnticoagulant
-			such that FHIRHelpers.ToDateTime(DischargeAnticoagulant.authoredOn) during Encounter.period
+			such that DischargeAnticoagulant.authoredOn during Encounter.period
 
       define "Anticoagulant Therapy at Discharge":
       	["MedicationRequest": medication in "Anticoagulant Therapy"] AnticoagulantDischarge
@@ -158,12 +158,12 @@ define "Numerator":
 define "Denominator Exceptions":
 	"Denominator" Encounter
 		with "Reason for Not Giving Anticoagulant at Discharge" NoDischargeAnticoagulant
-			such that FHIRHelpers.ToDateTime(NoDischargeAnticoagulant.authoredOn) during Encounter.period
+			such that NoDischargeAnticoagulant.authoredOn during Encounter.period
 
 //QA - removed singleton
       define "Reason for Not Giving Anticoagulant at Discharge":
       	["MedicationRequest": medication in "Anticoagulant Therapy"] NoAnticoagulant
-      		where FHIRHelpers.ToBoolean(NoAnticoagulant.doNotPerform) is true
+      		where NoAnticoagulant.doNotPerform is true
       			and (NoAnticoagulant.reasonCode in "Medical Reason"
       				or NoAnticoagulant.reasonCode in "Patient Refusal")
       					and exists (NoAnticoagulant.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
