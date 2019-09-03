@@ -76,12 +76,12 @@ define "SDE Sex":
 
 //QA
 define "Initial Population":
-	"Encounter with Principal Diagnosis and Age"
+	TJC."Encounter with Principal Diagnosis and Age"
 
     define "Encounter with Principal Diagnosis and Age":
       "All Stroke Encounter" AllStrokeEncounter
       	with ["Patient"] BirthDate
-      		such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of FHIRHelpers.ToInterval(AllStrokeEncounter.period)) >= 18
+      		such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of AllStrokeEncounter.period) >= 18
 
           define "All Stroke Encounter":
           	"Non Elective Inpatient Encounter" NonElectiveEncounter
@@ -90,7 +90,7 @@ define "Initial Population":
 
                 define "Non Elective Inpatient Encounter":
                 	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
-                		where Global."LengthInDays"(FHIRHelpers.ToInterval(NonElectiveEncounter.period))<= 120
+                		where Global."LengthInDays"(NonElectiveEncounter.period)<= 120
                 			and NonElectiveEncounter.period ends during "Measurement Period"
 
 //QA
@@ -122,22 +122,21 @@ define "Denominator Exclusions":
     define "Comfort Measures during Hospitalization":
     	"Ischemic Stroke Encounter" IschemicStrokeEncounter
        	with "Intervention Comfort Measures" ComfortMeasure
-        	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
+        	such that Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn) during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 
 //QA
           define "Intervention Comfort Measures":
           	(["ServiceRequest": "Comfort Measures"] P
-          		where P.intent = 'order')
+          		where P.intent in {'order', 'plan'})
           		union
           		(["Procedure": "Comfort Measures"] IntervetionPerformed
-          		where IntervetionPerformed.status = 'completed')
-              //Change to "in progress", add in progress
+          		where IntervetionPerformed.status in {'in progress', 'complete'})
 
 //QA
 define "Numerator":
 	"Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Statin at Discharge" DischargeStatin
-			such that FHIRHelpers.ToDateTime(DischargeStatin.authoredOn) during (IschemicStrokeEncounter.period)
+			such that DischargeStatin.authoredOn during (IschemicStrokeEncounter.period)
 
 //QA
       define "Statin at Discharge":
@@ -149,20 +148,20 @@ define "Numerator":
 define "Denominator Exception":
 	("Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Statin Not Given at Discharge" NoDischargeStatin
-			such that FHIRHelpers.ToDateTime(NoDischargeStatin.authoredOn) during IschemicStrokeEncounter.period
+			such that NoDischargeStatin.authoredOn during IschemicStrokeEncounter.period
 	)
 	union
 	("Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Statin Allergy" StatinAllergy
-			such that "Normalize Onset"(StatinAllergy.onset) starts on or before end of FHIRHelpers.ToInterval(IschemicStrokeEncounter.period))
+			such that "Normalize Onset"(StatinAllergy.onset) starts on or before end of IschemicStrokeEncounter.period)
   union "Encounter with Max LDL less than 70 mg per dL"
 
 //QA - added and NoStatin.intent = 'order'
       define "Statin Not Given at Discharge":
         ["MedicationRequest": medication in "Statin Grouper"] NoStatin
           where FHIRHelpers.ToBoolean(NoStatin.doNotPerform) is true
-          and (singleton from NoStatin.reasonCode in "Medical Reason"
-            or singleton from NoStatin.reasonCode in "Patient Refusal")
+          and (NoStatin.reasonCode in "Medical Reason"
+            or NoStatin.reasonCode in "Patient Refusal")
              and exists (NoStatin.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
               and NoStatin.intent = 'order'
 
@@ -174,7 +173,7 @@ define "Denominator Exception":
       define "Encounter with Max LDL less than 70 mg per dL":
       	"Ischemic Stroke Encounter" IschemicStrokeEncounter
       		where Max(["Observation": "LDL-c"] Ldl
-      				where FHIRHelpers.ToDateTime(Ldl.issued) during Interval[FHIRHelpers.ToDateTime(IschemicStrokeEncounter.period.start) - 30 days, FHIRHelpers.ToDateTime(IschemicStrokeEncounter.period.end)]
+      				where (Ldl.issued) during Interval[(IschemicStrokeEncounter.period.start) - 30 days, (IschemicStrokeEncounter.period.end)]
       				return (Ldl.value as Quantity)
       		) < 70 'mg/dL'
 
