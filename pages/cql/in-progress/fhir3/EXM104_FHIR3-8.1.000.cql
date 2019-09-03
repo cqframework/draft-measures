@@ -77,7 +77,7 @@ define "Initial Population":
 
             define "Non Elective Inpatient Encounter":
             	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
-            		where Global."LengthInDays"(FHIRHelpers.ToInterval(NonElectiveEncounter.period))<= 120
+            		where Global."LengthInDays"(NonElectiveEncounter.period)<= 120
             			and NonElectiveEncounter.period ends during "Measurement Period"
 
 define "Denominator":
@@ -104,7 +104,7 @@ define "Denominator Exclusions":
     define "Comfort Measures during Hospitalization":
     	"Ischemic Stroke Encounter" IschemicStrokeEncounter
     		with "Intervention Comfort Measures" ComfortMeasure
-    			such that Coalesce(start of FHIRHelpers.ToInterval(ComfortMeasure.performed), ComfortMeasure.authoredOn)during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
+    			such that Coalesce(start of ComfortMeasure.performed, ComfortMeasure.authoredOn)during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 
           define "Intervention Comfort Measures":
           	(["ProcedureRequest": "Comfort Measures"] P
@@ -164,7 +164,7 @@ define "Denominator Exceptions":
       define "Encounter With Ticagrelor at Discharge":
         TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
           with "Ticagrelor Therapy at Discharge" DischargeTicagrelor
-            such that FHIRHelpers.ToDateTime(DischargeTicagrelor.authoredOn) during IschemicStrokeEncounter.period
+            such that DischargeTicagrelor.authoredOn during IschemicStrokeEncounter.period
 
             define "Ticagrelor Therapy at Discharge":
               ["MedicationRequest": medication in TJC."Ticagrelor Therapy"] Ticagrelor
