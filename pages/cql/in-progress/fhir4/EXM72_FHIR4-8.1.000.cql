@@ -148,14 +148,14 @@ define "Denominator Exclusions":
         define "Encounter with Comfort Measures":
         	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
         		with TJC."Intervention Comfort Measures" ComfortMeasures
-        			such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasures.performed as dateTime, ComfortMeasures.authoredOn))during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
+        			such that Coalesce(ComfortMeasures.performed as dateTime, ComfortMeasures.authoredOn) during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
 
 //QA
         define "Encounter With An INR Greater Than 3.5":
             TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
               with ["Observation": "INR"] INR
                   such that INR.issued during TJC."CalendarDayOfOrDayAfter"(start of Global."HospitalizationWithObservation"(IschemicStrokeEncounter))
-                        and FHIRHelpers.ToQuantity(INR.value) > 3.5
+                        and INR.value > 3.5
 
 //QA
         define "Encounter With Thrombolytic Therapy Prior to Arrival":
@@ -202,7 +202,7 @@ define "Denominator Exceptions":
 //QA
               define "No Antithrombotic Ordered for Medical Reason or Patient Refusal":
                 ["MedicationRequest": medication in "Antithrombotic Therapy"] NoAntithromboticOrder
-                  where FHIRHelpers.ToBoolean(NoAntithromboticOrder.doNotPerform) is true
+                  where NoAntithromboticOrder.doNotPerform is true
                     and NoAntithromboticOrder.reasonCode in "Medical Reason"
                 			or NoAntithromboticOrder.reasonCode in "Patient Refusal"
 
