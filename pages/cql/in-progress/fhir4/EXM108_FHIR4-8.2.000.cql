@@ -304,7 +304,7 @@ define "Low Risk for VTE or Anticoagulant Administered From Day of Start of Hosp
   define "Is In Low Risk for VTE or On Anticoagulant":
  	  ( ["Observation": "Risk for venous thromboembolism"] VTERiskAssessment
  			  where VTERiskAssessment.value in "Low Risk"
-          and VTERiskAssessment.status in {'final','amended', 'corrected'} //Note: due to Mapping table as constrain. Needed?
+          and VTERiskAssessment.status in {'final','amended', 'corrected'}
  	  )
     union ( ["Observation": "INR"] INRLabTest
           where INRLabTest.value as Quantity > 3.0
@@ -317,8 +317,7 @@ define "Low Risk for VTE or Anticoagulant Administered From Day of Start of Hosp
            union ["MedicationAdministration": "Direct Thrombin Inhibitor"]
            union ["MedicationAdministration": "Glycoprotein IIb/IIIa Inhibitors"] ) AnticoagulantMedication
            where AnticoagulantMedication.status = 'complete'
-           return //"Observation" { id: AnticoagulantMedication.id, effective: start of FHIRHelpers.ToInterval(AnticoagulantMedication.effective as Period)}
-                  "Observation" { id: AnticoagulantMedication.id, effective: AnticoagulantMedication.effective as dateTime}
+           return "Observation" { id: AnticoagulantMedication.id, effective: (AnticoagulantMedication.effective as Period).start}
         )
 
 define "Low Risk for VTE or Anticoagulant Administered on Day of or Day After Procedure":
