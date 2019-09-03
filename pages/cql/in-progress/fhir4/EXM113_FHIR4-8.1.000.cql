@@ -11,7 +11,7 @@ codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
 codesystem "ObservationCategoryCodes":  'http://terminology.hl7.org/CodeSystem/observation-category'
 codesystem "ConditionClinicalStatusCodes": 'http://terminology.hl7.org/CodeSystem/condition-clinical'
-
+//codesystem "MedicationAdministrationStatusCodes":  'http://terminology.hl7.org/codesystem-medication-admin-status.html
 
 valueset "Artificial Rupture of Membranes": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1045.57'
 valueset "Cesarean Birth":  'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.282'
@@ -216,8 +216,7 @@ define "History of Uterine Surgery Procedure":
     union ["Procedure": "Metroplasty"]
     union ["Procedure": "Uterine Horn"]
 //**do these conditions need to be constrained to clinical status, verificationstatus, category?  verificationstatus = confirmed seems to be only relevan choice
-//clinical status , don't qualify b/c h/o.  Vendors report verificationstatus not populated.
-
+//clinical status , don't qualify b/c h/o.
 //NOTE: Feedback at Digitial Quality Summit 2019 indicates verificationStatus may be difficult for implementers to retrieve
   //      both condition.clinicalStatus and condition.verificationStatus = 'confirmed'
 //define "History of Uterine Surgery Diagnosis":
@@ -252,7 +251,6 @@ define "Medical Induction Medication Administered While Not In Labor":
   "Medical Induction Medication" InductionMedication,
   "Is In Labor" Labor
     where Labor.effective as dateTime during DeliveryEncounter.period
-      //**why don't we need as dateTime after Labor.effective here?
       and InductionMedication.effective 24 hours or less before Labor.effective as dateTime
     return DeliveryEncounter
 
@@ -261,8 +259,9 @@ define "Medical Induction Medication Administered While Not In Labor":
 //  ["Medication, Administered": "Oxytocin"]
 //    union ["Medication, Administered": "Dinoprostone"]
 define "Medical Induction Medication":
-  ["MedicationAdministration": "Oxytocin"]
-    union ["MedicationAdministration": "Dinoprostone"]
+  (["MedicationAdministration": "Oxytocin"]
+    union ["MedicationAdministration": "Dinoprostone"])InductionMedication
+    where InductionMedication.status = 'completed'
 
 //define "Medical Induction Procedure Performed While Not In Labor":
 //                from
@@ -285,5 +284,6 @@ define "Medical Induction Procedure Performed While Not In Labor":
 //   ["Procedure, Performed": "Artificial Rupture of Membranes"]
 //      union ["Procedure, Performed": "Medical Induction of Labor"]
 define "Medical Induction Procedure":
-        ["Procedure": "Artificial Rupture of Membranes"]
-            union ["Procedure": "Medical Induction of Labor"]
+        (["Procedure": "Artificial Rupture of Membranes"]
+            union ["Procedure": "Medical Induction of Labor"])InductionProcedure
+            where InductionProcedure.status = 'completed'
