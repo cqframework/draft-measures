@@ -10,7 +10,8 @@ include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
 codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
 codesystem "ObservationCategoryCodes":  'http://terminology.hl7.org/CodeSystem/observation-category'
-
+codesystem "ConditionClinicalStatusCodes": 'http://terminology.hl7.org/CodeSystem/condition-clinical'
+//codesystem "MedicationAdministrationStatusCodes":  'http://terminology.hl7.org/codesystem-medication-admin-status.html
 
 valueset "Artificial Rupture of Membranes": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1045.57'
 valueset "Cesarean Birth":  'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.282'
@@ -37,6 +38,9 @@ valueset "Uterine Window": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113
 code "Birth date": '21112-8' from "LOINC" display 'Birth date'
 code "exam": 'exam' from "ObservationCategoryCodes" 
 code "procedure": 'procedure' from "ObservationCategoryCodes"
+code "active": 'active' from "ConditionClinicalStatusCodes"
+code "recurrence": 'recurrence' from "ConditionClinicalStatusCodes"
+code "relapse": 'relapse' from "ConditionClinicalStatusCodes"
 
 context Patient
 
@@ -57,7 +61,7 @@ define "SDE Sex":
 define "Initial Population":
   "Delivery Encounter with Age Range"
 
-  //**Should Procedure Category = Surgical procedure be used?
+  //**Should Procedure.category = Surgical procedure be used?  Not required.
   //define "Delivery Encounter with Age Range":
   //  "Encounter with Age Range" EncounterWithQualifyingAge
   //    with ["Procedure, Performed": "Delivery Procedures"] DeliveryProcedure
@@ -72,8 +76,8 @@ define "Delivery Encounter with Age Range":
 //define "Encounter with Age Range":
 //  Global."Inpatient Encounter" EncounterInpatient
 //    with ["Patient Characteristic Birthdate": "Birth date"] BirthDate
-//      such that Global."CalendarAgeInYearsAt"(BirthDate.birthDatetime, start of EncounterInpatient.relevantPeriod)>= 8
-//        and Global."CalendarAgeInYearsAt"(BirthDate.birthDatetime, start of EncounterInpatient.relevantPeriod)< 65
+//      such that Global."CalendarAgeInYearsAt"(BirthDate.birthDatetime, start of EncounterInpatient.***relevantPeriod)>= 8
+//        and Global."CalendarAgeInYearsAt"(BirthDate.birthDatetime, start of EncounterInpatient.***relevantPeriod)< 65
 define "Encounter with Age Range":
   Global."Inpatient Encounter" EncounterInpatient
     with ["Patient"] BirthDate
@@ -91,7 +95,7 @@ define "Denominator":
 //    "Delivery Encounter with Age Range" QualifyingEncounter,
 //    "Last Gestational Age Prior To Or At the Same Time of Delivery" GestationalAge,
 //    "Delivery Time" Delivery
-//         where Delivery.authorDatetime during QualifyingEncounter.relevantPeriod
+//         where Delivery.***authorDatetime during QualifyingEncounter.relevantPeriod
 //             and GestationalAge.result >= 37 weeks
 //             and GestationalAge.result < 39 weeks
 //         return QualifyingEncounter
@@ -100,15 +104,15 @@ define "Delivery Encounter Near Term":
     "Delivery Encounter with Age Range" QualifyingEncounter,
     "Last Gestational Age Prior To Or At the Same Time of Delivery" GestationalAge,
     "Delivery Time" Delivery
-      where FHIRHelpers.ToDateTime(Delivery.effective as dateTime) during QualifyingEncounter.period
-          and FHIRHelpers.ToInteger(GestationalAge.value) >= 37 weeks
-          and FHIRHelpers.ToInteger(GestationalAge.value) < 39 weeks
+      where Delivery.effective as dateTime during QualifyingEncounter.period
+          and GestationalAge.value >= 37 weeks
+          and GestationalAge.value < 39 weeks
       return QualifyingEncounter
 
 //define "Last Gestational Age Prior To Or At the Same Time of Delivery":
-//   Last(["Assessment, Performed": "Estimated Gestational Age at Delivery"] LastGestational
+//   Last([***"Assessment, Performed": "Estimated Gestational Age at Delivery"] LastGestational
 //       with "Delivery Time" Delivery
-//             such that LastGestational.authorDatetime 1 day or less before or on Delivery.authorDatetime
+//             such that LastGestational.***authorDatetime 1 day or less before or on Delivery.authorDatetime
 //             sort by authorDatetime
 //            )
 
@@ -118,12 +122,12 @@ define "Last Gestational Age Prior To Or At the Same Time of Delivery":
       with "Delivery Time" Delivery
         such that exists(LastGestational.category categories where FHIRHelpers.ToConcept(categories) ~ "exam")
         and LastGestational.status = 'final'
-        and FHIRHelpers.ToDateTime(LastGestational.effective as dateTime) 1 day or less before or on FHIRHelpers.ToDateTime(Delivery.effective as dateTime)
-          sort by FHIRHelpers.ToDateTime(effective as dateTime)
+        and LastGestational.effective as dateTime 1 day or less before or on Delivery.effective as dateTime
+          sort by effective
   )
 
 
-//**Is procedure the correct category for Delivery Time?  Exam does not seem to fit.
+//**Is procedure the correct category for Delivery Time?  Exam does not seem to fit.  No feedback on Collaboration call
 //define "Delivery Time":
 //              ["Assessment, Performed": "Time of Delivery"]
 define "Delivery Time":
@@ -138,8 +142,8 @@ define "Denominator Exclusions":
 
 //define "Delivery Encounter with Justifying Conditions":
 //         ( "Delivery Encounter Near Term" DeliveryEncounter
-//            with ["Diagnosis": "Conditions Possibly Justifying Elective Delivery Prior to 39 Weeks Gestation"] DiagnosisElectiveDelivery
-//            such that DiagnosisElectiveDelivery.prevalencePeriod overlaps DeliveryEncounter.relevantPeriod
+//            with [***"Diagnosis": "Conditions Possibly Justifying Elective Delivery Prior to 39 Weeks Gestation"] DiagnosisElectiveDelivery
+//            such that DiagnosisElectiveDelivery.***prevalencePeriod overlaps DeliveryEncounter.relevantPeriod
 //             )
 //            union ( "Delivery Encounter Near Term" DeliveryEncounter
 //            where exists ( DeliveryEncounter.diagnoses EncounterDiagnoses
@@ -176,22 +180,24 @@ define "Delivery Encounter With Cesarean Birth Without Labor or History of Uteri
       with "Cesarean Birth While Not in Labor" CSectionNoLabor
         such that CSectionNoLabor.performed as Period starts during DeliveryEncounter.period
       without "History of Uterine Surgery Procedure" PriorUterineProcedure
-        such that PriorUterineProcedure.performed as Period starts before start of DeliveryEncounter.period
+        such that PriorUterineProcedure.status = 'completed'
+        and PriorUterineProcedure.performed as Period starts before start of DeliveryEncounter.period
       without "History of Uterine Surgery Diagnosis" PriorUterineDiagnosis
-        such that PriorUterineDiagnosis.onset as Period starts before start of DeliveryEncounter.period
+        such that FHIRHelpers.ToConcept(PriorUterineDiagnosis.clinicalStatus) is not null
+        and PriorUterineDiagnosis.onset as Period starts before start of DeliveryEncounter.period
 
 //define "Cesarean Birth While Not in Labor":
-//    ["Procedure, Performed": "Cesarean Birth"] CSection
+//    [***"Procedure, Performed": "Cesarean Birth"] CSection
 //       without "Is In Labor" Labor
-//       such that Labor.authorDatetime 24 hours or less before start of CSection.relevantPeriod
+//       such that ***Labor.authorDatetime 24 hours or less before start of CSection.relevantPeriod
 define "Cesarean Birth While Not in Labor":
   ["Procedure": "Cesarean Birth"] Csection
   without "Is In Labor" Labor
     such that Csection.status = 'completed' and
-    FHIRHelpers.ToDateTime(Labor.effective as dateTime) 24 hours or less before FHIRHelpers.ToDateTime(Csection.performed as dateTime)
+    Labor.effective as dateTime 24 hours or less before Csection.performed as dateTime
 
 //define "Is In Labor":
-//  ["Assessment, Performed": "Labor"]
+//  [***"Assessment, Performed": "Labor"]
 define "Is In Labor":
   ["Observation": "Labor"] Labor
   where Labor.status = 'final'
@@ -209,8 +215,10 @@ define "History of Uterine Surgery Procedure":
     union ["Procedure": "Transabdominal Cerclage"]
     union ["Procedure": "Metroplasty"]
     union ["Procedure": "Uterine Horn"]
-
 //**do these conditions need to be constrained to clinical status, verificationstatus, category?  verificationstatus = confirmed seems to be only relevan choice
+//clinical status , don't qualify b/c h/o.
+//NOTE: Feedback at Digitial Quality Summit 2019 indicates verificationStatus may be difficult for implementers to retrieve
+  //      both condition.clinicalStatus and condition.verificationStatus = 'confirmed'
 //define "History of Uterine Surgery Diagnosis":
 //  ["Diagnosis": "Perforation of Uterus"]
 //    union ["Diagnosis": "Uterine Window"]
@@ -242,39 +250,40 @@ define "Medical Induction Medication Administered While Not In Labor":
   "Delivery Encounter Near Term" DeliveryEncounter,
   "Medical Induction Medication" InductionMedication,
   "Is In Labor" Labor
-    where FHIRHelpers.ToDateTime(Labor.effective as dateTime) during DeliveryEncounter.period
-      //**why don't we need as dateTime after Labor.effective here?
-      and InductionMedication.effective 24 hours or less before FHIRHelpers.ToInterval(Labor.effective)
+    where Labor.effective as dateTime during DeliveryEncounter.period
+      and InductionMedication.effective 24 hours or less before Labor.effective as dateTime
     return DeliveryEncounter
 
-//**Need additional constraints?  status=in-progress or completed.
+//**Need additional constraints?  status=in-progress or completed.  Yes.
 //define "Medical Induction Medication":
 //  ["Medication, Administered": "Oxytocin"]
 //    union ["Medication, Administered": "Dinoprostone"]
 define "Medical Induction Medication":
-  ["MedicationAdministration": "Oxytocin"]
-    union ["MedicationAdministration": "Dinoprostone"]
+  (["MedicationAdministration": "Oxytocin"]
+    union ["MedicationAdministration": "Dinoprostone"])InductionMedication
+    where InductionMedication.status = 'completed'
 
 //define "Medical Induction Procedure Performed While Not In Labor":
 //                from
 //                  "Delivery Encounter Near Term" DeliveryEncounter,
 //                    "Medical Induction Procedure" InductionProcedure,
 //                    "Is In Labor" Labor
-//                    where Labor.authorDatetime during DeliveryEncounter.relevantPeriod
-//                      and InductionProcedure.relevantPeriod 24 hours or less before Labor.authorDatetime
+//                    where ***Labor.authorDatetime during DeliveryEncounter.relevantPeriod
+//                      and ***InductionProcedure.relevantPeriod 24 hours or less before Labor.authorDatetime
 //                    return DeliveryEncounter
 define "Medical Induction Procedure Performed While Not In Labor":
   from
     "Delivery Encounter Near Term" DeliveryEncounter,
     "Medical Induction Procedure" InductionProcedure,
     "Is In Labor" Labor
-      where FHIRHelpers.ToDateTime(Labor.effective as dateTime) during DeliveryEncounter.period
-        and FHIRHelpers.ToInterval(InductionProcedure.performed as Period) 24 hours or less before FHIRHelpers.ToDateTime(Labor.effective as dateTime)
+      where Labor.effective as dateTime during DeliveryEncounter.period
+        and FHIRHelpers.ToInterval(InductionProcedure.performed as Period) 24 hours or less before Labor.effective as dateTime
       return DeliveryEncounter
 
 //define "Medical Induction Procedure":
 //   ["Procedure, Performed": "Artificial Rupture of Membranes"]
 //      union ["Procedure, Performed": "Medical Induction of Labor"]
 define "Medical Induction Procedure":
-        ["Procedure": "Artificial Rupture of Membranes"]
-            union ["Procedure": "Medical Induction of Labor"]
+        (["Procedure": "Artificial Rupture of Membranes"]
+            union ["Procedure": "Medical Induction of Labor"])InductionProcedure
+            where InductionProcedure.status = 'completed'
