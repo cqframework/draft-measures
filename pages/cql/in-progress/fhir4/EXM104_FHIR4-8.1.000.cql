@@ -71,7 +71,7 @@ define "Initial Population":
   define "Encounter with Principal Diagnosis and Age":
     "All Stroke Encounter" AllStrokeEncounter
     	with ["Patient"] BirthDate
-    		such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of FHIRHelpers.ToInterval(AllStrokeEncounter.period)) >= 18
+    		such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of AllStrokeEncounter.period) >= 18
 
 //QA
         define "All Stroke Encounter":
@@ -82,7 +82,7 @@ define "Initial Population":
 //QA
               define "Non Elective Inpatient Encounter":
               	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
-              		where Global."LengthInDays"(FHIRHelpers.ToInterval(NonElectiveEncounter.period))<= 120
+              		where Global."LengthInDays"(NonElectiveEncounter.period)<= 120
               			and NonElectiveEncounter.period ends during "Measurement Period"
 
 //QA
@@ -131,7 +131,7 @@ define "Denominator Exclusions":
 define "Numerator":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Antithrombotic Therapy at Discharge" DischargeAntithrombotic
-			such that FHIRHelpers.ToDateTime(DischargeAntithrombotic.authoredOn) during IschemicStrokeEncounter.period
+			such that DischargeAntithrombotic.authoredOn during IschemicStrokeEncounter.period
 
 //QA
       define "Antithrombotic Therapy at Discharge":
@@ -148,12 +148,12 @@ define "Denominator Exceptions":
     define "Encounter With No Antithrombotic At Discharge":
     	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
     		with "Antithrombotic Not Given at Discharge" NoDischargeAntithrombotic
-    			such that FHIRHelpers.ToDateTime(NoDischargeAntithrombotic.authoredOn) during IschemicStrokeEncounter.period
+    			such that NoDischargeAntithrombotic.authoredOn during IschemicStrokeEncounter.period
 
 //QA - removed singleton
           define "Antithrombotic Not Given at Discharge":
           	["MedicationRequest": medication in "Antithrombotic Therapy"] NoAntithromboticDischarge
-              where FHIRHelpers.ToBoolean(NoAntithromboticDischarge.doNotPerform) is true
+              where NoAntithromboticDischarge.doNotPerform is true
           			and (NoAntithromboticDischarge.reasonCode in "Medical Reason"
           				or NoAntithromboticDischarge.reasonCode in "Patient Refusal")
                     and exists (NoAntithromboticDischarge.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
@@ -175,7 +175,7 @@ define "Denominator Exceptions":
     define "Encounter With Ticagrelor at Discharge":
       TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
         with "Ticagrelor Therapy at Discharge" DischargeTicagrelor
-          such that FHIRHelpers.ToDateTime(DischargeTicagrelor.authoredOn) during IschemicStrokeEncounter.period
+          such that DischargeTicagrelor.authoredOn during IschemicStrokeEncounter.period
 
           /*define "Encounter With Ticagrelor During Hospitalization":
             TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
