@@ -84,25 +84,25 @@ define "Denominator":
 define "Denominator Exceptions":
 	"Denominator" Encounter
 		with "Reason for Not Giving Anticoagulant at Discharge" NoDischargeAnticoagulant
-			such that NoDischargeAnticoagulant.authorDatetime during Encounter.relevantPeriod
+			such that NoDischargeAnticoagulant.authoredOn during Encounter.period
 
 define "History of Atrial Fibrillation or Flutter":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with ["Condition": "Atrial Fibrillation/Flutter"] AtrialFibrillationFlutter
-			such that FHIRHelpers.ToDateTime(AtrialFibrillationFlutter.Period as dateTime) starts on or before
-			end of IschemicStrokeEncounter.relevantPeriod
+			such that AtrialFibrillationFlutter.onset as dateTime on or before
+			end of IschemicStrokeEncounter.period
 
 define "Denominator Exclusions":
 	( "Denominator" Encounter
-			where Encounter.dischargeDisposition in "Discharge To Acute Care Facility"
-				or Encounter.dischargeDisposition in "Left Against Medical Advice"
-				or Encounter.dischargeDisposition in "Patient Expired"
-				or Encounter.dischargeDisposition in "Discharged to Home for Hospice Care"
-				or Encounter.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
+			where Encounter.hospitalization.dischargeDisposition in "Discharge To Acute Care Facility"
+				or Encounter.hospitalization.dischargeDisposition in "Left Against Medical Advice"
+				or Encounter.hospitalization.dischargeDisposition in "Patient Expired"
+				or Encounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
+				or Encounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
 	)
 		union "Comfort Measures during Hospitalization"
 
 define "Comfort Measures during Hospitalization":
 	"Denominator" Encounter
 		with TJC."Intervention Comfort Measures" ComfortMeasure
-			such that Coalesce(start of ComfortMeasure.relevantPeriod, ComfortMeasure.authorDatetime)during Global."HospitalizationWithObservation"(Encounter)
+			such that Coalesce(ComfortMeasure.performed as dateTime, ComfortMeasure.authoredOn)during Global."HospitalizationWithObservation"(Encounter)
