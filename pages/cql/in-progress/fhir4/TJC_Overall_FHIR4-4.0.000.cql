@@ -64,12 +64,12 @@ define "Ischemic Stroke Encounters with Discharge Disposition":
 	define "Comfort Measures during Hospitalization":
 		"Ischemic Stroke Encounter" IschemicStrokeEncounter
 	   	with "Intervention Comfort Measures" ComfortMeasure
-	    	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
+	    	such that Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn) during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 
 define "Encounter with Principal Diagnosis and Age":
 	"All Stroke Encounter" AllStrokeEncounter
 		with ["Patient"] BirthDate
-			such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of FHIRHelpers.ToInterval(AllStrokeEncounter.period)) >= 18
+			such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of AllStrokeEncounter.period) >= 18
 
 define function "CalendarDayOfOrDayAfter"(StartValue DateTime ):
 	Interval(Global."ToDate"(StartValue), Global."ToDate"(StartValue + 2 days))
