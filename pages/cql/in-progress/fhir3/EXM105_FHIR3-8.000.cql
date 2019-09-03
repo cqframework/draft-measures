@@ -78,7 +78,7 @@ define "All Stroke Encounter":
 
 define "Non Elective Inpatient Encounter":
 	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
-		where Global."LengthInDays"(FHIRHelpers.ToInterval(NonElectiveEncounter.period))<= 120
+		where Global."LengthInDays"(NonElectiveEncounter.period)<= 120
 			and NonElectiveEncounter.period ends during "Measurement Period"
 
 define "Denominator":
@@ -129,7 +129,7 @@ define "Denominator Exception":
 	union
 	("Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Statin Allergy" StatinAllergy
-			such that "Normalize Onset"(StatinAllergy.onset) on or before end of FHIRHelpers.ToInterval(IschemicStrokeEncounter.period))
+			such that "Normalize Onset"(StatinAllergy.onset) on or before end of IschemicStrokeEncounter.period)
 
 define "Denominator Exclusion":
 	"Ischemic Stroke Encounters with Discharge Status"
@@ -159,7 +159,7 @@ define "Intervention Comfort Measures":
 
 define "Intervention Comfort Measures":
 	(["ProcedureRequest": "Comfort Measures"] P
-		where P.intent = 'order')
+		where P.intent in {'plan', 'order'}
 		union
 		(["Procedure": "Comfort Measures"] IntervetionPerformed
-		where IntervetionPerformed.status = 'completed')
+		where IntervetionPerformed.status in {'complete', 'in progress'})
