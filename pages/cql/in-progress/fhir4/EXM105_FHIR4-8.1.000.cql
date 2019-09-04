@@ -78,6 +78,7 @@ define "SDE Sex":
 define "Initial Population":
 	TJC."Encounter with Principal Diagnosis and Age"
 
+
     define "Encounter with Principal Diagnosis and Age":
       "All Stroke Encounter" AllStrokeEncounter
       	with ["Patient"] BirthDate
@@ -173,7 +174,7 @@ define "Denominator Exception":
       define "Encounter with Max LDL less than 70 mg per dL":
       	"Ischemic Stroke Encounter" IschemicStrokeEncounter
       		where Max(["Observation": "LDL-c"] Ldl
-      				where (Ldl.issued) during Interval[(IschemicStrokeEncounter.period.start) - 30 days, (IschemicStrokeEncounter.period.end)]
+      				where (Ldl.issued) during Interval[(IschemicStrokeEncounter.period.start) - 30 days, IschemicStrokeEncounter.period.end]
       				return (Ldl.value as Quantity)
       		) < 70 'mg/dL'
 
