@@ -83,7 +83,7 @@ define "Initial Population":
   define "Encounter with Principal Diagnosis and Age":
     "All Stroke Encounter" AllStrokeEncounter
     	with ["Patient"] BirthDate
-    		such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of FHIRHelpers.ToInterval(AllStrokeEncounter.period)) >= 18
+    		such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of AllStrokeEncounter.period) >= 18
 
         define "All Stroke Encounter":
         	"Non Elective Inpatient Encounter" NonElectiveEncounter
@@ -92,7 +92,7 @@ define "Initial Population":
 
               define "Non Elective Inpatient Encounter":
               	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
-              		where Global."LengthInDays"(FHIRHelpers.ToInterval(NonElectiveEncounter.period))<= 120
+              		where Global."LengthInDays"(NonElectiveEncounter.period)<= 120
               			and NonElectiveEncounter.period ends during "Measurement Period"
 */
 //QA
