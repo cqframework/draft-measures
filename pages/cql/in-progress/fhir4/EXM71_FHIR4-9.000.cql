@@ -88,7 +88,7 @@ define "Initial Population":
 //QA
               define "Non Elective Inpatient Encounter":
               	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
-              		where Global."LengthInDays"(FHIRHelpers.ToInterval(NonElectiveEncounter.period))<= 120
+              		where Global."LengthInDays"(NonElectiveEncounter.period)<= 120
               			and NonElectiveEncounter.period ends during "Measurement Period"
 */
 
