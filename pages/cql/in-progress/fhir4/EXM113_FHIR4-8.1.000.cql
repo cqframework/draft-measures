@@ -11,7 +11,7 @@ codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
 codesystem "ObservationCategoryCodes":  'http://terminology.hl7.org/CodeSystem/observation-category'
 codesystem "ConditionClinicalStatusCodes": 'http://terminology.hl7.org/CodeSystem/condition-clinical'
-//codesystem "MedicationAdministrationStatusCodes":  'http://terminology.hl7.org/codesystem-medication-admin-status.html
+
 
 valueset "Artificial Rupture of Membranes": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1045.57'
 valueset "Cesarean Birth":  'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.282'
@@ -154,7 +154,10 @@ define "Delivery Encounter with Justifying Conditions":
   (
     "Delivery Encounter Near Term" DeliveryEncounter
       with ["Condition": "Conditions Possibly Justifying Elective Delivery Prior to 39 Weeks Gestation"] DiagnosisElectiveDelivery
-        such that DiagnosisElectiveDelivery.onset PeriodRange overlaps DeliveryEncounter.period
+        such that FHIRHelpers.ToConcept(DiagnosisElectiveDelivery.clinicalStatus) in { "active", "recurrence", "relapse"  } and
+//Recurrence = experiencing repating of a previously resolved condition.  This could apply to the gallbladder dx in value set as well
+//as HIV.  Relapse = return of a condition, or S&S after a period of remission (ancer, MS, bipolar disease).  Could apply to HIV
+            DiagnosisElectiveDelivery.onset PeriodRange overlaps DeliveryEncounter.period
   )
   union (
     "Delivery Encounter Near Term" DeliveryEncounter
@@ -183,6 +186,7 @@ define "Delivery Encounter With Cesarean Birth Without Labor or History of Uteri
         such that PriorUterineProcedure.status = 'completed'
         and PriorUterineProcedure.performed as Period starts before start of DeliveryEncounter.period
       without "History of Uterine Surgery Diagnosis" PriorUterineDiagnosis
+//Decision:  will not constrain clinical status as we are looking for history of diagnosis.
         such that FHIRHelpers.ToConcept(PriorUterineDiagnosis.clinicalStatus) is not null
         and PriorUterineDiagnosis.onset as Period starts before start of DeliveryEncounter.period
 
