@@ -7,7 +7,7 @@ include FHIRHelpers version '4.0.0' called FHIRHelpers
 codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
 codesystem "RoleCode": 'http://hl7.org/fhir/v3/RoleCode'
-codesystem "Diagnosis Role": 'http://hl7.org/fhir/diagnosis-role'
+codesystem "Diagnosis Role": 'http://terminology.hl7.org/CodeSystem/diagnosis-role'
 
 valueset "Encounter Inpatient": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.666.5.307'
 valueset "Emergency Department Visit": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.292'
@@ -138,7 +138,7 @@ define function "EncounterDiagnosis"(Encounter Encounter):
 // Returns the condition that is specified as the principal diagnosis for the encounter
 // TODO: BTR 2019-07-30: Shouldn't need the FHIRHelpers reference here, investigate
 define function "PrincipalDiagnosis"(Encounter Encounter):
-	(singleton from (Encounter.diagnosis D where FHIRHelpers.ToInteger(D.rank) = 1)) PD
+	(singleton from (Encounter.diagnosis D where FHIRHelpers.ToInteger(D.rank) = 1 and FHIRHelpers.ToConcept(D.use) ~ "Billing")) PD
 		return singleton from ([Condition: id in "GetId"(PD.condition.reference)])
 
 // Returns the location for the given location reference
