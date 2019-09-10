@@ -51,6 +51,7 @@ code "relapse": 'relapse' from "ConditionClinicalStatusCodes"
 code "inactive": 'inactive' from "ConditionClinicalStatusCodes"
 code "remission": 'remission' from "ConditionClinicalStatusCodes"
 code "resolved": 'resolved' from "ConditionClinicalStatusCodes"
+code "completed": 'completed' from "ConditionClinicalStatusCodes"
 
 parameter "Measurement Period" Interval<DateTime>
 
