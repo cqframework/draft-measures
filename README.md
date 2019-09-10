@@ -16,7 +16,7 @@ Full debugging information is available here:
 
 The HL7 IG Publisher is committed to this repository to make building as easy as possible. To build locally, clone the repository and issue the following command in the root:
 
-    java -jar "org.hl7.fhir.igpublisher.jar" -ig ig.json
+    java -jar "org.hl7.fhir.publisher.jar" -ig ig.json
 
 ## Dependencies
 
@@ -41,4 +41,3 @@ https://www.ruby-lang.org/en/downloads/) for directions.
 Go to [https://jekyllrb.com](https://jekyllrb.com) and follow the
 instructions there, for example `gem install jekyll bundler`.  The end
 result of this should be that the binary "jekyll" is now in your path.
-

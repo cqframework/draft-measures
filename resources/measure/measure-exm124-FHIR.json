@@ -18,7 +18,7 @@
       "valueCode": "boolean"
     }
   ],
-  "url": "http://hl7.org/fhir/us/cqfmeasures/Measure/measure-exm124-FHIR",
+  "url": "http://hl7.org/fhir/us/draftmeasures/Measure/measure-exm124-FHIR",
   "identifier": [
     {
       "use": "official",
