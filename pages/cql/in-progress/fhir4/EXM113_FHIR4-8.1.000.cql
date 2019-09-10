@@ -115,7 +115,11 @@ define "Delivery Encounter Near Term":
 //             such that LastGestational.***authorDatetime 1 day or less before or on Delivery.authorDatetime
 //             sort by authorDatetime
 //            )
-
+/*
+  There was a question regarding why the exists operator is used in this expression. The reason exists is used
+  here is because the expression results in a translation error when the exists operator is removed. This is because
+  the query conditions must resolve to boolean values in order to filter the query
+*/
 define "Last Gestational Age Prior To Or At the Same Time of Delivery":
   Last(
     ["Observation": "Estimated Gestational Age at Delivery"] LastGestational
@@ -125,7 +129,6 @@ define "Last Gestational Age Prior To Or At the Same Time of Delivery":
         and LastGestational.effective as dateTime 1 day or less before or on Delivery.effective as dateTime
           sort by effective
   )
-
 
 //**Is procedure the correct category for Delivery Time?  Exam does not seem to fit.  No feedback on Collaboration call
 //define "Delivery Time":
