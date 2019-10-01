@@ -10,8 +10,8 @@ include SupplementalDataElements_FHIR3 version '1.0.0' called SDE
 codesystem "LOINC:2.46": 'urn:oid:2.16.840.1.113883.6.1' version 'urn:hl7:version:2.46'
 codesystem "SNOMEDCT:2016-03": 'urn:oid:2.16.840.1.113883.6.96' version 'urn:hl7:version:2016-03'
 
-//codesystem "LOINC:2.46": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.6.1' version 'urn:hl7:version:2.46'
-//codesystem "SNOMEDCT:2016-03": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.6.96' version 'urn:hl7:version:2016-03'
+//codesystem "LOINC:2.46": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.6.1' version 'urn:hl7:version:2.46'
+//codesystem "SNOMEDCT:2016-03": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.6.96' version 'urn:hl7:version:2016-03'
 
 // TODO: Use NLM VSAC Canonical URLs
 /*
@@ -28,17 +28,17 @@ valueset "Discharge To Acute Care Facility": 'urn:oid:2.16.840.1.113883.3.117.1.
 valueset "Discharged to Home for Hospice Care": 'urn:oid:2.16.840.1.113883.3.117.1.7.1.209'
 */
 
-valueset "Encounter Inpatient": 'https://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.666.5.307'
-valueset "Non-Elective Inpatient Encounter": 'https://cts.nlm.nih.gov/fhir/valueset/2.16.840.1.113883.3.117.1.4.1.424'
-valueset "Ischemic Stroke": 'https://cts.nlm.nih.gov/fhir/valueset/2.16.840.1.113883.3.117.1.7.1.247'
-valueset "Hemorrhagic Stroke": 'https://cts.nlm.nih.gov/fhir/valueset/2.16.840.1.113883.3.117.1.7.1.212'
-valueset "Comfort Measures": 'https://cts.nlm.nih.gov/fhir/valueset/1.3.6.1.4.1.33895.1.3.0.45'
-valueset "Emergency Department Visit": 'https://cts.nlm.nih.gov/fhir/valueset/2.16.840.1.113883.3.117.1.7.1.292'
-valueset "Left Against Medical Advice": 'https://cts.nlm.nih.gov/fhir/valueset/2.16.840.1.113883.3.117.1.7.1.308'
-valueset "Discharged to Health Care Facility for Hospice Care": 'https://cts.nlm.nih.gov/fhir/valueset/2.16.840.1.113883.3.117.1.7.1.207'
-valueset "Patient Expired": 'https://cts.nlm.nih.gov/fhir/valueset/2.16.840.1.113883.3.117.1.7.1.309'
-valueset "Discharge To Acute Care Facility": 'https://cts.nlm.nih.gov/fhir/valueset/2.16.840.1.113883.3.117.1.7.1.87'
-valueset "Discharged to Home for Hospice Care": 'https://cts.nlm.nih.gov/fhir/valueset/2.16.840.1.113883.3.117.1.7.1.209'
+valueset "Encounter Inpatient": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.666.5.307'
+valueset "Non-Elective Inpatient Encounter": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.4.1.424'
+valueset "Ischemic Stroke": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.247'
+valueset "Hemorrhagic Stroke": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.212'
+valueset "Comfort Measures": 'http://cts.nlm.nih.gov/fhir/ValueSet/1.3.6.1.4.1.33895.1.3.0.45'
+valueset "Emergency Department Visit": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.292'
+valueset "Left Against Medical Advice": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.308'
+valueset "Discharged to Health Care Facility for Hospice Care": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.207'
+valueset "Patient Expired": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.309'
+valueset "Discharge To Acute Care Facility": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.87'
+valueset "Discharged to Home for Hospice Care": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.209'
 
 
 code "Birthdate": '21112-8' from "LOINC" display 'Birth date'
