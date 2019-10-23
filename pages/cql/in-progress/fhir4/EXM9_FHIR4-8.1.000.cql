@@ -28,7 +28,7 @@ valueset "Galactosemia": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883
 valueset "Neonatal Intensive Care Unit (NICU)": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1029.205'
 valueset "Other Health Care Facility": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1029.67'
 valueset "Parenteral Nutrition": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.38'
-valueset "Patient Expired": 'htts://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.309'
+valueset "Patient Expired": 'htt://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.309'
 valueset "Single Live Born Newborn Born in Hospital": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.26'
 
 code "Gestational age--at birth": '76516-4' from "LOINC" display 'Gestational age--at birth'
