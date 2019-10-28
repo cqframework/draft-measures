@@ -16,12 +16,17 @@ codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
 codesystem "LOINC": 'http://loinc.org'
 // NOTE: R4 code system URLs changed to be based on terminology.hl7.org...
 codesystem "RequestIntent": 'http://terminology.hl7.org/CodeSystem/request-intent'
+// NOTE: 10/29 created ProcedureReason for Device Not order or applied reason. Both Procedure and ServiceQuest use ProcedureReason
+codesystem "ProcedureReason": 'http://snomed.info/sct'
 //NOTE: Created for condition.clinicalStatus which is codeableConcept
 codesystem "ConditionClinicalStatusCodes": 'http://terminology.hl7.org/CodeSystem/condition-clinical'
 
 //NOTE: Created for ActPriority for Encounter.category which is codeableConcept
 codesystem "ActPriority": 'http://terminology.hl7.org/ValueSet/v3-ActPriority'
 
+
+//TODO: Create the following value set for replacing DeviceUseStatement with Procedure
+valueset "Applying Foot Device": 'TBD'
 valueset "Atrial Fibrillation/Flutter": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.202'
 valueset "Comfort Measures": 'http://cts.nlm.nih.gov/fhir/ValueSet/1.3.6.1.4.1.33895.1.3.0.45'
 valueset "Direct Thrombin Inhibitor": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.205'
@@ -68,8 +73,8 @@ code "inactive": 'inactive' from "ConditionClinicalStatusCodes"
 code "remission": 'remission' from "ConditionClinicalStatusCodes"
 code "resolved": 'resolved' from "ConditionClinicalStatusCodes"
 
-//NOTE: Created for ActPriority for Encounter.category which is codeableConcept
-code "elective": 'elective' from "ActPriority"
+// NOTE: 10/29 created ProcedureReason for Device Not order or applied reason. Both Procedure and ServiceQuest use ProcedureReason
+code "reasonCode": 'reasonCode' from "ProcedureReason"
 
 
 context Patient
@@ -99,10 +104,13 @@ define "Encounter With Age Range and Without VTE Diagnosis or Obstetrical Condit
 
   define "Admission Without VTE or Obstetrical Conditions":
 	  	Global."Inpatient Encounter" InpatientEncounter
-		    where not (Global.EncounterDiagnosis(InpatientEncounter).code in "Obstetrics"
-								or Global.EncounterDiagnosis(InpatientEncounter).code in "Venous Thromboembolism"
-								or Global.EncounterDiagnosis(InpatientEncounter).code in "Obstetrics VTE"
-							)
+		    where not (exists (Global.EncounterDiagnosis(InpatientEncounter)) EncounterDiagnosis
+              where (EncounterDiagnosis.code in "Obstetrics"
+								or EncounterDiagnosis.code in "Venous Thromboembolism"
+								or EncounterDiagnosis.code in "Obstetrics VTE"
+							         )
+                )
+
 
 
 define "Denominator":
@@ -175,16 +183,17 @@ define "Encounter With Principal Procedure of SCIP VTE Selected Surgery":
       where Procedure.status = 'completed'
 
 
-//TODO -need FHIRHelpers.ToInterval()  when using start of or end of xxxx .
+//NOTE: need FHIRHelpers.ToInterval()  when using start of or end of xxxx .
 define "Encounter With Intervention Comfort Measures From Day of Start of Hospitalization To Day After Admission":
 	"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter
 		with "Intervention Comfort Measures" ComfortMeasure
 		such that Coalesce( start of FHIRHelpers.ToInterval(ComfortMeasure.performed as Period), ComfortMeasure.authoredOn) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
 
 
+//10/29: removed 'plan' from RequestIntent value. it was P.intent in {'order', 'plan'}
   define "Intervention Comfort Measures":
   	(["ServiceRequest": "Comfort Measures"] P
-      		where P.intent in {'order', 'plan'}
+      		where P.intent = 'order'
     )
     	union
       	(["Procedure": "Comfort Measures"] IntervetionPerformed
@@ -217,7 +226,7 @@ define "Encounter With VTE Prophylaxis Received on Day of or Day After Admission
  	( from
  			"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter,
  			"VTE Prophylaxis by Medication Administered or Device Applied" VTEProphylaxis
-		where Coalesce(VTEProphylaxis.effective as Period, VTEProphylaxis.timing as Period) starts during TJC."CalendarDayOfOrDayAfter"(start of QualifyingEncounter.period)
+		where Coalesce(VTEProphylaxis.effective as Period, VTEProphylaxis.performed as Period) starts during TJC."CalendarDayOfOrDayAfter"(start of QualifyingEncounter.period)
 		return QualifyingEncounter
  	)
  	union ( from
@@ -225,10 +234,11 @@ define "Encounter With VTE Prophylaxis Received on Day of or Day After Admission
     				["Procedure": "General or Neuraxial Anesthesia"] AnesthesiaProcedure,
     				"VTE Prophylaxis by Medication Administered or Device Applied" VTEProphylaxis
    				where AnesthesiaProcedure.performed as Period ends 1 day after day of start of QualifyingEncounter.period
-   					and Coalesce(VTEProphylaxis.effective as Period,  VTEProphylaxis.timing as Period) starts during TJC."CalendarDayOfOrDayAfter"(end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
+   					and Coalesce(VTEProphylaxis.effective as Period,  VTEProphylaxis.performed as Period) starts during TJC."CalendarDayOfOrDayAfter"(end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
    				return QualifyingEncounter
    		)
 
+     // 10/29: Replaced DeviceUseStatement with Procedure
     define "VTE Prophylaxis by Medication Administered or Device Applied":
  	      ( ["MedicationAdministration": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"] VTEMedication
  			      where VTEMedication.status ='completed'
@@ -237,12 +247,20 @@ define "Encounter With VTE Prophylaxis Received on Day of or Day After Admission
  		     union (["MedicationAdministration": medication in "Low Molecular Weight Heparin for VTE Prophylaxis"] LMWH where LMWH.status = 'completed')
  		      union (["MedicationAdministration": medication in "Injectable Factor Xa Inhibitor for VTE Prophylaxis"] FactorXa where FactorXa.status = 'completed')
  		       union (["MedicationAdministration": medication in "Warfarin"] Warfarin where Warfarin.status = 'completed')
- 		        union ((
+ 		        union (
+              /*(
   				        ["DeviceUseStatement": code in "Intermittent pneumatic compression devices (IPC)"]
   				         union ["DeviceUseStatement": code in "Venous foot pumps (VFP)"]
   				         union ["DeviceUseStatement": code in "Graduated compression stockings (GCS)"]
                    ) DeviceApplied
    				            where DeviceApplied.status = 'active' //	'completed' - no longer used
+                */
+                  ["Procedure": "Applying Foot Device"] DeviceApplied //need a new value set
+                  where DeviceApplied.status = 'complete'
+                        and (DeviceApplied.usedCode in "Intermittent pneumatic compression devices (IPC)"
+                            or DeviceApplied.usedCode in"Venous foot pumps (VFP)"
+                            or DeviceApplied.usedCode in "Graduated compression stockings (GCS)"
+                            )
                   )
 
 define "Encounter With Medication Oral Factor Xa Inhibitor Administered on Day of or Day After Admission or Procedure":
@@ -300,7 +318,7 @@ define "Low Risk for VTE or Anticoagulant Administered From Day of Start of Hosp
     with "Is In Low Risk for VTE or On Anticoagulant" VTERiskAssessment
     such that VTERiskAssessment.effective as dateTime during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
 
-  // TODO: Issue on return "Observation" { id: AnticoagulantMedication.id, effective: start of FHIRHelpers.ToInterval(AnticoagulantMedication.effective as Period)}
+
   define "Is In Low Risk for VTE or On Anticoagulant":
  	  ( ["Observation": "Risk for venous thromboembolism"] VTERiskAssessment
  			  where VTERiskAssessment.value in "Low Risk"
@@ -383,48 +401,29 @@ define "No VTE Prophylaxis Medication Due to Medical Reason on Day of or Day Aft
 define "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hospitalization To Day After Admission":
 	"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter
 	with "No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
-  such that (GetNotDoneReason(NoVTEDevice) in "Medical Reason"
-              or GetNotPerformReason(NoVTEDevice) in "Medical Reason")
-        and Coalesce(NoVTEDevice.authoredOn, NoVTEDevice.recordedOn) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
+  such that //10/29: Review Coalesce(NoVTEDevice.statusReason, NoVTEDevice.reasonCode) vs Coalesce(NoVTEMedication.statusReason,NoVTEMedication.reasonCode)
+            //TODO:10/29 statusReason is in FHIR, as notDoneReason is an element in QI-core
+          (NoVTEDevice.statusReason in "Medical Reason"
+          or NoVTEDevice.reasonCode in "Medical Reason"
+          )
+          //TODO: 10/29 recordedOn datetime is needed for Procedure not done. performed needs a Replacement
+        and Coalesce(NoVTEDevice.performed as dateTime, NoVTEDevice.authoredOn) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
 
-/*: TODO: Mapping Table review - neither DeviceRequest nor DeviceUseStatement reasonCode could be used for not done reasonCode
-   In R4 - Use Extensions to get Not done reason for DeviceRequest and DeviceUseStatement
-     DeviceUseStatement not-done-reason uses extension 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-devicerequest-doNotPerformReason'
-     DeviceUseRequest not-done-reason uses extension 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDoneReason'
-     GForge ticket # 20601
-  NOTE: 2 options to retrive those information in the logic and the Option_2 is more effecient after comparing 2 options -
-      Option_1 is to express the extensions by using generic extension functions as below -
-           FHIRHelpers.ToBoolean(GetExtension(DeviceApplied, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDone').value)
-           FHIRHelpers.ToCode(GetExtension(DeviceApplied, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDoneReason').value)
-                  in "Medical Reason"
-      Option_2 is to define Specific extension functions to retrive Information (used by VTE-1 and VTE-2)
-*/
-
-define function GetNotDone(deviceUseStatement DeviceUseStatement):
-    GetExtension(deviceUseStatement, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDone').value
-
-define function GetNotDoneReason(deviceUseStatement DeviceUseStatement):
-    FHIRHelpers.ToCode(GetExtension(deviceUseStatement, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDoneReason').value)
-
-define function GetDoNotPerfom(deviceRequest DeviceRequest):
-    GetExtension(deviceRequest, 'http://hl7.org/fhir/StructureDefinition/request-doNotPerform').value
-
-define function GetNotPerformReason(deviceRequest DeviceRequest):
-    FHIRHelpers.ToCode(GetExtension(deviceRequest, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-devicerequest-doNotPerformReason').value)
 
   define "No VTE Prophylaxis Device Applied or Ordered":
-     ((["DeviceUseStatement": code in "Venous foot pumps (VFP)"]
-      union ["DeviceUseStatement": code in "Intermittent pneumatic compression devices (IPC)"]
-      union ["DeviceUseStatement": code in "Graduated compression stockings (GCS)"]
-      ) DeviceApplied
-        where GetNotDone(DeviceApplied) is true
-    )
+     (["Procedure": "Applying Foot Device"] DeviceApplied
+     where (DeviceApplied.usedCode in "Intermittent pneumatic compression devices (IPC)"
+               or DeviceApplied.usedCode in "Venous foot pumps (VFP)"
+               or DeviceApplied.usedCode in "Graduated compression stockings (GCS)"
+              )
+            and  DeviceApplied.status = 'not-done' // 10/29 - QI-core notDone is an element while base FHIR uses status = 'not-done'
+      )
     union ((
-        ["DeviceRequest": code in "Venous foot pumps (VFP)"]
-        union ["DeviceRequest": code in "Intermittent pneumatic compression devices (IPC)"]
-        union ["DeviceRequest": code in "Graduated compression stockings (GCS)"]
+        ["ServiceRequest": "Venous foot pumps (VFP)"]
+        union ["ServiceRequest": "Intermittent pneumatic compression devices (IPC)"]
+        union ["ServiceRequest": "Graduated compression stockings (GCS)"]
         ) DeviceOrder
-          where GetDoNotPerfom(DeviceOrder) is true
+          where DeviceOrder.doNotPerform is true
         )
 
 
@@ -433,11 +432,12 @@ define "No VTE Prophylaxis Device Due to Medical Reason on Day of or Day After P
   		"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter,
   		["Procedure": "General or Neuraxial Anesthesia"] AnesthesiaProcedure,
   		"No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
-  where  (GetNotDoneReason(NoVTEDevice) in "Medical Reason"
-                  or GetNotPerformReason(NoVTEDevice) in "Medical Reason")
+  where  ( NoVTEDevice.statusReason in "Medical Reason"
+          or NoVTEDevice.reasonCode in "Medical Reason"
+        )
       and AnesthesiaProcedure.status = 'completed'
   		and AnesthesiaProcedure.performed as Period ends 1 day after day of start of QualifyingEncounter.period
-      and Coalesce(NoVTEDevice.authoredOn, NoVTEDevice.recordedOn) during TJC."CalendarDayOfOrDayAfter"(end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
+      and Coalesce(NoVTEDevice.performed as dateTime, NoVTEDevice.authoredOn) during TJC."CalendarDayOfOrDayAfter"(end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
   return QualifyingEncounter
 
 
@@ -449,7 +449,7 @@ define "Encounter With No VTE Prophylaxis Due to Patient Refusal":
 define "No VTE Prophylaxis Due to Patient Refusal From Day of Start of Hospitalization To Day After Admission":
  	"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter
 	 with "No VTE Prophylaxis Medication or Device Due to Patient Refusal" PatientRefusal
-   such that Coalesce(PatientRefusal.effective, PatientRefusal.authoredOn, PatientRefusal.recordedOn)
+   such that Coalesce(PatientRefusal.effective as dateTime, PatientRefusal.authoredOn, PatientRefusal.performed as dateTime)
          during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
 
 
@@ -458,9 +458,9 @@ define "No VTE Prophylaxis Due to Patient Refusal From Day of Start of Hospitali
           where Coalesce(NoVTEMedication.statusReason,NoVTEMedication.reasonCode) in "Patient Refusal"
       )
     union ("No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
-             where GetNotDoneReason(NoVTEDevice) in "Patient Refusal"
-                 or GetNotPerformReason(NoVTEDevice) in "Patient Refusal"
-           )
+             where NoVTEDevice.statusReason in "Patient Refusal"
+                or NoVTEDevice.reasonCode in "Patient Refusal"
+          )
 
 define "No VTE Prophylaxis Due to Patient Refusal on Day of or Day After Procedure":
  	from
@@ -468,6 +468,6 @@ define "No VTE Prophylaxis Due to Patient Refusal on Day of or Day After Procedu
    		["Procedure": "General or Neuraxial Anesthesia"] AnesthesiaProcedure,
    		"No VTE Prophylaxis Medication or Device Due to Patient Refusal" PatientRefusal
 	where AnesthesiaProcedure.performed as Period ends 1 day after day of start of QualifyingEncounter.period
- 			and Coalesce(PatientRefusal.effective as dateTime, PatientRefusal.authoredOn, PatientRefusal.recordedOn)
+ 			and Coalesce(PatientRefusal.effective as dateTime, PatientRefusal.authoredOn, PatientRefusal.performed as dateTime)
              during TJC."CalendarDayOfOrDayAfter"(end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
 	return QualifyingEncounter
