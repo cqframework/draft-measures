@@ -26,7 +26,7 @@ codesystem "ActPriority": 'http://terminology.hl7.org/ValueSet/v3-ActPriority'
 
 
 //TODO: Create the following value set for replacing DeviceUseStatement with Procedure
-valueset "Applying Foot Device": 'TBD'
+valueset "Device Application": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1110.48'
 valueset "Atrial Fibrillation/Flutter": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.202'
 valueset "Comfort Measures": 'http://cts.nlm.nih.gov/fhir/ValueSet/1.3.6.1.4.1.33895.1.3.0.45'
 valueset "Direct Thrombin Inhibitor": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.205'
@@ -239,6 +239,7 @@ define "Encounter With VTE Prophylaxis Received on Day of or Day After Admission
    		)
 
      // 10/29: Replaced DeviceUseStatement with Procedure
+     //10/29: Option 2 - we've already created 3 new value sets for IPC, GCS and VFP with Procedure codes. Could we directly use them with Procedure resource
     define "VTE Prophylaxis by Medication Administered or Device Applied":
  	      ( ["MedicationAdministration": medication in "Low Dose Unfractionated Heparin for VTE Prophylaxis"] VTEMedication
  			      where VTEMedication.status ='completed'
@@ -255,7 +256,7 @@ define "Encounter With VTE Prophylaxis Received on Day of or Day After Admission
                    ) DeviceApplied
    				            where DeviceApplied.status = 'active' //	'completed' - no longer used
                 */
-                  ["Procedure": "Applying Foot Device"] DeviceApplied //need a new value set
+                  ["Procedure": "Device Application"] DeviceApplied //need a new value set
                   where DeviceApplied.status = 'complete'
                         and (DeviceApplied.usedCode in "Intermittent pneumatic compression devices (IPC)"
                             or DeviceApplied.usedCode in"Venous foot pumps (VFP)"
@@ -411,7 +412,7 @@ define "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hos
 
 
   define "No VTE Prophylaxis Device Applied or Ordered":
-     (["Procedure": "Applying Foot Device"] DeviceApplied
+     (["Procedure": "Device Application"] DeviceApplied
      where (DeviceApplied.usedCode in "Intermittent pneumatic compression devices (IPC)"
                or DeviceApplied.usedCode in "Venous foot pumps (VFP)"
                or DeviceApplied.usedCode in "Graduated compression stockings (GCS)"
