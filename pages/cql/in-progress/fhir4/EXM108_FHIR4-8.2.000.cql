@@ -403,7 +403,6 @@ define "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hos
   "Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter
 	with "No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
   such that NoVTEDevice.reasonCode in "Medical Reason"
-          //TODO: 10/29 Procedure.recorded is not avaialbe in R4. Instead using an extension for procedure notDone timing
           and  NoVTEDevice.authoredOn during VTEICU."FromDayOfStartOfHospitalizationToDayAfterAdmission"(QualifyingEncounter)
 
 
@@ -413,9 +412,11 @@ define "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hos
       union ["ServiceRequest": "Intermittent pneumatic compression devices (IPC)"]
       union ["ServiceRequest": "Graduated compression stockings (GCS)"]
       ) DeviceOrder
-        where DeviceOrder.doNotPerform is true
+        where DeviceOrder.status = 'completed'
+          and DeviceOrder.doNotPerform is true
+
         )
-    union //TODO: 10/29 the error due to ServiceRequest.reasonCode is 0..* vs. Procedure.statusReason
+    union
       (
         ["Procedure": "Device Application"] DeviceApplied
         let DeviceNotDoneTiming: GetExtension(DeviceApplied, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-recorded').value
@@ -424,8 +425,8 @@ define "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hos
               or DeviceApplied.usedCode in "Graduated compression stockings (GCS)"
              )
              and  DeviceApplied.status = 'not-done'
-        return "ServiceRequest"{id: DeviceApplied.id, ToConcept(reasonCode): DeviceApplied.statusReason, authoredOn: DeviceNotDoneTiming}
-        //TODO: 19/29 - ServiceRequest.reasonCode is 0..* vs. Procedure.statusReason is 0..1. Looking for a cast function
+        return "ServiceRequest"{id: DeviceApplied.id, reasonCode: {DeviceApplied.statusReason}, authoredOn: DeviceNotDoneTiming}
+      //procedure.statusReason is to converted to a list of codeableConcept
         )
 
 
