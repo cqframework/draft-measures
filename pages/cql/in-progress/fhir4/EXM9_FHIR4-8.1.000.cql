@@ -20,7 +20,8 @@ codesystem "LOINC": 'http://loinc.org'
 codesystem "ObservationCategoryCodes":  'http://terminology.hl7.org/CodeSystem/observation-category'
 codesystem "ConditionClinicalStatusCodes": 'http://terminology.hl7.org/CodeSystem/condition-clinical'
 
-valueset "Enteral Feeding": 'TBD' //temp value set for procedure used for Breast Milk and other fedding
+//11/5: new value set for proedure: Feeding
+valueset "Feeding": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1110.49 '
 valueset "Breast Milk": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.30'
 valueset "Dietary Intake Other than Breast Milk": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.27'
 valueset "Discharge To Acute Care Facility": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.87'
@@ -104,19 +105,19 @@ define "Numerator":
 
  //NOTE: Procedure needs to be replaced by NutritionInake once NutritionInake resource is avaialbe in FHIR
  //NOTE: use Procedure.usedCode to indicate Breask Milk and Diettary are not surgical procedures
- //NOTE: With Breast Milk fedding and without not breaskfeeding to express "Exclusive breask milk feeding"
   define "Single Live Birth Encounter With Newborn Fed Breast Milk Only Since Birth":
     "Single Live Birth Encounter With Gestational Age 37 Weeks or More" QualifyingEncounter
-    with ["Procedure": "Enteral Feeding"] Feeding
+    with ["Procedure": "Feeding"] Feeding
     such that Feeding.status in { 'complete', 'in-progress' }
           and Feeding.usedCode in "Breast Milk"
           and Feeding.performed as Period starts during QualifyingEncounter.period
-    without ["Procedure": "Enteral Feeding"] Feeding
+    without ["Procedure": "Feeding"] Feeding
     such that Feeding.status in {'complete', 'in progress'}
-        and not (Feeding.usedCode in "Breast Milk")
+        and Feeding.usedCode in "Dietary Intake Other than Breast Milk"
         and Feeding.performed as Period starts during QualifyingEncounter.period
 
-        //without ["Procedure": "Enteral Feeding"] Fedding
-        // such that Fedding.usedCode in "Dietary Intake Other than Breast Milk"
-        //  and Feeding.status in {'complete', 'in progress'}
-        //    and Feeding.performed as Period starts during QualifyingEncounter.period
+      //11/05: With Breast Milk fedding and without not breaskfeeding to express "Exclusive breask milk feeding"
+        /*Feeding.status in {'complete', 'in progress'}
+        and not (Feeding.usedCode in "Breast Milk")
+        and Feeding.performed as Period starts during QualifyingEncounter.period
+        */
