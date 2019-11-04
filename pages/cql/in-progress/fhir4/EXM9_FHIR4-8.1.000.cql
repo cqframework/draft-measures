@@ -104,7 +104,6 @@ define "Numerator":
   "Single Live Birth Encounter With Newborn Fed Breast Milk Only Since Birth"
 
  //NOTE: Procedure needs to be replaced by NutritionInake once NutritionInake resource is avaialbe in FHIR
- //NOTE: use Procedure.usedCode to indicate Breask Milk and Diettary are not surgical procedures
   define "Single Live Birth Encounter With Newborn Fed Breast Milk Only Since Birth":
     "Single Live Birth Encounter With Gestational Age 37 Weeks or More" QualifyingEncounter
     with ["Procedure": "Feeding"] Feeding
