@@ -1,10 +1,10 @@
 library DocumentationofCurrentMedicationsintheMedicalRecord version '9.1.000'
-
+//This example is based on CMS 68 V9.1.000 Documentation of Current Medications in the Medical Record
 using FHIR version '3.0.0'
-using QDM version '5.4'
 include FHIRHelpers version '3.0.0' called FHIRHelpers
 
-include MATGlobalCommonFunctions version '4.0.000' called Global
+include MATGlobalCommonFunctions_FHIR3 version '4.0.000' called Global
+include SupplementalDataElements_FHIR3 version '1.0.0' called SDE
 
 codesystem "LOINC": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.6.1'
 codesystem "SNOMEDCT": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.6.96'
@@ -24,19 +24,16 @@ parameter "Measurement Period" Interval<DateTime>
 context Patient
 
 define "SDE Ethnicity":
-	["Patient Characteristic Ethnicity": "Ethnicity"]
+  SDE."SDE Ethnicity"
 
 define "SDE Payer":
-	["Patient Characteristic Payer": "Payer"]
+	SDE."SDE Payer"
 
 define "SDE Race":
-	["Patient Characteristic Race": "Race"]
+  SDE."SDE Race"
 
 define "SDE Sex":
-	["Patient Characteristic Sex": "ONC Administrative Sex"]
-
-define "Denominator":
-	"Initial Population"
+	SDE."SDE Sex"
 
 define "Medications Not Documented for Medical Reason":
 	["Procedure, Not Performed": "Documentation of current medications (procedure)"] NotPerformed
