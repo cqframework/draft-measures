@@ -1,10 +1,11 @@
 library EXM177_FHIR3 version '8.1.000'
 
 using FHIR version '3.0.0'
-using QDM version '5.4'
 
-include MATGlobalCommonFunctions_FHIR version '4.0.000' called Global
+//This measures is based on CMS177 V8.1.000 Child and Adolesent Major Depressive Disorder:Suicide Risk Assessment
+include MATGlobalCommonFunctions_FHIR3 version '4.0.000' called Global
 include FHIRHelpers version '3.0.0' called FHIRHelpers
+include SupplementalDataElements_FHIR3 version '1.0.0' called SDE
 
 codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'https://snomed.info/sct'
@@ -31,17 +32,16 @@ parameter "Measurement Period" Interval<DateTime>
 context Patient
 
 define "SDE Ethnicity":
-	["Patient Characteristic Ethnicity": "Ethnicity"]
+  SDE."SDE Ethnicity"
 
 define "SDE Payer":
-	["Patient Characteristic Payer": "Payer"]
+	SDE."SDE Payer"
 
 define "SDE Race":
-	["Patient Characteristic Race": "Race"]
+  SDE."SDE Race"
 
 define "SDE Sex":
-	["Patient Characteristic Sex": "ONC Administrative Sex"]
-
+	SDE."SDE Sex"
 define "Denominator":
 	"Initial Population"
 
@@ -55,7 +55,7 @@ define "Major Depressive Disorder Encounter":
 		union ["Encounter": "Group Psychotherapy"]
 		union ["Encounter": "Telehealth Services"] ) ValidEncounter
 		where ValidEncounter.status = 'finished'
-				and Global.EncounterDiagnosis(ValidEncounter).code in "Major Depressive Disoder-Active"
+				and Global.EncounterDiagnosis(ValidEncounter).code in "Major Depressive Disorder-Active"
 
 define "Numerator":
 "Major Depressive Disorder Encounter" MDDEncounter
