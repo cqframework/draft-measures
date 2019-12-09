@@ -20,6 +20,8 @@ codesystem "LOINC": 'http://loinc.org'
 codesystem "ObservationCategoryCodes":  'http://terminology.hl7.org/CodeSystem/observation-category'
 codesystem "ConditionClinicalStatusCodes": 'http://terminology.hl7.org/CodeSystem/condition-clinical'
 
+//11/5: new value set for proedure: Feeding
+valueset "Feeding": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1110.49 '
 valueset "Breast Milk": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.30'
 valueset "Dietary Intake Other than Breast Milk": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.27'
 valueset "Discharge To Acute Care Facility": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.87'
@@ -30,6 +32,7 @@ valueset "Other Health Care Facility": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.1
 valueset "Parenteral Nutrition": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.38'
 valueset "Patient Expired": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.309'
 valueset "Single Live Born Newborn Born in Hospital": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.26'
+
 
 code "Gestational age--at birth": '76516-4' from "LOINC" display 'Gestational age--at birth'
 code "exam": 'exam' from "ObservationCategoryCodes" 
@@ -64,13 +67,19 @@ define "Initial Population":
       define "Single Live Birth Encounter Without Galactosemia and Parenteral Nutrition":
         "Single Live Birth Encounter" SingleLiveBirthEncounter
           without ["MedicationAdministration": "Parenteral Nutrition"] ParenteralNutrition
-          such that ParenteralNutrition.effective as Period starts during SingleLiveBirthEncounter.period
-          where not ( Global.EncounterDiagnosis(SingleLiveBirthEncounter).code in "Galactosemia"
+          such that ParenteralNutrition.status in { 'in-progress', 'on-hold', 'completed', 'stopped' }
+                and ParenteralNutrition.effective as Period starts during SingleLiveBirthEncounter.period
+          where not exists (
+                      (Global.EncounterDiagnosis(SingleLiveBirthEncounter)) EncounterDiagnosis
+                        where EncounterDiagnosis.code in "Galactosemia"
                     )
 
           define "Single Live Birth Encounter":
               Global."Inpatient Encounter" InpatientEncounter
-	             where Global.EncounterDiagnosis(InpatientEncounter).code in "Single Live Born Newborn Born in Hospital"
+	             where exists (
+                        (Global.EncounterDiagnosis(InpatientEncounter)) EncounterDiagnosis
+                        where EncounterDiagnosis.code in "Single Live Born Newborn Born in Hospital"
+                      )
 
 
 define "Denominator":
@@ -95,12 +104,19 @@ define "Numerator":
   "Single Live Birth Encounter With Newborn Fed Breast Milk Only Since Birth"
 
  //NOTE: Procedure needs to be replaced by NutritionInake once NutritionInake resource is avaialbe in FHIR
- //NOTE: use Procedure.usedCode to indicate Breask Milk and Diettary are not surgical procedures
   define "Single Live Birth Encounter With Newborn Fed Breast Milk Only Since Birth":
     "Single Live Birth Encounter With Gestational Age 37 Weeks or More" QualifyingEncounter
-	     with ["Procedure": usedCode in "Breast Milk"] BreastMilkFeeding
-		     such that BreastMilkFeeding.status = 'complete'
-              and BreastMilkFeeding.performed as Period starts during QualifyingEncounter.period
-	        without ["Procedure": usedCode in "Dietary Intake Other than Breast Milk"] OtherFeeding
-		        such that OtherFeeding.status in {'complete', 'in progress'}
-                and OtherFeeding.performed as Period starts during QualifyingEncounter.period
+    with ["Procedure": "Feeding"] Feeding
+    such that Feeding.status in { 'complete', 'in-progress' }
+          and Feeding.usedCode in "Breast Milk"
+          and Feeding.performed as Period starts during QualifyingEncounter.period
+    without ["Procedure": "Feeding"] Feeding
+    such that Feeding.status in {'complete', 'in progress'}
+        and Feeding.usedCode in "Dietary Intake Other than Breast Milk"
+        and Feeding.performed as Period starts during QualifyingEncounter.period
+
+      //11/05: With Breast Milk fedding and without not breaskfeeding to express "Exclusive breask milk feeding"
+        /*Feeding.status in {'complete', 'in progress'}
+        and not (Feeding.usedCode in "Breast Milk")
+        and Feeding.performed as Period starts during QualifyingEncounter.period
+        */

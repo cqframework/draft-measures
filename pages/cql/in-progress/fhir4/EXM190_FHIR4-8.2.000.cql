@@ -21,6 +21,7 @@ codesystem "ConditionClinicalStatusCodes": 'http://terminology.hl7.org/CodeSyste
 //NOTE: Created for ActPriority for Encounter.category which is codeableConcept
 codesystem "ActPriority": 'http://terminology.hl7.org/ValueSet/v3-ActPriority'
 
+valueset "Device Application": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1110.48'
 valueset "Atrial Fibrillation/Flutter": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.202'
 valueset "Comfort Measures": 'http://cts.nlm.nih.gov/fhir/ValueSet/1.3.6.1.4.1.33895.1.3.0.45'
 valueset "Direct Thrombin Inhibitor": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.205'
@@ -376,7 +377,11 @@ define "No VTE Prophylaxis Medication Due to Medical Reason From Day Of Start of
   	["MedicationRequest": medication in "Warfarin"]
   	) MedicationOrder
   	where	MedicationOrder.doNotPerform is true
-  	)
+      and MedicationOrder.status in {'completed', 'cancelled'}
+      //11/5 discussion: all expressions for QI-Core must include a status.
+      //Therefore, we need ServiceRequest.status = completed; and MedicationRequest.status = cancelled (or completed, since cancelled indicates it was once ordered but intentionally never filled).
+      //So the not done issue is handled by ServiceRequest.doNotPerform = True  Or MedicationRequest.doNotPerform = True
+    )
 
 
 define "No VTE Prophylaxis Medication Due to Medical Reason on Day of or Day After Procedure":
@@ -395,50 +400,38 @@ define "No VTE Prophylaxis Medication Due to Medical Reason on Day of or Day Aft
 define "No VTE Prophylaxis Device Due to Medical Reason From Day of Start of Hospitalization To Day After First ICU Stay":
   	"Encounter With ICU Location" QualifyingEncounterICU
     with "No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
-    such that (GetNotDoneReason(NoVTEDevice) in "Medical Reason"
-                or GetNotPerformReason(NoVTEDevice) in "Medical Reason")
-        and Coalesce(NoVTEDevice.authoredOn, NoVTEDevice.recordedOn) during VTEICU."FromDayOfStartOfHospitalizationToDayAfterFirstICU"(QualifyingEncounterICU)
+    such that NoVTEDevice.requestStatusReason in "Medical Reason"
+        and NoVTEDevice.authoredOn during VTEICU."FromDayOfStartOfHospitalizationToDayAfterFirstICU"(QualifyingEncounterICU)
 
 
-  /*: TODO: Mapping Table review - neither DeviceRequest nor DeviceUseStatement reasonCode could be used for not done reasonCode
-     In R4 - Use Extensions to get Not done reason for DeviceRequest and DeviceUseStatement
-       DeviceUseStatement not-done-reason uses extension 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-devicerequest-doNotPerformReason'
-       DeviceUseRequest not-done-reason uses extension 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDoneReason'
-       GForge ticket # 20601
-    NOTE: 2 options to retrive those information in the logic and the Option_2 is more effecient after comparing 2 options -
-        Option_1 is to express the extensions by using generic extension functions as below -
-             FHIRHelpers.ToBoolean(GetExtension(DeviceApplied, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDone').value)
-             FHIRHelpers.ToCode(GetExtension(DeviceApplied, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDoneReason').value)
-                    in "Medical Reason"
-        Option_2 is to define Specific extension functions to retrive Information (used by VTE-1 and VTE-2)
-  */
+  //11/5: ServiceRequest not done reason is an extension in QI-Core R4 as ServiceRequest.extension:statusReason
+    define function GetStatusReason(requestReason ServiceRequest):
+            GetExtension(requestReason, 'http://hl7.org/fhir/StructureDefinition/request-statusReason')
 
-  define function GetNotDone(deviceUseStatement DeviceUseStatement):
-      GetExtension(deviceUseStatement, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDone').value
-
-  define function GetNotDoneReason(deviceUseStatement DeviceUseStatement):
-      FHIRHelpers.ToCode(GetExtension(deviceUseStatement, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-deviceusestatement-notDoneReason').value)
-
-  define function GetDoNotPerfom(deviceRequest DeviceRequest):
-      GetExtension(deviceRequest, 'http://hl7.org/fhir/StructureDefinition/request-doNotPerform').value
-
-  define function GetNotPerformReason(deviceRequest DeviceRequest):
-      FHIRHelpers.ToCode(GetExtension(deviceRequest, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-devicerequest-doNotPerformReason').value)
-
-  define "No VTE Prophylaxis Device Applied or Ordered":
-      ((["DeviceUseStatement": code in "Venous foot pumps (VFP)"]
-        union ["DeviceUseStatement": code in "Intermittent pneumatic compression devices (IPC)"]
-        union ["DeviceUseStatement": code in "Graduated compression stockings (GCS)"]
-        ) DeviceApplied
-          where GetNotDone(DeviceApplied) is true
-      )
-      union ((
-          ["DeviceRequest": code in "Venous foot pumps (VFP)"]
-          union ["DeviceRequest": code in "Intermittent pneumatic compression devices (IPC)"]
-          union ["DeviceRequest": code in "Graduated compression stockings (GCS)"]
+    define "No VTE Prophylaxis Device Applied or Ordered":
+        ((
+          ["ServiceRequest": "Venous foot pumps (VFP)"]
+          union ["ServiceRequest": "Intermittent pneumatic compression devices (IPC)"]
+          union ["ServiceRequest": "Graduated compression stockings (GCS)"]
           ) DeviceOrder
-            where GetDoNotPerfom(DeviceOrder) is true
+          where DeviceOrder.status = 'completed'
+          //11/5 discussion: all expressions for QI-Core must include a status
+          //ServiceRequest.status -  draft | active | suspended | completed | entered-in-error | cancelled
+              and DeviceOrder.doNotPerform is true
+          return {id: DeviceOrder.id, requestStatusReason: GetStatusReason(DeviceOrder), authoredOn: DeviceOrder.authoredOn}
           )
+    union
+        (
+          ["Procedure": "Device Application"] DeviceApplied
+            let DeviceNotDoneTiming: GetExtension(DeviceApplied, 'http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-recorded').value
+            where (DeviceApplied.usedCode in "Intermittent pneumatic compression devices (IPC)"
+                or DeviceApplied.usedCode in "Venous foot pumps (VFP)"
+                or DeviceApplied.usedCode in "Graduated compression stockings (GCS)"
+                )
+                and  DeviceApplied.status = 'not-done'
+                return {id: DeviceApplied.id, requestStatusReason: DeviceApplied.statusReason, authoredOn: DeviceNotDoneTiming}
+
+    )
 
 
 define "No VTE Prophylaxis Device Due to Medical Reason on Day of or Day After Procedure":
@@ -446,11 +439,10 @@ define "No VTE Prophylaxis Device Due to Medical Reason on Day of or Day After P
 		"Encounter With ICU Location" QualifyingEncounterICU,
 		["Procedure": "General or Neuraxial Anesthesia"] AnesthesiaProcedure,
 		"No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
-		where  (GetNotDoneReason(NoVTEDevice) in "Medical Reason"
-              or GetNotPerformReason(NoVTEDevice) in "Medical Reason")
+		where  NoVTEDevice.requestStatusReason in "Medical Reason"
         and AnesthesiaProcedure.status = 'completed'
         and AnesthesiaProcedure.performed as Period ends 1 day after day of VTEICU."StartOfFirstICU"(QualifyingEncounterICU)
-        and Coalesce(NoVTEDevice.authoredOn, NoVTEDevice.recordedOn) during TJC."CalendarDayOfOrDayAfter"(
+        and NoVTEDevice.authoredOn during TJC."CalendarDayOfOrDayAfter"(
 			         end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
 		return QualifyingEncounterICU
 
@@ -462,7 +454,7 @@ define "Encounter With No VTE Prophylaxis Due to Patient Refusal":
 define "No VTE Prophylaxis Due to Patient Refusal From Day of Start of Hospitalization To Day After First ICU Stay":
 	"Encounter With ICU Location" QualifyingEncounterICU
 		with "No VTE Prophylaxis Medication or Device Due to Patient Refusal" PatientRefusal
-    such that Coalesce(PatientRefusal.effective, PatientRefusal.authoredOn, PatientRefusal.recordedOn)
+    such that Coalesce(PatientRefusal.effective as dateTime, PatientRefusal.authoredOn)
         during VTEICU.FromDayOfStartOfHospitalizationToDayAfterFirstICU(QualifyingEncounterICU)
 
   define "No VTE Prophylaxis Medication or Device Due to Patient Refusal":
@@ -470,8 +462,7 @@ define "No VTE Prophylaxis Due to Patient Refusal From Day of Start of Hospitali
           where  Coalesce(NoVTEMedication.statusReason,NoVTEMedication.reasonCode) in "Patient Refusal"
       )
       union ("No VTE Prophylaxis Device Applied or Ordered" NoVTEDevice
-              where GetNotDoneReason(NoVTEDevice) in "Patient Refusal"
-                or GetNotPerformReason(NoVTEDevice) in "Patient Refusal"
+              where NoVTEDevice.requestStatusReason in "Patient Refusal"
             )
 
 define "No VTE Prophylaxis Due to Patient Refusal on Day of or Day After Procedure":
@@ -480,7 +471,7 @@ define "No VTE Prophylaxis Due to Patient Refusal on Day of or Day After Procedu
 		["Procedure": "General or Neuraxial Anesthesia"] AnesthesiaProcedure,
 		"No VTE Prophylaxis Medication or Device Due to Patient Refusal" PatientRefusal
 		where AnesthesiaProcedure.performed as Period ends 1 day after day of VTEICU."StartOfFirstICU"(QualifyingEncounterICU)
-			and Coalesce(PatientRefusal.effective as dateTime, PatientRefusal.authoredOn, PatientRefusal.recordedOn)
+			and Coalesce(PatientRefusal.effective as dateTime, PatientRefusal.authoredOn)
         during TJC."CalendarDayOfOrDayAfter"(
   			end of FHIRHelpers.ToInterval(AnesthesiaProcedure.performed as Period))
 		return QualifyingEncounterICU
