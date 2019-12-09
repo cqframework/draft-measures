@@ -1,5 +1,7 @@
 library DocumentationofCurrentMedicationsintheMedicalRecord version '9.1.000'
 //This example is based on CMS 68 V9.1.000 Documentation of Current Medications in the Medical Record
+//Updated on 12/3 Collaboration call: changed file name, added SDE elements, corrected reference libaries
+
 using FHIR version '3.0.0'
 include FHIRHelpers version '3.0.0' called FHIRHelpers
 
