@@ -6,7 +6,7 @@ title: Examples
 # Libraries
 
 # Measure Conversion Status
-The following subsections link to measures measures that have started conversion to FHIR (separated as FHIR STU3 and R4), been fully converted, or are undergiong testing.
+The following subsections link to measures that have started conversion to FHIR (separated as FHIR STU3 and R4), been fully converted, or are undergoing testing.
 
 ## FHIR R4 Conversion in Progress
 Measures that are in the process of being converted to FHIR R4
@@ -16,59 +16,59 @@ Measures that are in the process of being converted to FHIR R4
 ## FHIR R4 Converted Measures
 Measures that have been converted to FHIR R4
 
-* [**EXM9**](cql/in-progress/fhir4/EXM9_FHIR4-8.1.000.cql) Exclusive Breast Milk Feeding - [Library]()
-* [**EXM71**](cql/in-progress/fhir4/EXM71_FHIR4-9.000.cql) Anticoagulation Therapy for Atrial Fibrillation/Flutter - [Library]()
-* [**EXM72**](cql/in-progress/fhir4/EXM72_FHIR4-8.1.000.cql) Antithrombotic Therapy By End of Hospital Day 2 - [Library]()
-* [**EXM105**](cql/in-progress/fhir4/EXM105_FHIR4-8.1.000.cql) Discharged on Statin Medication - [Library]()
-* [**EXM111**](cql/in-progress/fhir4/EXM111_FHIR4-8.0.000.cql) Median Admit Decision Time to ED Departure Time for Admitted Patients - [Library]()
-* [**EXM113**](cql/in-progress/fhir4/EXM113_FHIR4-8.1.000.cql) Elective Delivery - [Library]()
-* [**EXM190**](cql/in-progress/fhir4/EXM190_FHIR4-8.2.000.cql) Intensive Care Unit Venous Thromboembolism Prophylaxis - [Library]()
-* [**EXM349**](cql/in-progress/fhir4/EXM349_FHIR4-2.9.000.cql) HIV Screening - [Library]()
-* [**EXM506**](cql/in-progress/fhir4/EXM506_FHIR4-2.0.000.cql) Safe use of opioids - concurrent prescribing - [Library]()
+* [**EXM9**](cql/in-progress/fhir4/EXM9_FHIR4-8.1.000.cql) Exclusive Breast Milk Feeding
+* [**EXM71**](cql/in-progress/fhir4/EXM71_FHIR4-9.000.cql) Anticoagulation Therapy for Atrial Fibrillation/Flutter
+* [**EXM72**](cql/in-progress/fhir4/EXM72_FHIR4-8.1.000.cql) Antithrombotic Therapy By End of Hospital Day 2
+* [**EXM105**](cql/in-progress/fhir4/EXM105_FHIR4-8.1.000.cql) Discharged on Statin Medication
+* [**EXM111**](cql/in-progress/fhir4/EXM111_FHIR4-8.0.000.cql) Median Admit Decision Time to ED Departure Time for Admitted Patients
+* [**EXM113**](cql/in-progress/fhir4/EXM113_FHIR4-8.1.000.cql) Elective Delivery
+* [**EXM190**](cql/in-progress/fhir4/EXM190_FHIR4-8.2.000.cql) Intensive Care Unit Venous Thromboembolism Prophylaxis
+* [**EXM349**](cql/in-progress/fhir4/EXM349_FHIR4-2.9.000.cql) HIV Screening
+* [**EXM506**](cql/in-progress/fhir4/EXM506_FHIR4-2.0.000.cql) Safe use of opioids - concurrent prescribing
 
 ## FHIR R4 Under-Test Measures
 Measures that are undergoing testing on their FHIR R4 version
 
-* [**EXM104**](cql/in-progress/fhir4/EXM104_FHIR4-8.1.000.cql) Discharged on Antithrombotic Therapy - [Library]()
-* [**EXM108**](cql/in-progress/fhir4/EXM108_FHIR4-8.2.000.cql) Venous Thromboembolism Prophylaxis - [Library]()
+* [**EXM104**](cql/in-progress/fhir4/EXM104_FHIR4-8.1.000.cql) Discharged on Antithrombotic Therapy
+* [**EXM108**](cql/in-progress/fhir4/EXM108_FHIR4-8.2.000.cql) Venous Thromboembolism Prophylaxis
 * [**EXM124**](cql/in-progress/fhir4/EXM124_FHIR4-8.1.000.cql) Cervical Cancer Screening - [Library](../resources/library/library-exm124-FHIR.json)
 * [**EXM125**](cql/in-progress/fhir4/EXM125_FHIR4-8.1.000.cql) Breast Cancer Screening - [Library](../resources/library/library-exm125-FHIR.json)
 * [**EXM130**](cql/in-progress/fhir4/EXM130_FHIR4-8.1.000.cql) Breast Cancer Screening - [Library](../resources/library/library-exm130-FHIR.json)
-* [**EXM165**](cql/in-progress/fhir4/EXM165_FHIR4-8.5.000.cql) Controlling High Blood Pressure - [Library]()
+* [**EXM165**](cql/in-progress/fhir4/EXM165_FHIR4-8.5.000.cql) Controlling High Blood Pressure
 
 ## FHIR STU3 Conversion in Progress
 Measures that are in the process of being converted to FHIR STU3
 
-* [**EXM68**](cql/in-progress/fhir3/EXM_FHIR3-9.1.000.cql) Documentation of Current Medications in the Medical Record - [Library]()
-* [**EXM71**](cql/in-progress/fhir3/EXM_FHIR3-9.1.000.cql) Anticoagulation Therapy for Atrial Fibrillation/Flutter - [Library]()
-* [**EXM117**](cql/in-progress/fhir3/EXM_FHIR3-1.0.1.cql) Childhood Immunization Status - [Library]()
-* [**EXM122**](cql/in-progress/fhir3/EXM_FHIR3-8.1.000.cql) Diabetes: Hemoglobin A1c (HbA1c) Poor Control (> 9%) - [Library]()
-* [**EXM135**](cql/in-progress/fhir3/EXM_FHIR3-8.1.000.cql) Heart Failure (HF): Angiotensin-Converting Enzyme (ACE) Inhibitor or Angiotensin Receptor Blocker (ARB) Therapy for Left Ventricular Systolic Dysfunction (LVSD) - [Library]()
-* [**EXM146**](cql/in-progress/fhir3/EXM_FHIR3-8.1.000.cql) Appropriate Testing for Children with Pharyngitis - [Library]()
+* [**EXM68**](cql/in-progress/fhir3/EXM_FHIR3-9.1.000.cql) Documentation of Current Medications in the Medical Record
+* [**EXM71**](cql/in-progress/fhir3/EXM_FHIR3-9.1.000.cql) Anticoagulation Therapy for Atrial Fibrillation/Flutter
+* [**EXM117**](cql/in-progress/fhir3/EXM_FHIR3-1.0.1.cql) Childhood Immunization Status
+* [**EXM122**](cql/in-progress/fhir3/EXM_FHIR3-8.1.000.cql) Diabetes: Hemoglobin A1c (HbA1c) Poor Control (> 9%)
+* [**EXM135**](cql/in-progress/fhir3/EXM_FHIR3-8.1.000.cql) Heart Failure (HF): Angiotensin-Converting Enzyme (ACE) Inhibitor or Angiotensin Receptor Blocker (ARB) Therapy for Left Ventricular Systolic Dysfunction (LVSD)
+* [**EXM146**](cql/in-progress/fhir3/EXM_FHIR3-8.1.000.cql) Appropriate Testing for Children with Pharyngitis
 
 ## FHIR STU3 Converted Measures
 Measures that have been converted to FHIR STU3
 
-* [**EXM2**](cql/in-progress/fhir3/EXM2_FHIR3-1.1.000.cql) Preventive Care and Screening: Screening for Depression and Follow-Up Plan - [Library]()
-* [**EXM72**](cql/in-progress/fhir3/EXM72_FHIR3-8.1.0.cql) Antithrombotic Therapy By End of Hospital Day 2 - [Library]()
-* [**EXM105**](cql/in-progress/fhir3/EXM105_FHIR3-8.000.cql) Discharged on Statin Medication - [Library]()
-* [**EXM111**](cql/in-progress/fhir3/EXM111_FHIR3-8.0.000.cql) Median Admit Decision Time to ED Departure Time for Admitted Patients - [Library]()
-* [**EXM135**](cql/in-progress/fhir3/EXM135_FHIR3.cql) Heart Failure (HF): Angiotensin-Converting Enzyme (ACE) Inhibitor or Angiotensin Receptor Blocker (ARB) Therapy for Left Ventricular Systolic Dysfunction (LVSD) - [Library]()
-* [**EXM159**](cql/in-progress/fhir3/EXM159_FHIR3-8.5.002.cql) Depression Remission at Twelve Months - [Library]()
-* [**EXM161**](cql/in-progress/fhir3/EXM161_FHIR3-8.0.0.cql) Adult Major Depressive Disorder (MDD): Suicide Risk Assessment - [Library]()
-* [**EXM177**](cql/in-progress/fhir3/EXM177_FHIR3-8.1.000.cql) Child and Adolescent Major Depressive Disorder (MDD): Suicide Risk Assessment - [Library]()
-* [**EXM349**](cql/in-progress/fhir3/EXM349_FHIR3-2.9.000.cql) HIV Screening - [Library]()
-* [**EXM506**](cql/in-progress/fhir3/EXM506_FHIR3-2.0.000.cql) Safe use of opioids - concurrent prescribing - [Library]()
+* [**EXM2**](cql/in-progress/fhir3/EXM2_FHIR3-1.1.000.cql) Preventive Care and Screening: Screening for Depression and Follow-Up Plan
+* [**EXM72**](cql/in-progress/fhir3/EXM72_FHIR3-8.1.0.cql) Antithrombotic Therapy By End of Hospital Day 2
+* [**EXM105**](cql/in-progress/fhir3/EXM105_FHIR3-8.000.cql) Discharged on Statin Medication
+* [**EXM111**](cql/in-progress/fhir3/EXM111_FHIR3-8.0.000.cql) Median Admit Decision Time to ED Departure Time for Admitted Patients
+* [**EXM135**](cql/in-progress/fhir3/EXM135_FHIR3.cql) Heart Failure (HF): Angiotensin-Converting Enzyme (ACE) Inhibitor or Angiotensin Receptor Blocker (ARB) Therapy for Left Ventricular Systolic Dysfunction (LVSD)
+* [**EXM159**](cql/in-progress/fhir3/EXM159_FHIR3-8.5.002.cql) Depression Remission at Twelve Months
+* [**EXM161**](cql/in-progress/fhir3/EXM161_FHIR3-8.0.0.cql) Adult Major Depressive Disorder (MDD): Suicide Risk Assessment
+* [**EXM177**](cql/in-progress/fhir3/EXM177_FHIR3-8.1.000.cql) Child and Adolescent Major Depressive Disorder (MDD): Suicide Risk Assessment
+* [**EXM349**](cql/in-progress/fhir3/EXM349_FHIR3-2.9.000.cql) HIV Screening
+* [**EXM506**](cql/in-progress/fhir3/EXM506_FHIR3-2.0.000.cql) Safe use of opioids - concurrent prescribing
 
 ## FHIR STU3 Under-Test Measures
 Measures that are undergoing testing on their FHIR STU3 version
 
-* [**EXM104**](cql/in-progress/fhir3/EXM104_FHIR3-8.1.000.cql) Discharged on Antithrombotic Therapy - [Library]()
-* [**EXM108**](cql/complete/fhir3/EXM108_FHIR3-7.4.000.cql) Venous Thromboembolism Prophylaxis - [Library]()
+* [**EXM104**](cql/in-progress/fhir3/EXM104_FHIR3-8.1.000.cql) Discharged on Antithrombotic Therapy
+* [**EXM108**](cql/complete/fhir3/EXM108_FHIR3-7.4.000.cql) Venous Thromboembolism Prophylaxis
 * [**EXM124**](cql/complete/fhir3/EXM124_FHIR3-7.2.000.cql) Cervical Cancer Screening - [Library](../resources/library/library-exm124-FHIR.json)
 * [**EXM125**](cql/complete/fhir3/EXM125_FHIR3-7.2.000.cql) Breast Cancer Screening - [Library](../resources/library/library-exm125-FHIR.json)
 * [**EXM130**](cql/complete/fhir3/EXM130_FHIR3-7.2.000.cql) Colorectal Cancer Screening - [Library](../resources/library/library-exm130-FHIR.json)
-* [**EXM165**](cql/in-progress/fhir3/EXM165_FHIR3-8.5.000.cql) Controlling High Blood Pressure - [Library]()
+* [**EXM165**](cql/in-progress/fhir3/EXM165_FHIR3-8.5.000.cql) Controlling High Blood Pressure
 
 # Issues
 
