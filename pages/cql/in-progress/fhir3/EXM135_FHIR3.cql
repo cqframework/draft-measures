@@ -42,7 +42,6 @@ parameter "Measurement Period" Interval<DateTime>
 
 context Patient
 
-// PCPI to ESAC: Supplemental data elements are showing errors because we don't have the SupplementalDataElements_FHIR3 file in our folder
 define "SDE Ethnicity":
 	SDE."SDE Ethnicity"
 
