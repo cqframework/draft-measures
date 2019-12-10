@@ -1,5 +1,7 @@
 library DocumentationofCurrentMedicationsintheMedicalRecord version '9.1.000'
 //This example is based on CMS 68 V9.1.000 Documentation of Current Medications in the Medical Record
+//Updated on 12/3 Collaboration call: changed file name, added SDE elements, corrected reference libaries
+
 using FHIR version '3.0.0'
 include FHIRHelpers version '3.0.0' called FHIRHelpers
 
@@ -35,14 +37,19 @@ define "SDE Race":
 define "SDE Sex":
 	SDE."SDE Sex"
 
-define "Medications Not Documented for Medical Reason":
-	["Procedure, Not Performed": "Documentation of current medications (procedure)"] NotPerformed
-		where NotPerformed.negationRationale in "Medical or Other reason not done"
+  define "Medications Not Documented for Medical Reason":
+  	["Procedure": "Documentation of current medications (procedure)"] DocumentationNotPerformed
+  		where DocumentationNotPerformed.status = 'aborted'
+  		//not sure if 'aborted' is appropriate, given that we are looking for a procedure //
+  		//to not be performed, therefore not even started. looking for recommendations//
+  		and DocumentationNotPerformed.notDoneReason in "Medical or Other reason not done"
 
-define "Denominator Exceptions":
-	"Qualifying Encounters During Measurement Period" EncounterDuringMeasurementPeriod
-		with "Medications Not Documented for Medical Reason" MedicationsNotDocumented
-			such that MedicationsNotDocumented.authorDatetime during EncounterDuringMeasurementPeriod.period
+  define "Denominator Exceptions":
+  	"Qualifying Encounters During Measurement Period" EncounterDuringMeasurementPeriod
+  		with "Medications Not Documented for Medical Reason" MedicationsNotDocumented
+  			such that MedicationsNotDocumented.FHIR.provenance.recorded during EncounterDuringMeasurementPeriod.period
+  			//unsure what attribute should be used to incorporate timing of negation to reflect it occurred during the Encoutner.
+  			//FHIR.provenance.recorded is what's listed in the table on http://hl7.org/fhir/us/qicore/Procedure.html//
 
 define "Medications Documented During Qualifying Encounter":
 	"Qualifying Encounters During Measurement Period" QualifyingEncounterDuringMeasurementPeriod
