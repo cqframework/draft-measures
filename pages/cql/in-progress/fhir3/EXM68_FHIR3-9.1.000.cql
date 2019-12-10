@@ -39,9 +39,11 @@ define "SDE Sex":
 
   define "Medications Not Documented for Medical Reason":
   	["Procedure": "Documentation of current medications (procedure)"] DocumentationNotPerformed
-  		where DocumentationNotPerformed.status = 'aborted'
+  		where DocumentationNotPerformed.status = 'completed'
   		//not sure if 'aborted' is appropriate, given that we are looking for a procedure //
   		//to not be performed, therefore not even started. looking for recommendations//
+      //will need to use extension for not performed. Not available yet
+      //ESAC team, would you mind showing us where to add the extension  (http://hl7.org/fhir/us/qicore/StructureDefinition/notDone').value in the logic?
   		and DocumentationNotPerformed.notDoneReason in "Medical or Other reason not done"
 
   define "Denominator Exceptions":
