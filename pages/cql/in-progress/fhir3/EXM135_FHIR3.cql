@@ -322,26 +322,25 @@ define "Medical Patient or System Reason for No ACEI or ARB or ARNI at Inpatient
 //PCPI to ESAC: We're wondering which approach is correct to express negation logic. Should we use MedicationRequest (see above) or MedicationStatement (see below OPTION 2)?
 // NOTE: US Core is moving away from MedicationStatement, so the recommendation is to use MedicationRequest
 
-define "OPTION 2 Medical Patient or System Reason for No ACEI or ARB or ARNI at Inpatient Discharge":
-	["MedicationStatement"] NoACEIOrARBOrARNIAtDischarge
-		with "Heart Failure Inpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFInpatientEncounter
-			such that NoACEIOrARBOrARNIAtDischarge.effective during ModerateOrSevereLVSDHFInpatientEncounter.period
-		  and (NoACEIOrARBOrARNIAtDischarge.medication as CodeableConcept) in "ACE Inhibitor or ARB"
-			and NoACEIOrARBOrARNIAtDischarge.taken = 'n'
-			and ( singleton from NoACEIOrARBOrARNIAtDischarge.reasonNotTaken in "Medical Reason"
-				or singleton from NoACEIOrARBOrARNIAtDischarge.reasonNotTaken in "Patient Reason"
-				or singleton from NoACEIOrARBOrARNIAtDischarge.reasonNotTaken in "Patient Reason for ACE Inhibitor or ARB Decline"
-				or singleton from NoACEIOrARBOrARNIAtDischarge.reasonNotTaken in "System Reason")
+//define "OPTION 2 Medical Patient or System Reason for No ACEI or ARB or ARNI at Inpatient Discharge":
+//	["MedicationStatement"] NoACEIOrARBOrARNIAtDischarge
+	//	with "Heart Failure Inpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFInpatientEncounter
+	//		such that NoACEIOrARBOrARNIAtDischarge.effective during ModerateOrSevereLVSDHFInpatientEncounter.period
+	//	  and (NoACEIOrARBOrARNIAtDischarge.medication as CodeableConcept) in "ACE Inhibitor or ARB"
+	//		and NoACEIOrARBOrARNIAtDischarge.taken = 'n'
+	//		and ( singleton from NoACEIOrARBOrARNIAtDischarge.reasonNotTaken in "Medical Reason"
+		//		or singleton from NoACEIOrARBOrARNIAtDischarge.reasonNotTaken in "Patient Reason"
+	//			or singleton from NoACEIOrARBOrARNIAtDischarge.reasonNotTaken in "Patient Reason for ACE Inhibitor or ARB Decline"
+		//		or singleton from NoACEIOrARBOrARNIAtDischarge.reasonNotTaken in "System Reason")
 
 define "Medical Patient or System Reason for Not Ordering ACEI or ARB or ARNI Outpatient":
-	["MedicationRequest"] NoACEIOrARBOrARNIOrdered
+	["MedicationRequest": "ACE Inhibitor or ARB" ] NoACEIOrARBOrARNIOrdered
 		with "Heart Failure Outpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFOutpatientEncounter
 			such that NoACEIOrARBOrARNIOrdered.authoredOn during ModerateOrSevereLVSDHFOutpatientEncounter.period
-		 	and (NoACEIOrARBOrARNIOrdered.medication as CodeableConcept) in "ACE Inhibitor or ARB"
-      and (singleton from NoACEIOrARBOrARNIOrdered.reasonCode in "Medical Reason"
-				or singleton from NoACEIOrARBOrARNIOrdered.reasonCode in "Patient Reason"
-				or singleton from NoACEIOrARBOrARNIOrdered.reasonCode in "Patient Reason for ACE Inhibitor or ARB Decline"
-				or singleton from NoACEIOrARBOrARNIOrdered.reasonCode in "System Reason"
+		 	and (NoACEIOrARBOrARNIOrdered.reasonCode in "Medical Reason"
+				or NoACEIOrARBOrARNIOrdered.reasonCode in "Patient Reason"
+				or  NoACEIOrARBOrARNIOrdered.reasonCode in "Patient Reason for ACE Inhibitor or ARB Decline"
+				or NoACEIOrARBOrARNIOrdered.reasonCode in "System Reason"
 		)
 
 define "Initial Population 1":
