@@ -72,37 +72,58 @@ define "Inpatient Discharge During Measurement Period":
 define "Heart Failure Inpatient Encounter":
 	"Inpatient Discharge During Measurement Period" InpatientEncounter
 		with ["Condition": "Heart Failure"] HeartFailure
-			such that HeartFailure.onset overlaps InpatientEncounter.period
+		  such that Global.GetPrevalencePeriod(HeartFailure) overlaps InpatientEncounter.period
+			//such that HeartFailure.onset overlaps InpatientEncounter.period
 			and HeartFailure.clinicalStatus = 'active'
 			and HeartFailure.verificationStatus = 'confirmed'
+
+/*
+OnSet for QICoreCondition (STU3) is specified as a choice of:
+* dateTime
+* Age
+* Period
+* Range
+Abatement is specified as a choice of:
+* date
+* Age
+* boolean
+* Period
+* Range
+
+See Normalize Onset, Normalize Abatement, and GetPrevalencePeriod in the GlobalCommonFunctions library for more
+*/
 
 define "Heart Failure Outpatient Encounter with Moderate or Severe LVSD":
 	"Heart Failure Outpatient Encounter" HFOutpatientEncounter
 		with "Moderate or Severe LVSD Findings" OutpatientLVSDFindings
-			such that OutpatientLVSDFindings.onset before
-			end of HFOutpatientEncounter.period
+		  such that Global.GetPrevalencePeriod(OutpatientLVSDFindings) starts before end of HFOutpatientEncounter.period
+			//such that OutpatientLVSDFindings.onset before
+			//end of HFOutpatientEncounter.period
 				or OutpatientLVSDFindings.effective starts before
 				end of HFOutpatientEncounter.period
 
 define "Diagnosis of Pregnancy Outpatient":
 	["Condition": "Pregnancy"] Pregnancy
 		with "Heart Failure Outpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFOutpatientEncounter
-			such that Pregnancy.onset overlaps ModerateOrSevereLVSDHFOutpatientEncounter.period
+		  such that Global.GetPrevalencePeriod(Pregnancy) overlaps ModerateOrSevereLVSDHFOutpatientEncounter.period
+			//such that Pregnancy.onset overlaps ModerateOrSevereLVSDHFOutpatientEncounter.period
 			and Pregnancy.clinicalStatus = 'active'
 			and Pregnancy.verificationStatus = 'confirmed'
 
 define "Diagnosis of Pregnancy Inpatient":
 	["Condition": "Pregnancy"] Pregnancy
 		with "Heart Failure Inpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFInpatientEncounter
-			such that Pregnancy.onset overlaps ModerateOrSevereLVSDHFInpatientEncounter.period
+			such that Global.GetPrevalencePeriod(Pregnancy) overlaps ModerateOrSevereLVSDHFInpatientEncounter.period
+			//such that Pregnancy.onset overlaps ModerateOrSevereLVSDHFInpatientEncounter.period
 			and Pregnancy.clinicalStatus = 'active'
 			and Pregnancy.verificationStatus = 'confirmed'
 
 define "Heart Failure Inpatient Encounter with Moderate or Severe LVSD":
 	"Heart Failure Inpatient Encounter" HFInpatientEncounter
 		with "Moderate or Severe LVSD Findings" InpatientLVSDFindings
-			such that InpatientLVSDFindings.onset before
-			end of HFInpatientEncounter.period
+		  such that Global.GetPrevalencePeriod(InpatientLVSDFindings) starts before end of HFInpatientEncounter.period
+			//such that InpatientLVSDFindings.onset before
+			//end of HFInpatientEncounter.period
 				or InpatientLVSDFindings.effective starts before
 				end of HFInpatientEncounter.period
 
@@ -137,78 +158,92 @@ define "Moderate or Severe LVSD Findings":
 				and LVSD.verificationStatus = 'confirmed' )
 
 define "ACEI or ARB or ARNI at Inpatient Discharge":
-	["MedicationRequest"] ACEIOrARBOrARNIAtDischarge
+	["MedicationRequest": "ACE Inhibitor or ARB"] ACEIOrARBOrARNIAtDischarge
 		with "Heart Failure Inpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFInpatientEncounter
 			such that ACEIOrARBOrARNIAtDischarge.authoredOn during ModerateOrSevereLVSDHFInpatientEncounter.period
-			and (ACEIOrARBOrARNIAtDischarge.medication as CodeableConcept) in "ACE Inhibitor or ARB"
+			// NOTE: Why not just put this in as a value set filter in the retrieve?
+			//and (ACEIOrARBOrARNIAtDischarge.medication as CodeableConcept) in "ACE Inhibitor or ARB"
 			and ACEIOrARBOrARNIAtDischarge.status = 'active'
 			and ACEIOrARBOrARNIAtDischarge.intent = 'plan'
 
 define "Allergy or Intolerance to ACEI or ARB or ARNI Ingredient Inpatient":
-	["AllergyIntolerance"] ACEIOrARBOrARNIAllergyIntolerance
+	["AllergyIntolerance": code in "ACE Inhibitor or ARB Ingredient"] ACEIOrARBOrARNIAllergyIntolerance
 		with "Heart Failure Inpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFInpatientEncounter
 			such that ACEIOrARBOrARNIAllergyIntolerance.onset overlaps after ModerateOrSevereLVSDHFInpatientEncounter.period
-			and ACEIOrARBOrARNIAllergyIntolerance.category in "ACE Inhibitor or ARB Ingredient"
+			// NOTE: Why not just put this in as a value set filter in the retrieve?
+			// NOTE: Category is a required binding to { food | medication | environment | biologic }
+			// so this should really be "code", not "category", and category should be restricted here
+			// based on intent, unless it's implied by the code restriction already, which appears to be the case
+			//and ACEIOrARBOrARNIAllergyIntolerance.category in "ACE Inhibitor or ARB Ingredient"
 			and ACEIOrARBOrARNIAllergyIntolerance.clinicalStatus = 'active'
 			and ACEIOrARBOrARNIAllergyIntolerance.verificationStatus in {'confirmed', 'unconfirmed'}
 			and ACEIOrARBOrARNIAllergyIntolerance.type in {'allergy', 'intolerance'}
 			and ACEIOrARBOrARNIAllergyIntolerance.criticality in {'low', 'high', 'unable-to-assess'}
 
 define "Currently Taking ACEI or ARB or ARNI Inpatient":
-	["MedicationStatement"] ActiveACEIOrARBOrARNI
+	["MedicationStatement": "ACE Inhibitor or ARB"] ActiveACEIOrARBOrARNI
 		with "Heart Failure Inpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFInpatientEncounter
 			such that ActiveACEIOrARBOrARNI.effective overlaps after ModerateOrSevereLVSDHFInpatientEncounter.period
-      and (ActiveACEIOrARBOrARNI.medication as CodeableConcept) in "ACE Inhibitor or ARB"
+			// NOTE: Moved to retrieve
+      //and (ActiveACEIOrARBOrARNI.medication as CodeableConcept) in "ACE Inhibitor or ARB"
 			and ActiveACEIOrARBOrARNI.status = 'active'
       and ActiveACEIOrARBOrARNI.taken = 'y'
 
 define "Currently Taking ACEI or ARB or ARNI Outpatient":
-	["MedicationStatement"] ActiveACEIOrARBOrARNI
+	["MedicationStatement": "ACE Inhibitor or ARB"] ActiveACEIOrARBOrARNI
 		with "Heart Failure Outpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFOutpatientEncounter
 			such that ActiveACEIOrARBOrARNI.effective overlaps after ModerateOrSevereLVSDHFOutpatientEncounter.period
-			and (ActiveACEIOrARBOrARNI.medication as CodeableConcept) in "ACE Inhibitor or ARB"
+			// NOTE: Moved to retrieve
+			//and (ActiveACEIOrARBOrARNI.medication as CodeableConcept) in "ACE Inhibitor or ARB"
 			and ActiveACEIOrARBOrARNI.status = 'active'
 			and ActiveACEIOrARBOrARNI.taken = 'y'
 
 define "Diagnosis of Allergy to ACEI or ARB Outpatient":
 	["Condition": "Allergy to ACE Inhibitor or ARB"] ACEIOrARBAllergyDiagnosis
 		with "Heart Failure Outpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFOutpatientEncounter
-			such that ACEIOrARBAllergyDiagnosis.onset overlaps after ModerateOrSevereLVSDHFOutpatientEncounter.period
+		  // NOTE: Propose the use of GetPrevalencePeriod...
+			such that Global.GetPrevalencePeriod(ACEIOrARBAllergyDiagnosis) overlaps after ModerateOrSevereLVSDHFOutpatientEncounter.period
+			//such that ACEIOrARBAllergyDiagnosis.onset overlaps after ModerateOrSevereLVSDHFOutpatientEncounter.period
 			and ACEIOrARBAllergyDiagnosis.clinicalStatus = 'active'
 			and ACEIOrARBAllergyDiagnosis.verificationStatus = 'confirmed'
 
 define "Diagnosis of Allergy to ACEI or ARB Inpatient":
 	["Condition": "Allergy to ACE Inhibitor or ARB"] ACEIOrARBAllergyDiagnosis
 		with "Heart Failure Inpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFInpatientEncounter
-			such that ACEIOrARBAllergyDiagnosis.onset overlaps after ModerateOrSevereLVSDHFInpatientEncounter.period
+      such that Global.GetPrevalencePeriod(ACEIOrARBAllergyDiagnosis) overlaps after ModerateOrSevereLVSDHFInpatientEncounter.period
+			//such that ACEIOrARBAllergyDiagnosis.onset overlaps after ModerateOrSevereLVSDHFInpatientEncounter.period
 			and ACEIOrARBAllergyDiagnosis.clinicalStatus = 'active'
 			and ACEIOrARBAllergyDiagnosis.verificationStatus = 'confirmed'
 
 define "Diagnosis of Intolerance to ACEI or ARB Inpatient":
 	["Condition": "Intolerance to ACE Inhibitor or ARB"] ACEIOrARBIntoleranceDiagnosis
 		with "Heart Failure Inpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFInpatientEncounter
-			such that ACEIOrARBIntoleranceDiagnosis.onset overlaps after ModerateOrSevereLVSDHFInpatientEncounter.period
+			such that Global.GetPrevalencePeriod(ACEIOrARBIntoleranceDiagnosis) overlaps after ModerateOrSevereLVSDHFInpatientEncounter.period
+			//such that ACEIOrARBIntoleranceDiagnosis.onset overlaps after ModerateOrSevereLVSDHFInpatientEncounter.period
 			and ACEIOrARBIntoleranceDiagnosis.clinicalStatus = 'active'
 			and ACEIOrARBIntoleranceDiagnosis.verificationStatus = 'confirmed'
 
 define "Diagnosis of Intolerance to ACEI or ARB Outpatient":
 	["Condition": "Intolerance to ACE Inhibitor or ARB"] ACEIOrARBIntoleranceDiagnosis
 		with "Heart Failure Outpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFOutpatientEncounter
-			such that ACEIOrARBIntoleranceDiagnosis.onset overlaps after ModerateOrSevereLVSDHFOutpatientEncounter.period
+      such that Global.GetPrevalencePeriod(ACEIOrARBIntoleranceDiagnosis) overlaps after ModerateOrSevereLVSDHFOutpatientEncounter.period
+			//such that ACEIOrARBIntoleranceDiagnosis.onset overlaps after ModerateOrSevereLVSDHFOutpatientEncounter.period
 			and ACEIOrARBIntoleranceDiagnosis.clinicalStatus = 'active'
 			and ACEIOrARBIntoleranceDiagnosis.verificationStatus = 'confirmed'
 
 define "Diagnosis of Renal Failure Due to ACEI Inpatient":
 	["Condition": "Renal Failure Due to ACE Inhibitor"] RenalFailureDueToACEI
 		with "Heart Failure Inpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFInpatientEncounter
-			such that RenalFailureDueToACEI.onset overlaps ModerateOrSevereLVSDHFInpatientEncounter.period
+			such that Global.GetPrevalencePeriod(RenalFailureDueToACEI) overlaps ModerateOrSevereLVSDHFInpatientEncounter.period
+			//such that RenalFailureDueToACEI.onset overlaps ModerateOrSevereLVSDHFInpatientEncounter.period
 			and RenalFailureDueToACEI.clinicalStatus = 'active'
 			and RenalFailureDueToACEI.verificationStatus = 'confirmed'
 
 define "Diagnosis of Renal Failure Due to ACEI Outpatient":
 	["Condition": "Renal Failure Due to ACE Inhibitor"] RenalFailureDueToACEI
 		with "Heart Failure Outpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFOutpatientEncounter
-			such that RenalFailureDueToACEI.onset overlaps ModerateOrSevereLVSDHFOutpatientEncounter.period
+			such that Global.GetPrevalencePeriod(RenalFailureDueToACEI) overlaps ModerateOrSevereLVSDHFOutpatientEncounter.period
+			//such that RenalFailureDueToACEI.onset overlaps ModerateOrSevereLVSDHFOutpatientEncounter.period
 			and RenalFailureDueToACEI.clinicalStatus = 'active'
 			and RenalFailureDueToACEI.verificationStatus = 'confirmed'
 
@@ -217,13 +252,15 @@ define "Heart Failure Outpatient Encounter":
 		with ["Condition": "Heart Failure"] HeartFailure
 		such that HeartFailure.clinicalStatus = 'active'
 		and HeartFailure.verificationStatus = 'confirmed'
-		and HeartFailure.onset overlaps ValidFaceToFaceEncounter.period
+		and Global.GetPrevalencePeriod(HeartFailure) overlaps ValidFaceToFaceEncounter.period
+		//and HeartFailure.onset overlaps ValidFaceToFaceEncounter.period
 
 define "ACEI or ARB or ARNI Ordered Outpatient":
-	["MedicationRequest"] ACEIOrARBOrARNIOrdered
+	["MedicationRequest": "ACE Inhibitor or ARB"] ACEIOrARBOrARNIOrdered
 		with "Heart Failure Outpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFOutpatientEncounter
 			such that ACEIOrARBOrARNIOrdered.authoredOn during ModerateOrSevereLVSDHFOutpatientEncounter.period
-	    and (ACEIOrARBOrARNIOrdered.medication as CodeableConcept) in "ACE Inhibitor or ARB"
+			// NOTE: Moved to retrieve
+	    //and (ACEIOrARBOrARNIOrdered.medication as CodeableConcept) in "ACE Inhibitor or ARB"
 			and ACEIOrARBOrARNIOrdered.intent = 'order'
 			and ACEIOrARBOrARNIOrdered.status in {'active', 'completed'}
 
@@ -232,10 +269,14 @@ define "Numerator 1":
 		or exists "Currently Taking ACEI or ARB or ARNI Outpatient"
 
 define "Allergy or Intolerance to ACEI or ARB or ARNI Ingredient Outpatient":
-	["AllergyIntolerance"] ACEIOrARBOrARNIAllergyIntolerance
+	["AllergyIntolerance": code in "ACE Inhibitor or ARB Ingredient"] ACEIOrARBOrARNIAllergyIntolerance
 		with "Heart Failure Outpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFOutpatientEncounter
-			such that ACEIOrARBOrARNIAllergyIntolerance.onset overlaps after ModerateOrSevereLVSDHFOutpatientEncounter.period
-      and ACEIOrARBOrARNIAllergyIntolerance.category in "ACE Inhibitor or ARB Ingredient"
+      such that Global."Normalize Onset"(ACEIOrARBOrARNIAllergyIntolerance.onset) overlaps after ModerateOrSevereLVSDHFOutpatientEncounter.period
+			//such that ACEIOrARBOrARNIAllergyIntolerance.onset overlaps after ModerateOrSevereLVSDHFOutpatientEncounter.period
+			// NOTE: Should be "code" not "category"
+			// NOTE: "category" should be specified { food | medication | environment | biologic }
+			// NOTE: Moved to retrieve
+      //and ACEIOrARBOrARNIAllergyIntolerance.category in "ACE Inhibitor or ARB Ingredient"
 			and ACEIOrARBOrARNIAllergyIntolerance.clinicalStatus = 'active'
 			and ACEIOrARBOrARNIAllergyIntolerance.verificationStatus in {'confirmed', 'unconfirmed'}
 			and ACEIOrARBOrARNIAllergyIntolerance.type in {'allergy', 'intolerance'}
@@ -262,16 +303,24 @@ define "Numerator 2":
 		or exists "Currently Taking ACEI or ARB or ARNI Inpatient"
 
 define "Medical Patient or System Reason for No ACEI or ARB or ARNI at Inpatient Discharge":
-	["MedicationRequest"] NoACEIOrARBOrARNIAtDischarge
+	["MedicationRequest": "ACE Inhibitor or ARB"] NoACEIOrARBOrARNIAtDischarge
 		with "Heart Failure Inpatient Encounter with Moderate or Severe LVSD" ModerateOrSevereLVSDHFInpatientEncounter
 			such that NoACEIOrARBOrARNIAtDischarge.authoredOn during ModerateOrSevereLVSDHFInpatientEncounter.period
-		  and (NoACEIOrARBOrARNIAtDischarge.medication as CodeableConcept) in "ACE Inhibitor or ARB"
-			and ( singleton from NoACEIOrARBOrARNIAtDischarge.reasonCode in "Medical Reason"
-				or singleton from NoACEIOrARBOrARNIAtDischarge.reasonCode in "Patient Reason"
-				or singleton from NoACEIOrARBOrARNIAtDischarge.reasonCode in "Patient Reason for ACE Inhibitor or ARB Decline"
-				or singleton from NoACEIOrARBOrARNIAtDischarge.reasonCode in "System Reason"
-		)
+			// NOTE: Moved to retrieve
+		  //and (NoACEIOrARBOrARNIAtDischarge.medication as CodeableConcept) in "ACE Inhibitor or ARB"
+			// NOTE: Why use singleton from here?
+			and ( NoACEIOrARBOrARNIAtDischarge.reasonCode in "Medical Reason"
+				or NoACEIOrARBOrARNIAtDischarge.reasonCode in "Patient Reason"
+				or NoACEIOrARBOrARNIAtDischarge.reasonCode in "Patient Reason for ACE Inhibitor or ARB Decline"
+				or NoACEIOrARBOrARNIAtDischarge.reasonCode in "System Reason"
+			)
+			//and ( singleton from NoACEIOrARBOrARNIAtDischarge.reasonCode in "Medical Reason"
+			//	or singleton from NoACEIOrARBOrARNIAtDischarge.reasonCode in "Patient Reason"
+			//	or singleton from NoACEIOrARBOrARNIAtDischarge.reasonCode in "Patient Reason for ACE Inhibitor or ARB Decline"
+			//	or singleton from NoACEIOrARBOrARNIAtDischarge.reasonCode in "System Reason"
+		  //)
 //PCPI to ESAC: We're wondering which approach is correct to express negation logic. Should we use MedicationRequest (see above) or MedicationStatement (see below OPTION 2)?
+// NOTE: US Core is moving away from MedicationStatement, so the recommendation is to use MedicationRequest
 
 define "OPTION 2 Medical Patient or System Reason for No ACEI or ARB or ARNI at Inpatient Discharge":
 	["MedicationStatement"] NoACEIOrARBOrARNIAtDischarge

@@ -18,7 +18,6 @@ codesystem "Diagnosis Role": 'http://hl7.org/fhir/diagnosis-role'
 
 valueset "Encounter Inpatient": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.666.5.307'
 valueset "Emergency Department Visit": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.292'
-valueset "Observation Services": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1111.143'
 
 code "Birthdate": '21112-8' from "LOINC" display 'Birth date'
 code "Dead": '419099009' from "SNOMEDCT" display 'Dead'
@@ -117,9 +116,6 @@ define function "First Inpatient Intensive Care Unit"(TheEncounter FHIR.Encounte
 			sort by start of FHIRHelpers.ToInterval(period)
 	)*/
 
-
-
-
 /*
 *
 *    CQFMeasures Common Logic
@@ -127,44 +123,70 @@ define function "First Inpatient Intensive Care Unit"(TheEncounter FHIR.Encounte
 */
 
 define function "Normalize Onset"(onset Choice<FHIR.dateTime, FHIR.Age, FHIR.Period, FHIR.Range, FHIR.string>):
-  if onset is FHIR.dateTime then Interval[onset.value, onset.value]
-	else if onset is FHIR.Period then FHIRHelpers.ToInterval(onset as FHIR.Period)
+  if onset is FHIR.dateTime then
+	  Interval[FHIRHelpers.ToDateTime(onset as FHIR.dateTime), FHIRHelpers.ToDateTime(onset as FHIR.dateTime)]
+	else if onset is FHIR.Period then
+	  FHIRHelpers.ToInterval(onset as FHIR.Period)
+	else if onset is FHIR.Age then
+	  Interval[FHIRHelpers.ToDate(Patient.birthDate) + FHIRHelpers.ToQuantity(onset as FHIR.Age),
+		  FHIRHelpers.ToDate(Patient.birthDate) + FHIRHelpers.ToQuantity(onset as FHIR.Age) + 1 year)
 	else null
 
-define function "Get Choice Interval - dateTime or Period"(performed Choice<FHIR.dateTime,FHIR.Period>):
-	if performed is FHIR.dateTime then Interval[performed.value, performed.value]
-	else FHIRHelpers.ToInterval(performed as FHIR.Period)
+define function "Normalize Abatement"(condition Condition):
+	if condition.abatement is FHIR.dateTime then
+	  Interval[FHIRHelpers.ToDateTime(condition.abatement as FHIR.dateTime), FHIRHelpers.ToDateTime(condition.abatement as FHIR.dateTime)]
+	else if condition.abatement is FHIR.Period then
+	  FHIRHelpers.ToInterval(condition.abatement as FHIR.Period)
+	else if condition.abatement is FHIR.Age then
+		Interval[FHIRHelpers.ToDate(Patient.birthDate) + FHIRHelpers.ToQuantity(condition.abatement as FHIR.Age),
+			FHIRHelpers.ToDate(Patient.birthDate) + FHIRHelpers.ToQuantity(condition.abatement as FHIR.Age) + 1 year)
+	else if condition.abatement is FHIR.boolean then
+	  Interval[end of "Normalize Onset"(condition.onset), condition.assertedDate)
+	else null
+
+define function "GetPrevalencePeriod"(condition Condition):
+  Interval[start of "Normalize Onset"(condition.onset), end of "Normalize Abatement"(condition))
 
 define function "GetId"(uri String):
 	Last(Split(uri, '/'))
 
 define function "EncounterDiagnosis"(Encounter Encounter):
   Encounter.diagnosis D
-    return singleton from ([Condition: id in "GetId"(D.condition.reference)])
+    return singleton from ([Condition] C where C.id = "GetId"(D.condition.reference))
 
 // Returns the condition that is specified as the principal diagnosis for the encounter
 define function "PrincipalDiagnosis"(Encounter Encounter):
 	(singleton from (Encounter.diagnosis D where D.role ~ ToConcept("Billing") and D.rank = 1)) PD
-		return singleton from ([Condition: id in "GetId"(PD.condition.reference)])
+		return singleton from ([Condition] C where C.id = "GetId"(PD.condition.reference))
 
 // Returns the location for the given location reference
 define function GetLocation(reference Reference):
   singleton from (
-    [Location: id in GetId(reference.reference)]
+    [Location] Location where Location.id.value = GetId(reference.reference)
   )
 
-	define function "HospitalizationWithObservation"(TheEncounter FHIR.Encounter):
-		TheEncounter Visit
-				let ObsVisit: Last([Encounter: "Observation Services"] LastObs
-											where LastObs.period ends 1 hour or less on or before start of Visit.period
-											sort by end of period
-											),
-						VisitStart: Coalesce(start of ObsVisit.period, start of Visit.period),
-						EDVisit: Last([Encounter: "Emergency Department Visit"] LastED
-										 where LastED.period ends 1 hour or less on or before VisitStart
-										 sort by end of period
-											)
-			return Interval[Coalesce(start of EDVisit.period, VisitStart), end of Visit.period]
+/*
+NOTE: Extensions are not the preferred approach, but are used as a way to access
+content that is defined by extensions but not yet surfaced in the
+CQL model info.
+*/
+define function "GetExtensions"(domainResource DomainResource, url String):
+  domainResource.extension E
+	  where E.url = ('http://hl7.org/fhir/us/qicore/StructureDefinition/' + url)
+		return E
 
-	define function "HospitalizationWithObservationLengthofStay"(Encounter FHIR.Encounter):
-		"LengthInDays"("HospitalizationWithObservation"(Encounter))
+define function "GetExtension"(domainResource DomainResource, url String):
+  singleton from "GetExtensions"(domainResource, url)
+
+/*
+NOTE: Provenance is not the preferred approach, this is provided only as an illustration
+for what using Provenance could look like, and is not a tested pattern
+*/
+define function "GetProvenance"(resource Resource):
+  singleton from ([Provenance: target in resource.id])
+
+define function "GetMedicationCode"(request MedicationRequest):
+  if request.medication is CodeableConcept then
+	  request.medication as CodeableConcept
+	else
+	  (singleton from ([Medication: id in GetId((request.medication as Reference).reference)])).code
