@@ -8,6 +8,9 @@ codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
 codesystem "RoleCode": 'http://hl7.org/fhir/v3/RoleCode'
 codesystem "Diagnosis Role": 'http://terminology.hl7.org/CodeSystem/diagnosis-role'
+codesystem "RequestIntent": 'http://terminology.hl7.org/CodeSystem/request-intent'
+codesystem "MedicationRequestCategory": 'http://terminology.hl7.org/CodeSystem/medicationrequest-category'
+codesystem "ConditionClinicalStatusCodes": 'http://terminology.hl7.org/CodeSystem/condition-clinical'
 
 valueset "Encounter Inpatient": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.666.5.307'
 valueset "Emergency Department Visit": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.292'
@@ -18,6 +21,14 @@ code "Dead": '419099009' from "SNOMEDCT" display 'Dead'
 code "ER": 'ER' from "RoleCode" display 'Emergency room'
 code "ICU": 'ICU' from "RoleCode" display 'Intensive care unit'
 code "Billing": 'billing' from "Diagnosis Role" display 'Billing'
+
+// Condition Clinical Status Codes - Consider value sets for these
+code "active": 'active' from "ConditionClinicalStatusCodes"
+code "recurrence": 'recurrence' from "ConditionClinicalStatusCodes"
+code "relapse": 'relapse' from "ConditionClinicalStatusCodes"
+code "inactive": 'inactive' from "ConditionClinicalStatusCodes"
+code "remission": 'remission' from "ConditionClinicalStatusCodes"
+code "resolved": 'resolved' from "ConditionClinicalStatusCodes"
 
 parameter "Measurement Period" Interval<DateTime>
 

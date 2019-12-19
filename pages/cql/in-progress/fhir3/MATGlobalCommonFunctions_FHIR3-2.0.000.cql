@@ -147,6 +147,12 @@ define function "Normalize Abatement"(condition Condition):
 define function "GetPrevalencePeriod"(condition Condition):
   Interval[start of "Normalize Onset"(condition.onset), end of "Normalize Abatement"(condition))
 
+define function "Normalize Interval"(choice Choice<FHIR.dateTime, FHIR.Period>):
+  if choice is FHIR.dateTime then
+	  Interval[FHIRHelpers.ToDateTime(choice as FHIR.dateTime), FHIRHelpers.ToDateTime(choice as FHIR.dateTime)]
+	else
+	  FHIRHelpers.ToInterval(choice as FHIR.Period)
+
 define function "GetId"(uri String):
 	Last(Split(uri, '/'))
 

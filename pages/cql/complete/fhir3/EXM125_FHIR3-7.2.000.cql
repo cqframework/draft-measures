@@ -35,6 +35,7 @@ valueset "Right": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.464.
 valueset "Unilateral Mastectomy, Unspecified Laterality": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.464.1003.198.12.1071'
 
 parameter "Measurement Period" Interval<DateTime>
+    default Interval[@2019-01-01T00:00:00.0, @2020-01-01T00:00:00.0)
 
 context Patient
 
@@ -55,7 +56,7 @@ define "Denominator":
 
 define "Unilateral Mastectomy Procedure":
 		[Procedure: "Unilateral Mastectomy"] UnilateralMastectomyProcedure
-				where UnilateralMastectomyProcedure.performed ends before day of end of "Measurement Period"
+				where Global."Normalize Interval"(UnilateralMastectomyProcedure.performed) ends before day of end of "Measurement Period"
 						and UnilateralMastectomyProcedure.status = 'completed'
 
 define "Right Mastectomy":
@@ -87,13 +88,13 @@ define "History Bilateral Mastectomy":
 
 define "Bilateral Mastectomy Procedure":
 		[Procedure: "Bilateral Mastectomy"] BilateralMastectomyPerformed
-				where BilateralMastectomyPerformed.performed ends before day of end of "Measurement Period"
+				where Global."Normalize Interval"(BilateralMastectomyPerformed.performed) ends before day of end of "Measurement Period"
 						and BilateralMastectomyPerformed.status = 'completed'
 
 define "Numerator":
 		exists (
 				[DiagnosticReport: "Mammography"] Mammogram
-						where ( Mammogram.effective ends 27 months or less before day of end of "Measurement Period" )
+						where ( Global."Normalize Interval"(Mammogram.effective) ends 27 months or less before day of end of "Measurement Period" )
 								and Mammogram.status in { 'final', 'amended', 'corrected', 'appended' }
 		)
 
