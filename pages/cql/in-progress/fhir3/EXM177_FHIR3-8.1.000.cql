@@ -60,8 +60,8 @@ define "Major Depressive Disorder Encounter":
 define "Numerator":
 "Major Depressive Disorder Encounter" MDDEncounter
 	with ["Procedure": "Suicide risk assessment (procedure)"] SuicideRiskAssessment
-		such that SuicideRiskAssessment.performed during MDDEncounter.period
-		and SuicideRiskAssessment.status = 'completed'
+		such that Global."Normalize Interval"(SuicideRiskAssessment.performed) during MDDEncounter.period
+  	 and SuicideRiskAssessment.status = 'completed'
 
 
 define "Initial Population":
