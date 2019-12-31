@@ -22,7 +22,7 @@ codesystem "RequestIntent": 'http://terminology.hl7.org/CodeSystem/request-inten
 //codesystem "RequestIntent": 'http://hl7.org/fhir/request-intent'
 codesystem "MedicationRequestCategory": 'http://terminology.hl7.org/CodeSystem/medicationrequest-category'
 
-//QA
+
 valueset "Antithrombotic Therapy": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.201'
 valueset "Comfort Measures": 'http://cts.nlm.nih.gov/fhir/ValueSet/1.3.6.1.4.1.33895.1.3.0.45'
 valueset "Discharge To Acute Care Facility": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.117.1.7.1.87'
@@ -63,38 +63,32 @@ define "SDE Race":
 define "SDE Sex":
 	SDE."SDE Sex"
 
-//QA
 define "Initial Population":
 	TJC."Encounter with Principal Diagnosis and Age"
 
-//QA
   define "Encounter with Principal Diagnosis and Age":
     "All Stroke Encounter" AllStrokeEncounter
     	with ["Patient"] BirthDate
     		such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of AllStrokeEncounter.period) >= 18
 
-//QA
         define "All Stroke Encounter":
         	"Non Elective Inpatient Encounter" NonElectiveEncounter
         		where Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Hemorrhagic Stroke"
         		or Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Ischemic Stroke"
 
-//QA
+
               define "Non Elective Inpatient Encounter":
               	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
               		where Global."LengthInDays"(NonElectiveEncounter.period)<= 120
               			and NonElectiveEncounter.period ends during "Measurement Period"
 
-//QA
 define "Denominator":
 	TJC."Ischemic Stroke Encounter"
 
-//QA
   define "Ischemic Stroke Encounter":
     "Encounter with Principal Diagnosis and Age" EncounterWithAge
       where Global.PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
 
-//QA
 define "Denominator Exclusions":
 	TJC."Ischemic Stroke Encounters with Discharge Disposition"
 		union TJC."Comfort Measures during Hospitalization"
@@ -127,30 +121,26 @@ define "Denominator Exclusions":
           		where IntervetionPerformed.status in {'in progress', 'complete'})
 */
 
-//QA
+
 define "Numerator":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Antithrombotic Therapy at Discharge" DischargeAntithrombotic
 			such that DischargeAntithrombotic.authoredOn during IschemicStrokeEncounter.period
 
-//QA
       define "Antithrombotic Therapy at Discharge":
       	["MedicationRequest": medication in "Antithrombotic Therapy"] Antithrombotic
       	  where exists (Antithrombotic.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
       	    and Antithrombotic.intent in {'plan', 'order'}
 
-//QA
 define "Denominator Exceptions":
 	"Encounter With No Antithrombotic At Discharge"
 		union "Encounter With Ticagrelor at Discharge"
 
-//QA
     define "Encounter With No Antithrombotic At Discharge":
     	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
     		with "Antithrombotic Not Given at Discharge" NoDischargeAntithrombotic
     			such that NoDischargeAntithrombotic.authoredOn during IschemicStrokeEncounter.period
 
-//QA - removed singleton
           define "Antithrombotic Not Given at Discharge":
           	["MedicationRequest": medication in "Antithrombotic Therapy"] NoAntithromboticDischarge
               where NoAntithromboticDischarge.doNotPerform is true
@@ -171,7 +161,6 @@ define "Denominator Exceptions":
           //  ["Observation": "Medication Not Given At Discharge"] O
           //	  where O.value in "Antithrombotic Therapy"
 
-//QA
     define "Encounter With Ticagrelor at Discharge":
       TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
         with "Ticagrelor Therapy at Discharge" DischargeTicagrelor
@@ -183,7 +172,6 @@ define "Denominator Exceptions":
                 such that Ticagrelor.effective starts during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)*/
           //Looking for Ticagrelor as discharge medication, include a corrected defintion in 2021 CQL based measure
 
-//QA
           define "Ticagrelor Therapy at Discharge":
             ["MedicationRequest": medication in TJC."Ticagrelor Therapy"] Ticagrelor
               where exists (Ticagrelor.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
