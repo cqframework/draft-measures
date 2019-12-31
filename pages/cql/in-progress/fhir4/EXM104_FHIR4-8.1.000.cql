@@ -166,12 +166,6 @@ define "Denominator Exceptions":
         with "Ticagrelor Therapy at Discharge" DischargeTicagrelor
           such that DischargeTicagrelor.authoredOn during IschemicStrokeEncounter.period
 
-          /*define "Encounter With Ticagrelor During Hospitalization":
-            TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
-              with ["MedicationAdministration": medication in TJC."Ticagrelor Therapy"] Ticagrelor
-                such that Ticagrelor.effective starts during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)*/
-          //Looking for Ticagrelor as discharge medication, include a corrected defintion in 2021 CQL based measure
-
           define "Ticagrelor Therapy at Discharge":
             ["MedicationRequest": medication in TJC."Ticagrelor Therapy"] Ticagrelor
               where exists (Ticagrelor.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
