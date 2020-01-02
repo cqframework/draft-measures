@@ -17,7 +17,6 @@ include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Global
 include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
 include TJC_Overall_FHIR4 version '4.0.000' called TJC
 
-//QA
 codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
 // NOTE: R4 code system URLs changed to be based on terminology.hl7.org...
