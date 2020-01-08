@@ -5,7 +5,6 @@ using FHIR version '4.0.0'
 include FHIRHelpers version '4.0.0' called FHIRHelpers
 include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Global
 include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
-//testing github
 
 codesystem "LOINC": 'http://loinc.org'
 
