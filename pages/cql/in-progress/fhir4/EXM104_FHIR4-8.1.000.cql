@@ -120,7 +120,7 @@ define "Denominator Exceptions":
           				or NoAntithromboticDischarge.reasonCode in "Patient Refusal")
                     and exists (NoAntithromboticDischarge.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
 
-  
+
     define "Encounter With Ticagrelor at Discharge":
       TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
         with "Ticagrelor Therapy at Discharge" DischargeTicagrelor
@@ -129,4 +129,5 @@ define "Denominator Exceptions":
           define "Ticagrelor Therapy at Discharge":
             ["MedicationRequest": medication in TJC."Ticagrelor Therapy"] Ticagrelor
               where exists (Ticagrelor.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+                and Ticagrelor.status in { 'active', 'completed'}
                 and Ticagrelor.intent in {'order', 'plan'}
