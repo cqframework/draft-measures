@@ -159,7 +159,8 @@ define "Intervention Comfort Measures":
 
 define "Intervention Comfort Measures":
 	(["ProcedureRequest": "Comfort Measures"] P
-		where P.intent in {'plan', 'order'}
+		where P.intent in {'plan', 'order'})
 		union
 		(["Procedure": "Comfort Measures"] IntervetionPerformed
 		where IntervetionPerformed.status in {'complete', 'in progress'})
+    
