@@ -1,4 +1,3 @@
-// for 2020 Reporting Year
 library EXM104_FHIR3 version '8.1.000'
 
 /*
@@ -11,7 +10,7 @@ using FHIR version '3.0.0'
 
 include FHIRHelpers version '3.0.0'
 include MATGlobalCommonFunctions_FHIR3 version '4.0.000' called Global
-include TJC_Overall_FHIR3 version '3.6.000' called TJC
+include TJCOverall_FHIR3 version '3.6.000' called TJC
 include SupplementalDataElements_FHIR3 version '1.0.0' called SDE
 
 codesystem "LOINC": 'http://loinc.org'
@@ -47,6 +46,7 @@ code "Birth date": '21112-8' from "LOINC" display 'Birth date'
 code "Discharge": 'discharge' from "MedicationRequestCategory" display 'Discharge'
 
 parameter "Measurement Period" Interval<DateTime>
+  default Interval[@2019-01-01T00:00:00.0, @2020-01-01T00:00:00.0)
 
 context Patient
 
@@ -87,7 +87,7 @@ define "Denominator":
   	"Encounter with Principal Diagnosis and Age" EncounterWithAge
   		where Global.PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
 
-define "Denominator Exclusions":
+define "Denominator Exclusion":
 	TJC."Ischemic Stroke Encounters with Discharge Disposition"
 		union TJC."Comfort Measures during Hospitalization"
 
@@ -119,8 +119,13 @@ define "Numerator":
 			such that DischargeAntithrombotic.authoredOn during IschemicStrokeEncounter.period
 
       define "Antithrombotic Therapy at Discharge":
-      	["MedicationRequest": "Antithrombotic Therapy"] Antithrombotic
-      	  where (Antithrombotic.medication as CodeableConcept) in "Antithrombotic Therapy"
+      	//The following should work, but it's pending a fix in the CQL Engine, ref https://github.com/DBCG/cql_engine/issues/271.
+        //["MedicationRequest": "Antithrombotic Therapy"] Antithrombotic
+        //where Antithrombotic.intent = 'order'
+        
+        //Temporarily using the following until the fix is available.
+        ["MedicationRequest"] Antithrombotic
+            where (Antithrombotic.medication as CodeableConcept) in "Antithrombotic Therapy"
       	    and Antithrombotic.intent = 'order'
 
 define "Denominator Exceptions":
