@@ -185,6 +185,19 @@ define function "GetExtension"(domainResource DomainResource, url String):
   singleton from "GetExtensions"(domainResource, url)
 
 /*
+NOTE: Extensions are not the preferred approach, but are used as a way to access
+content that is defined by extensions but not yet surfaced in the
+CQL model info.
+*/
+define function "GetBaseExtensions"(domainResource DomainResource, url String):
+  domainResource.extension E
+	  where E.url = ('http://hl7.org/fhir/StructureDefinition/' + url)
+		return E
+
+define function "GetBaseExtension"(domainResource DomainResource, url String):
+  singleton from "GetBaseExtensions"(domainResource, url)
+
+/*
 NOTE: Provenance is not the preferred approach, this is provided only as an illustration
 for what using Provenance could look like, and is not a tested pattern
 */
