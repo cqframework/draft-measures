@@ -1,5 +1,5 @@
-// for 2020 Reporting Year
 library EXM104_FHIR4 version '8.1.000'
+// for 2020 Reporting Year
 //STK 2
 /*
 Based on CMS104 - Discharged on Antithrombotic Therapy
@@ -11,7 +11,7 @@ using FHIR version '4.0.0'
 include FHIRHelpers version '4.0.0'
 include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Global
 include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
-include TJC_Overall_FHIR4 version '4.0.000' called TJC
+include TJCOverall_FHIR4 version '4.0.000' called TJC
 
 codesystem "LOINC": 'http://loinc.org'
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
@@ -89,7 +89,7 @@ define "Denominator":
     "Encounter with Principal Diagnosis and Age" EncounterWithAge
       where Global.PrincipalDiagnosis(EncounterWithAge).code in "Ischemic Stroke"
 
-define "Denominator Exclusions":
+define "Denominator Exclusion":
 	TJC."Ischemic Stroke Encounters with Discharge Disposition"
 		union TJC."Comfort Measures during Hospitalization"
 
@@ -97,12 +97,13 @@ define "Denominator Exclusions":
 define "Numerator":
 	TJC."Ischemic Stroke Encounter" IschemicStrokeEncounter
 		with "Antithrombotic Therapy at Discharge" DischargeAntithrombotic
-			such that DischargeAntithrombotic.authoredOn during IschemicStrokeEncounter.period
+			such that DischargeAntithrombotic.authoredOn during Global."Normalize Interval"(IschemicStrokeEncounter.period)
 
       define "Antithrombotic Therapy at Discharge":
       	["MedicationRequest": medication in "Antithrombotic Therapy"] Antithrombotic
       	  where exists (Antithrombotic.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
-      	    and Antithrombotic.intent in {'plan', 'order'}
+          //.value should not be required.  Antithrombotic.intent should work.  Pending fix to CQF Ruler.
+      	    and Antithrombotic.intent.value in {'plan', 'order'}
 
 define "Denominator Exceptions":
 	"Encounter With No Antithrombotic At Discharge"
@@ -129,5 +130,4 @@ define "Denominator Exceptions":
           define "Ticagrelor Therapy at Discharge":
             ["MedicationRequest": medication in TJC."Ticagrelor Therapy"] Ticagrelor
               where exists (Ticagrelor.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
-                and Ticagrelor.status in { 'active', 'completed'}
                 and Ticagrelor.intent in {'order', 'plan'}

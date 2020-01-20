@@ -1,7 +1,7 @@
+library EXM108_FHIR4 version '8.2.000'
 //for 2020 reporting year. QDM to QI-4
 //Venous Thromboembolism Prophylaxis
 //Author: TJC
-library EXM108_FHIR4 version '8.2.000'
 
 using FHIR version '4.0.0'
 
@@ -9,7 +9,7 @@ include FHIRHelpers version '4.0.0' called FHIRHelpers
 include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Global
 include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
 include VTEICU_FHIR4 version '3.1.000' called VTEICU
-include TJC_Overall_FHIR4 version '4.0.000' called TJC
+include TJCOverall_FHIR4 version '4.0.000' called TJC
 
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
 codesystem "LOINC": 'http://loinc.org'
@@ -107,7 +107,7 @@ define "Encounter With Age Range and Without VTE Diagnosis or Obstetrical Condit
 define "Denominator":
       "Initial Population"
 
-define "Denominator Exclusions":
+define "Denominator Exclusion":
     "Encounter Less Than 2 Days"
      union "Encounter With ICU Location Stay 1 Day or More"
      union "Encounter With Principal Diagnosis of Mental Disorder or Stroke"
@@ -217,6 +217,9 @@ define "Encounter With VTE Prophylaxis Received on Day of or Day After Admission
  	( from
  			"Encounter With Age Range and Without VTE Diagnosis or Obstetrical Conditions" QualifyingEncounter,
  			"VTE Prophylaxis by Medication Administered or Device Applied" VTEProphylaxis
+    //Measure Review: VTEProphylaxis is the result of the union of different types, not all of which have an 'effective' attribute.
+    //This is causing an "attribute not found" exception when the result only contains data for the type without an 'effective' attribute.
+    //Not sure if this is desired behavior (and the code should be changed) or a bug (and the tooling should be fixed).
 		where Coalesce(VTEProphylaxis.effective as Period, VTEProphylaxis.performed as Period) starts during TJC."CalendarDayOfOrDayAfter"(start of QualifyingEncounter.period)
 		return QualifyingEncounter
  	)
