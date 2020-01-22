@@ -110,7 +110,7 @@ define "Palliative or Hospice Care Procedure":
   ) PalliativeOrHospiceCare
     where PalliativeOrHospiceCare.status = 'completed'
 
-define "Denominator Exclusions":
+define "Denominator Exclusion":
   ("Inpatient Encounter with Age Greater than or Equal to 18" InpatientEncounter
     with "Diagnosis of Primary or Secondary Cancer" Cancer
       such that Global."Normalize Onset"(Cancer.onset) overlaps InpatientEncounter.period
