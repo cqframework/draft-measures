@@ -1,6 +1,4 @@
-//For 2020 Reporting Year
-// NOTE: BTR 2019-07-30: Renamed for consistency
-library TJC_Overall_FHIR4 version '4.0.000'
+library TJCOverall_FHIR4 version '4.0.000'
 
 using FHIR version '4.0.0'
 // NOTE: BTR 2019-07-30: Updated version dependencies
@@ -28,16 +26,17 @@ valueset "Observation Services": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.
 code "Birth date": '21112-8' from "LOINC" display 'Birth date'
 
 parameter "Measurement Period" Interval<DateTime>
+  default Interval[@2019-01-01T00:00:00.0, @2020-01-01T00:00:00.0)
 
 context Patient
 
 //Changed "ProcedureRequest" to "ServiceRequest"
 define "Intervention Comfort Measures":
 	(["ServiceRequest": "Comfort Measures"] P
-		where P.intent in {'order', 'plan'})
+		where P.intent = 'order')
 		union
-		(["Procedure": "Comfort Measures"] IntervetionPerformed
-		where IntervetionPerformed.status in {'in progress', 'complete'})
+		(["Procedure": "Comfort Measures"] InterventionPerformed
+		where InterventionPerformed.status = 'completed')
 
 define "All Stroke Encounter":
 	"Non Elective Inpatient Encounter" NonElectiveEncounter
@@ -50,26 +49,26 @@ define "Ischemic Stroke Encounter":
 
 define "Non Elective Inpatient Encounter":
 	["Encounter": "Non-Elective Inpatient Encounter"] NonElectiveEncounter
-		where Global."LengthInDays"(NonElectiveEncounter.period)<= 120
+		where Global."LengthInDays"(NonElectiveEncounter.period) <= 120
 			and NonElectiveEncounter.period ends during "Measurement Period"
 
 define "Ischemic Stroke Encounters with Discharge Disposition":
-	 "Ischemic Stroke Encounter" IschemicStrokeEncounter
-				where IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharge To Acute Care Facility"
-					or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Left Against Medical Advice"
-					or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Patient Expired"
-					or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
-					or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
+	"Ischemic Stroke Encounter" IschemicStrokeEncounter
+		where IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharge To Acute Care Facility"
+			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Left Against Medical Advice"
+			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Patient Expired"
+			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
+			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
 
-	define "Comfort Measures during Hospitalization":
-		"Ischemic Stroke Encounter" IschemicStrokeEncounter
-	   	with "Intervention Comfort Measures" ComfortMeasure
-	    	such that Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn) during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
+define "Comfort Measures during Hospitalization":
+	"Ischemic Stroke Encounter" IschemicStrokeEncounter
+   	with "Intervention Comfort Measures" ComfortMeasure
+    	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 
 define "Encounter with Principal Diagnosis and Age":
 	"All Stroke Encounter" AllStrokeEncounter
 		with ["Patient"] BirthDate
-			such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of AllStrokeEncounter.period) >= 18
+			such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of FHIRHelpers.ToInterval(AllStrokeEncounter.period)) >= 18
 
 define function "CalendarDayOfOrDayAfter"(StartValue DateTime ):
 	Interval(Global."ToDate"(StartValue), Global."ToDate"(StartValue + 2 days))
