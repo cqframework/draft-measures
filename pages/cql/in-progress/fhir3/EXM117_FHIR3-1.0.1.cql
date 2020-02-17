@@ -89,7 +89,7 @@ code "Neomycin adverse reaction (disorder)": '292927007' from "SNOMEDCT" display
 code "Pneumococcal vaccine adverse reaction (disorder)": '293116002' from "SNOMEDCT" display 'Pneumococcal vaccine adverse reaction (disorder)'
 code "Poliomyelitis vaccine adverse reaction (disorder)": '293117006' from "SNOMEDCT" display 'Poliomyelitis vaccine adverse reaction (disorder)'
 code "Polymyxin B adverse reaction (disorder)": '292992006' from "SNOMEDCT" display 'Polymyxin B adverse reaction (disorder)'
-code "Rotavirus vaccine, human, attenuated (RV1), 2 dose schedule, live, for oral use": '90681' from "SNOMEDCT" display
+code "Rotavirus vaccine, human, attenuated (RV1), 2 dose schedule, live, for oral use": '90681' from "SNOMEDCT"
 code "Rotavirus vaccine, pentavalent (RV5), 3 dose schedule, live, for oral use": '90680' from "CPT" display 'Rotavirus vaccine, pentavalent (RV5), 3 dose schedule, live, for oral use'
 code "rotavirus, live, monovalent vaccine": '119' from "CVX" display 'rotavirus, live, monovalent vaccine'
 code "Streptomycin adverse reaction (disorder)": '292925004' from "SNOMEDCT" display 'Streptomycin adverse reaction (disorder)'
@@ -132,7 +132,7 @@ define "Initial Population":
 		Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate),  start of "Measurement Period")>= 1
 				and Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), end of "Measurement Period")= 2
 		and exists ( "Qualifying Encounter" )
-		and (not Hospice."Has Hospice"(Measurement Period))
+		and (not Hospice."Has Hospice"("Measurement Period"))
 
 define "Qualifying Encounter":
 	( ["Encounter": "Office Visit"]
@@ -146,7 +146,7 @@ define "Denominator":
 	"Initial Population"
 
 define "Numerator":
-	
+
 	( exists ( "Four DTaP Vaccinations" )
 			or exists ( "DTaP Numerator Inclusion Conditions" )
 	)
@@ -186,330 +186,436 @@ define "Numerator":
 
 /* How do we enact the Hospice Library
 // BTR -> Add an include for Hospice_FHIR, we've already translated that to FHIR, then you can just reference it
-// 
- define "Four DTaP Vaccinations": 
+*/
+ define "Four DTaP Vaccinations":
 	from
 		"DTaP Immunizations or Procedures" DTaPVaccination1,
 		"DTaP Immunizations or Procedures" DTaPVaccination2,
 		"DTaP Immunizations or Procedures" DTaPVaccination3,
 		"DTaP Immunizations or Procedures" DTaPVaccination4
-		where DTaPVaccination2.occurrence as dateTime 1 day or more after day of DTaPVaccination1.occurrence as dateTime
-			and DTaPVaccination3.occurrence as dateTime 1 day or more after day of DTaPVaccination2.occurrence as dateTime
-			and DTaPVaccination4.occurrence as dateTime 1 day or more after day of DTaPVaccination3.occurrence as dateTime
+		where DTaPVaccination2.date 1 day or more after day of DTaPVaccination1.date
+			and DTaPVaccination3.date 1 day or more after day of DTaPVaccination2.date
+			and DTaPVaccination4.date 1 day or more after day of DTaPVaccination3.date
 		return DTaPVaccination1
-					       
-define "DTaP Immunizations or Procedures": 
-	( ["Immunization":"DTaP Vaccine"] DTaP
-		where DTaP.status = 'completed' )
-			and (( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, DTaP.occurrence as dateTime)>= 42 ))
-			and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, DTaP.occurrence as dateTime)<= Patient.birthDate + 2 years )))
- 
+
+define "DTaP Immunizations or Procedures":
+	["Immunization" : "DTaP Vaccine"] DTaP
+		where DTaP.status = 'completed'
+			and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), DTaP.date) >= 42 )
+			and (
+        Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), DTaP.date)
+          <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, DTaP.date)
+      )
+
 define "DTaP Numerator Inclusion Conditions":
-	( ["Condition": "Anaphylactic Reaction to DTaP Vaccine"]
-		union ["Condition": "Encephalopathy due to Childhood Vaccination"] ) DTaPConditions
-			where DTaPConditions.verificationStatus = 'confirmed'
-				and( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, DTaPConditions.onset as Period)<= Patient.birthDate + 2 years ))
+	(
+    ["Condition": "Anaphylactic Reaction to DTaP Vaccine"]
+		  union ["Condition": "Encephalopathy due to Childhood Vaccination"]
+  ) DTaPConditions
+		  where DTaPConditions.verificationStatus = 'confirmed'
+				and (
+          Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), DTaPConditions.onset."start")
+            <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, DTaPConditions.onset."start")
+        )
 
 define "Three Polio Vaccinations":
 	from
-		"Polio Immunizations or Procedures" PolioVaccination1,
+    "Polio Immunizations or Procedures" PolioVaccination1,
 		"Polio Immunizations or Procedures" PolioVaccination2,
 		"Polio Immunizations or Procedures" PolioVaccination3
-		where PolioVaccination2.occurrence as dateTime 1 day or more after day of PolioVaccination1.occurrence as dateTime
-			and PolioVaccination3.occurrence as dateTime 1 day or more after day of PolioVaccination2.occurrence as dateTime
-		return PolioVaccination1	
-					       
+		where PolioVaccination2.date 1 day or more after day of PolioVaccination1.date
+			and PolioVaccination3.date 1 day or more after day of PolioVaccination2.date
+		return PolioVaccination1
+
  define "Polio Immunizations or Procedures":
-	( ["Immunization": "Inactivated Polio Vaccine (IPV)"] PolioVaccination
-			where PolioVaccination.status = 'completed' )
-			and ((Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, PolioVaccination.occurrence as dateTime)>= 42 ))
-			and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, PolioVaccination.occurrence as dateTime)<= Patient.birthDate + 2 years )))
-  
+	["Immunization": "Inactivated Polio Vaccine (IPV)"] PolioVaccination
+		where PolioVaccination.status ~ 'completed'
+		and (Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), PolioVaccination.date) >= 42 )
+		and (
+      Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), PolioVaccination.date)
+        <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, PolioVaccination.date)
+    )
+
 define "Polio Numerator Inclusion Conditions":
 	( ["Condition": "Poliomyelitis vaccine adverse reaction (disorder)"]
 		union ["Condition": "Streptomycin adverse reaction (disorder)"]
 		union ["Condition": "Polymyxin B adverse reaction (disorder)"]
 		union ["Condition": "Neomycin adverse reaction (disorder)"] ) PolioConditions
-			where PolioConditions.verificationStatus = 'confirmed'
-				and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, PolioConditions.onset as Period)<= Patient.birthDate + 2 years))
-					       
-define "One MMR Vaccinations": 
-	( ["Immunization": "Measles, Mumps and Rubella (MMR) Vaccine"] MMRVaccination
-		where MMRVaccination.status = 'completed' )
-		and Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, MMRVaccination.occurrence as dateTime)<= Patient.birthDate + 2 years )			       
-					       
-define "MMR Numerator Inclusion Conditions": 
-	( ["Condition": "Disorders of the Immune System"]
-		union ["Condition": "HIV"]
-		union ["Condition": "Malignant Neoplasm of Lymphatic and Hematopoietic Tissue"]
-		union ["Condition": "Neomycin adverse reaction (disorder)"] ) MMRConditions
-			where MMRConditions.verificationStatus = 'confirmed'
-				and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate,  MMRConditions.onset as Period)<= Patient.birthDate + 2 years ))				       
+			where PolioConditions.verificationStatus ~ 'confirmed'
+				and (
+          Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), PolioConditions.onset."start")
+            <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, PolioConditions.onset."start")
+        )
 
-define "Measles Indicators": 
-	( ( ["Observation": "Measles Antibody Test (IgG Antibody Titer)"] MeaslesTiter
-			where MeaslesTiter.status in {'final' , 'amended'}
-			and MeaslesTiter.result >= 1.10
-	)
-		union ( ["Observation": "Measles Antibody Test (IgG Antibody presence)"] MeaslesIgGPresence
-			where MeaslesIgGPresence.status in {'final' , 'amended'}
-			and MeaslesIgGPresence.result in "Positive Finding"
+define "One MMR Vaccinations":
+	["Immunization": "Measles, Mumps and Rubella (MMR) Vaccine"] MMRVaccination
+		where MMRVaccination.status ~ 'completed'
+		and (
+      Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), MMRVaccination.date)
+        <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, MMRVaccination.date)
+    )
+
+define "MMR Numerator Inclusion Conditions":
+	(
+    ["Condition": "Disorders of the Immune System"]
+  		union ["Condition": "HIV"]
+  		union ["Condition": "Malignant Neoplasm of Lymphatic and Hematopoietic Tissue"]
+  		union ["Condition": "Neomycin adverse reaction (disorder)"]
+  ) MMRConditions
+			where MMRConditions.verificationStatus ~ 'confirmed'
+				and (
+          Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), MMRConditions.onset."start")
+            <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, MMRConditions.onset."start")
+        )
+
+define "Measles Indicators":
+	(
+    (
+      ["Observation": "Measles Antibody Test (IgG Antibody Titer)"] MeaslesTiter
+      	where MeaslesTiter.status in {'final', 'amended'}
+      	and MeaslesTiter.value >= 1.10
+    )
+		union (
+      ["Observation": "Measles Antibody Test (IgG Antibody presence)"] MeaslesIgGPresence
+  			where MeaslesIgGPresence.status in {'final', 'amended'}
+  			and MeaslesIgGPresence.interpretation in "Positive Finding"
 		)
-		union ( ["Condition": "Measles"] MeaslesDiagnosis
-			where MeaslesDiagnosis.verificationStatus = 'confirmed' 
-			return "Observation" { effective:  MeaslesDiagnosis.onset }
-		) ) Measles
-			where Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, Measles.effective as Period)<= Patient.birthDate + 2 years)
-  
-define "Mumps Indicators": 
-	( ( ["Observation": "Mumps Antibody Test (IgG Antibody Titer)"] MumpsTiter
-			where MumpsTiter.status in {'final' , 'amended'}
-			and MumpsTiter.result >= 1.10
-	)
-		union ( ["Observation": "Mumps Antibody Test (IgG Antibody presence)"] MumpsIgGPresence
-			where MumpsIgGPresence.status in {'final' , 'amended'}
-			and MumpsIgGPresence.result in "Positive Finding"
+		union (
+      ["Condition": "Measles"] MeaslesDiagnosis
+  			where MeaslesDiagnosis.verificationStatus ~ 'confirmed'
+  			return "Observation" { effective: MeaslesDiagnosis.onset }
 		)
-		union ( ["Condition": "Mumps"] MumpsDiagnosis
-			where MumpsDiagnosis.verificationStatus = 'confirmed' 
-			return "Observation" { effective:  MumpsDiagnosis.onset }
-		) ) Mumps
-			where Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, Mumps.effective as Period)<= Patient.birthDate + 2 years )
- 
- define "Rubella Indicators":
-	( ( ["Observation": "Rubella Antibody Test (IgG Antibody Titer)"] RubellaTiter
-			where RubellaTiter.statuse in {'final' , 'amended'}
-			and RubellaTiter.result >= 1.10
-	)
-		union ( ["Observation": "Rubella Antibody Test (IgG Antibody presence)"] RubellaIgGPresence
-			where RubellaIgGPresence.status in {'final' , 'amended'}
-			and RubellaIgGPresence.result in "Positive Finding"
+  ) Measles
+			where Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), Measles.effective."start")
+        <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, Measles.effective."start")
+
+define "Mumps Indicators":
+	(
+    (
+      ["Observation": "Mumps Antibody Test (IgG Antibody Titer)"] MumpsTiter
+      	where MumpsTiter.status in {'final', 'amended'}
+      	and MumpsTiter.value >= 1.10
+    )
+		union (
+      ["Observation": "Mumps Antibody Test (IgG Antibody presence)"] MumpsIgGPresence
+  			where MumpsIgGPresence.status in {'final', 'amended'}
+  			and MumpsIgGPresence.interpretation in "Positive Finding"
 		)
-		union ( ["Condition": "Rubella"] RubellaDiagnosis
-			where RubellaDiagnosis.verificationStatus = 'confirmed' 
-			return "Observation" { effective:  RubellaDiagnosis.onset }
-		) ) Rubella
-			where Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, Rubella.effective as Period)<= Patient.birthDate + 2 years )
-  					       
+		union (
+      ["Condition": "Mumps"] MumpsDiagnosis
+  			where MumpsDiagnosis.verificationStatus ~ 'confirmed'
+  			return "Observation" { effective: MumpsDiagnosis.onset }
+		)
+  ) Measles
+			where Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), Measles.effective."start")
+        <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, Measles.effective."start")
+
+define "Rubella Indicators":
+	(
+    (
+      ["Observation": "Rubella Antibody Test (IgG Antibody Titer)"] RubellaTiter
+      	where RubellaTiter.status in {'final', 'amended'}
+      	and RubellaTiter.value >= 1.10
+    )
+		union (
+      ["Observation": "Rubella Antibody Test (IgG Antibody presence)"] RubellaIgGPresence
+  			where RubellaIgGPresence.status in {'final', 'amended'}
+  			and RubellaIgGPresence.interpretation in "Positive Finding"
+		)
+		union (
+      ["Condition": "Rubella"] RubellaDiagnosis
+  			where RubellaDiagnosis.verificationStatus ~ 'confirmed'
+  			return "Observation" { effective: RubellaDiagnosis.onset }
+		)
+  ) Rubella
+			where Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), Rubella.effective."start")
+        <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, Rubella.effective."start")
+
 define "Three Hib Vaccinations":
 	from
 		"Hib Immunizations or Procedures" HiBVaccination1,
 		"Hib Immunizations or Procedures" HiBVaccination2,
 		"Hib Immunizations or Procedures" HiBVaccination3
-		where HiBVaccination2.occurrence as dateTime 1 day or more after day of HiBVaccination1.occurrence as dateTime
-			and HiBVaccination3.occurrence as dateTime 1 day or more after day of HiBVaccination2.occurrence as dateTime
-		return HiBVaccination1					       
-					       
-define "Hib Immunizations or Procedures":	
-	( ["Immunization": "Haemophilus Influenzae Type B (HiB) Vaccine"] HibVaccination
-		where HibVaccination.status = 'completed' )
-		and (( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, HibVaccination.occurrence as dateTime)>= 42 ))
-		and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, HibVaccination.occurrence as dateTime)<= Patient.birthDate + 2 years )))
+		where HiBVaccination2.date 1 day or more after day of HiBVaccination1.date
+			and HiBVaccination3.date 1 day or more after day of HiBVaccination2.date
+		return HiBVaccination1
+
+define "Hib Immunizations or Procedures":
+	["Immunization": "Haemophilus Influenzae Type B (HiB) Vaccine"] HibVaccination
+		where HibVaccination.status ~ 'completed'
+		and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), HibVaccination.date) >= 42 )
+		and (
+      Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), HibVaccination.date)
+        <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, HibVaccination.date)
+    )
 
 define "Hib Numerator Inclusion Conditions":
 	["Condition": "Anaphylaxis due to Haemophilus influenzae type b vaccine (disorder)"] HibReaction
-		where HibReaction.verificationStatus = 'confirmed' 
-			and (Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate,  HibReaction.onset as Period)<= Patient.birthDate + 2 years ))
+		where HibReaction.verificationStatus ~ 'confirmed'
+			and (
+        Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), HibReaction.onset."start")
+          <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, HibReaction.onset."start")
+      )
 
 define "Three Hepatitis B Vaccinations":
 	from
 		"Hepatitis B Immunizations or Procedures" HepatitisBVaccination1,
 		"Hepatitis B Immunizations or Procedures" HepatitisBVaccination2,
 		"Hepatitis B Immunizations or Procedures" HepatitisBVaccination3
-		where HepatitisBVaccination2.occurrence as dateTime 1 day or more after day of HepatitisBVaccination1.occurrence as dateTime
-			and HepatitisBVaccination3.occurrence as dateTime 1 day or more after day of HepatitisBVaccination2.occurrence as dateTime
+		where HepatitisBVaccination2.date 1 day or more after day of HepatitisBVaccination1.date
+			and HepatitisBVaccination3.date 1 day or more after day of HepatitisBVaccination2.date
 		return HepatitisBVaccination1
-  
-define "Hepatitis B Immunizations or Procedures": 
-	(["Immunization": "Hepatitis B Vaccine"] HepatitisBVaccination
-		where HepatitisBVaccination.status = 'completed' )
-		and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, HepatitisBVaccination.occurrence as dateTime)<= Patient.birthDate + 2 years ))
-  
+
+define "Hepatitis B Immunizations or Procedures":
+	["Immunization": "Hepatitis B Vaccine"] HepatitisBVaccination
+		where HepatitisBVaccination.status = 'completed'
+		and (
+      Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), HepatitisBVaccination.date)
+        <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, HepatitisBVaccination.date)
+    )
+
 define "Hepatitis B Numerator Inclusion Conditions":
-	( ( ["Observation": "Anti Hepatitis B Virus Surface Ab"] HepatitisBAntigenTest
-			where HepatitisBAntigenTest.status in {'final', 'amended'}
-			and HepatitisBAntigenTest.result in "Positive Finding"
-	)
-		union ( ["Condition": "Anaphylaxis due to Hepatitis B vaccine (disorder)"] HepatitisBReaction
-				where HepatitisBReaction.verificationStatus = 'confirmed' 
+	(
+    (
+      ["Observation": "Anti Hepatitis B Virus Surface Ab"] HepatitisBAntigenTest
+      	where HepatitisBAntigenTest.status in {'final', 'amended'}
+      	and HepatitisBAntigenTest.interpretation in "Positive Finding"
+    )
+		union (
+      ["Condition": "Anaphylaxis due to Hepatitis B vaccine (disorder)"] HepatitisBReaction
+				where HepatitisBReaction.verificationStatus ~ 'confirmed'
 				return "Observation" { effective:  HepatitisBReaction.onset }
 		)
-		union ( ["Condition": "Anaphylactic Reaction to Common Baker's Yeast"] YeastReaction
-				where YeastReaction.verificationStatus = 'confirmed' 
+		union (
+      ["Condition": "Anaphylactic Reaction to Common Baker's Yeast"] YeastReaction
+				where YeastReaction.verificationStatus ~ 'confirmed'
 				return "Observation" { effective:  YeastReaction.onset }
 		)
-		union ( ["Condition": "Hepatitis B"] HepatitisBDiagnosis
-				where HepatitisBDiagnosis.verificationStatus = 'confirmed' 
+		union (
+      ["Condition": "Hepatitis B"] HepatitisBDiagnosis
+				where HepatitisBDiagnosis.verificationStatus = 'confirmed'
 				return "Observation" { effective:  HepatitisBDiagnosis.onset }
-		) ) HepBConditions
-			where ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, HepBConditions.effective as Period)<= Patient.birthDate + 2 years ))
-  
+		)
+  ) HepBConditions
+			where (
+        Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), HepBConditions.effective."start")
+          <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, HepBConditions.effective."start")
+      )
+
 define "One Chicken Pox Vaccination":
-	( ["Immunization": "Varicella Zoster Vaccine (VZV)"] ChickenPoxVaccination
-		where ChickenPoxVaccination.status = 'completed' )
-		and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, ChickenPoxVaccination.occurrence as dateTime)<= Patient.birthDate + 2 years ))			       
- 
+	["Immunization": "Varicella Zoster Vaccine (VZV)"] ChickenPoxVaccination
+		where ChickenPoxVaccination.status ~ 'completed'
+		and (
+      Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), ChickenPoxVaccination.date)
+        <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, ChickenPoxVaccination.date)
+    )
+
 define "Varicella Zoster Numerator Inclusion Conditions":
-	( ( ["Observation": "Varicella Zoster Antibody Test (IgG Antibody Titer)"] ChickenPoxTiter 
-	    where ChickenPoxTiter.status in {'final' , 'amended'}
-		and ChickenPoxTiter.result >= 1.10
-	)
-		union ( ["Observation": "Varicella Zoster Antibody Test (IgG Antibody Presence)"] ChickenPoxIgGPresence
+	(
+    (
+      ["Observation": "Varicella Zoster Antibody Test (IgG Antibody Titer)"] ChickenPoxTiter
+        where ChickenPoxTiter.status in {'final' , 'amended'}
+          and ChickenPoxTiter.value >= 1.10
+    )
+		union (
+      ["Observation": "Varicella Zoster Antibody Test (IgG Antibody Presence)"] ChickenPoxIgGPresence
 				where ChickenPoxIgGPresence.status in {'final' , 'amended'}
-				and ChickenPoxIgGPresence.result in "Positive Finding"
+				and ChickenPoxIgGPresence.interpretation in "Positive Finding"
 		)
-		union ( ["Condition": "Disorders of the Immune System"] ImmuneDisorder
-				where ImmuneDisorder.verificationStatus = 'confirmed' 
-				return "Observation" { effective:  ImmuneDisorder.onset }
+		union (
+      ["Condition": "Disorders of the Immune System"] ImmuneDisorder
+				where ImmuneDisorder.verificationStatus ~ 'confirmed'
+				return "Observation" { effective: ImmuneDisorder.onset }
 		)
-		union ( ["Condition": "HIV"] HIV
-				where HIV.verificationStatus = 'confirmed' 
-				return "Observation" { effective:  HIV.onset }
+		union (
+      ["Condition": "HIV"] HIV
+				where HIV.verificationStatus ~ 'confirmed'
+				return "Observation" { effective: HIV.onset }
 		)
-		union ( ["Condition": "Malignant Neoplasm of Lymphatic and Hematopoietic Tissue"] LymphaticMalignantNeoplasm
-				where LymphaticMalignantNeoplasm.verificationStatus = 'confirmed' 
-				return "Observation" { effective:  LymphaticMalignantNeoplasm.onset }
+		union (
+      ["Condition": "Malignant Neoplasm of Lymphatic and Hematopoietic Tissue"] LymphaticMalignantNeoplasm
+				where LymphaticMalignantNeoplasm.verificationStatus ~ 'confirmed'
+				return "Observation" { effective: LymphaticMalignantNeoplasm.onset }
 		)
-		union ( ["Condition": "Neomycin adverse reaction (disorder)"] NeomycinReaction
-				where NeomycinReaction.verificationStatus = 'confirmed' 
-				return "Observation" { effective:  NeomycinReaction.onset }
+		union (
+      ["Condition": "Neomycin adverse reaction (disorder)"] NeomycinReaction
+				where NeomycinReaction.verificationStatus ~ 'confirmed'
+				return "Observation" { effective: NeomycinReaction.onset }
 		)
-		union ( ["Condition": "Varicella Zoster"] VaricellaZoster
-				where VaricellaZoster.verificationStatus = 'confirmed' 
-				return "Observation" { effective:  VaricellaZoster.onset }
-		) ) VaricellaZosterConditions
-			where ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, VaricellaZosterConditions.effective as Period)<= Patient.birthDate + 2 years ))
-					       
+		union (
+      ["Condition": "Varicella Zoster"] VaricellaZoster
+				where VaricellaZoster.verificationStatus ~ 'confirmed'
+				return "Observation" { effective: VaricellaZoster.onset }
+		)
+  ) VaricellaZosterConditions
+			where (
+        Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), VaricellaZosterConditions.effective."start")
+          <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, VaricellaZosterConditions.effective."start")
+      )
+
 define "Four Pneumococcal Conjugate Vaccinations":
 	from
 		"Pneumococcal Conjugate Immunizations or Procedures" PneumococcalVaccination1,
 		"Pneumococcal Conjugate Immunizations or Procedures" PneumococcalVaccination2,
 		"Pneumococcal Conjugate Immunizations or Procedures" PneumococcalVaccination3,
 		"Pneumococcal Conjugate Immunizations or Procedures" PneumococcalVaccination4
-		where PneumococcalVaccination2.occurrence as dateTime 1 day or more after day of PneumococcalVaccination1.occurrence as dateTime
-			and PneumococcalVaccination3.occurrence as dateTime 1 day or more after day of PneumococcalVaccination2.occurrence as dateTime
-			and PneumococcalVaccination4.occurrence as dateTime 1 day or more after day of PneumococcalVaccination3.occurrence as dateTime
-		return PneumococcalVaccination1
+  		where PneumococcalVaccination2.date 1 day or more after day of PneumococcalVaccination1.date
+  			and PneumococcalVaccination3.date 1 day or more after day of PneumococcalVaccination2.date
+  			and PneumococcalVaccination4.date 1 day or more after day of PneumococcalVaccination3.date
+  		return PneumococcalVaccination1
 
-define "Pneumococcal Conjugate Immunizations or Procedures":	
-	( ["Immunization": "Pneumococcal Conjugate Vaccine"] PneumococcalVaccination
-			where PneumococcalVaccination.status = 'completed' )
-			and(( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, PneumococcalVaccination.occurrence as dateTime)>= 42 ))
-			and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, PneumococcalVaccination.occurrence as dateTime)<= Patient.birthDate + 2 years )))
-  
+define "Pneumococcal Conjugate Immunizations or Procedures":
+  ["Immunization": "Pneumococcal Conjugate Vaccine"] PneumococcalVaccination
+    where PneumococcalVaccination.status ~ 'completed'
+    and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), PneumococcalVaccination.date) >= 42 )
+    and (
+      Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), PneumococcalVaccination.date)
+        <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, PneumococcalVaccination.date)
+    )
+
 define "Pneumococcal Conjugate Numerator Inclusion Conditions":
 	["Condition": "Pneumococcal vaccine adverse reaction (disorder)"] PneumococcalReaction
-		where PneumococcalReaction.verificationStatus = 'confirmed' 
-			and Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, PneumococcalReaction.onset as Period)<= Patient.birthDate + 2 years )
-  
-define "One Hepatitis A Vaccinations": 
-	( ["Immunization": "Hepatitis A Vaccine"] HepatitisAVaccination
-		where HepatitisAVaccination.status = 'completed' )
-		and Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, HepatitisAVaccination.occurrence as dateTime)<= Patient.birthDate + 2 years )
-  				       					       					       
+		where PneumococcalReaction.verificationStatus ~ 'confirmed'
+			and (
+        Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), PneumococcalReaction.onset."start")
+          <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, PneumococcalReaction.onset."start")
+      )
+
+define "One Hepatitis A Vaccinations":
+	["Immunization": "Hepatitis A Vaccine"] HepatitisAVaccination
+		where HepatitisAVaccination.status ~ 'completed'
+		and (
+      Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), HepatitisAVaccination.date)
+        <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, HepatitisAVaccination.date)
+    )
+
 define "Hepatitis A Numerator Inclusion Conditions":
-	( ( ["Observation": "Anti Hepatitis A IgG Antigen Test"] HepatitisAAntigenTest
-			where HepatitisAAntigenTest.status in {'final' , 'amended'} 
-				and HepatitisAAntigenTest in "Positive Finding"
-	)
-		union ( ["Condition": "Anaphylactic Reaction to Hepatitis A Vaccine"] HepatitisAReaction
-				where HepatitisAReaction.verificationStatus = 'confirmed' 
+	(
+    (
+      ["Observation": "Anti Hepatitis A IgG Antigen Test"] HepatitisAAntigenTest
+        where HepatitisAAntigenTest.status in {'final' , 'amended'}
+        	and HepatitisAAntigenTest.interpretation in "Positive Finding"
+    )
+		union (
+      ["Condition": "Anaphylactic Reaction to Hepatitis A Vaccine"] HepatitisAReaction
+				where HepatitisAReaction.verificationStatus ~ 'confirmed'
 				return "Observation" { effective: HepatitisAReaction.onset }
 		)
-		union ( ["Condition": "Hepatitis A"] HepatitisADiagnosis
-				where HepatitisADiagnosis.verificationStatus = 'confirmed' 	       
+		union (
+      ["Condition": "Hepatitis A"] HepatitisADiagnosis
+				where HepatitisADiagnosis.verificationStatus ~ 'confirmed'
 				return "Observation" { effective: HepatitisADiagnosis.onset }
-		) ) HepatitisAConditions
-			where ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, HepatitisAConditions.effective as Period)<= Patient.birthDate + 2 years ))
-  
-define "Rotavirus 2 Dose Immunizations or Procedures":
-	( ["Immunization": "rotavirus, live, monovalent vaccine"] TwoDoseRotavirus
-			where TwoDoseRotavirus.status = 'completed' )
-			and (( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, TwoDoseRotavirus.occurrence as dateTime)>= 42 ))
-			and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, TwoDoseRotavirus.occurrence as dateTime)<= Patient.birthDate + 2 years )))
- 
-define "Rotavirus 3 Dose Immunizations or Procedures":	
-	( ["Immunization": "Rotavirus Vaccine (3 dose schedule)"] ThreeDoseRotavirus
-			where ThreeDoseRotavirus.status = 'completed' )
-			and (( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, ThreeDoseRotavirus.occurrence as dateTime)>= 42 ))
-			and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, ThreeDoseRotavirus.occurrence as dateTime)<= Patient.birthDate + 2 years )))
+		)
+  ) HepatitisAConditions
+			where (
+        Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), HepatitisAConditions.effective."start")
+          <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, HepatitisAConditions.effective."start")
+      )
 
-define "Rotavirus 2 or 3 Dose Vaccinations":	
-	( "Rotavirus 2 Dose Vaccination Followed by Two Rotavirus 3 Dose Vaccinations"
-			union "Rotavirus 3 Dose Vaccination Followed by A Rotavirus 2 Dose Vaccination and A Rotavirus 3 Dose Vaccination"
-			union "Rotavirus 3 Dose Vaccinations Followed by One Rotavirus 2 Dose Vaccination"
-	) 
-					       
+define "Rotavirus 2 Dose Immunizations or Procedures":
+  ["Immunization": "rotavirus, live, monovalent vaccine"] TwoDoseRotavirus
+  	where TwoDoseRotavirus.status ~ 'completed'
+  	and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), TwoDoseRotavirus.date) >= 42 )
+  	and (
+      Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), TwoDoseRotavirus.date)
+        <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, TwoDoseRotavirus.date)
+    )
+
+define "Rotavirus 3 Dose Immunizations or Procedures":
+  ["Immunization": "Rotavirus Vaccine (3 dose schedule)"] ThreeDoseRotavirus
+  	where ThreeDoseRotavirus.status ~ 'completed'
+  	and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), ThreeDoseRotavirus.date) >= 42 )
+  	and (
+      Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), ThreeDoseRotavirus.date)
+        <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, ThreeDoseRotavirus.date)
+    )
+
+define "Rotavirus 2 or 3 Dose Vaccinations":
+  "Rotavirus 2 Dose Vaccination Followed by Two Rotavirus 3 Dose Vaccinations"
+  	union "Rotavirus 3 Dose Vaccination Followed by A Rotavirus 2 Dose Vaccination and A Rotavirus 3 Dose Vaccination"
+  	union "Rotavirus 3 Dose Vaccinations Followed by One Rotavirus 2 Dose Vaccination"
+
 define "Rotavirus 2 Dose Vaccination Followed by Two Rotavirus 3 Dose Vaccinations":
 	from
 		"Rotavirus 2 Dose Immunizations or Procedures" Rotavirus233Vaccination1,
 		"Rotavirus 3 Dose Immunizations or Procedures" Rotavirus233Vaccination2,
 		"Rotavirus 3 Dose Immunizations or Procedures" Rotavirus233Vaccination3
-		where Rotavirus233Vaccination2.occurrence as dateTime 1 day or more after day of Rotavirus233Vaccination1.occurrence as dateTime
-			and Rotavirus233Vaccination3.occurrence as dateTime 1 day or more after day of Rotavirus233Vaccination2.occurrence as dateTime
+		where Rotavirus233Vaccination2.date 1 day or more after day of Rotavirus233Vaccination1.date
+			and Rotavirus233Vaccination3.date 1 day or more after day of Rotavirus233Vaccination2.date
 		return Rotavirus233Vaccination1
-  
+
 define "Rotavirus 2 Dose Vaccinations":
 	from
 		"Rotavirus 2 Dose Immunizations or Procedures" Rotavirus2Vaccination1,
 		"Rotavirus 2 Dose Immunizations or Procedures" Rotavirus2Vaccination2
-		where Rotavirus2Vaccination2.occurrence as dateTime 1 day or more after day of Rotavirus2Vaccination1.occurrence as dateTime
+		where Rotavirus2Vaccination2.date 1 day or more after day of Rotavirus2Vaccination1.date
 		return Rotavirus2Vaccination1
-    
-define "Rotavirus 3 Dose Vaccination Followed by A Rotavirus 2 Dose Vaccination and A Rotavirus 3 Dose Vaccination":	
+
+define "Rotavirus 3 Dose Vaccination Followed by A Rotavirus 2 Dose Vaccination and A Rotavirus 3 Dose Vaccination":
 	from
 		"Rotavirus 3 Dose Immunizations or Procedures" Rotavirus323Vaccination1,
 		"Rotavirus 2 Dose Immunizations or Procedures" Rotavirus323Vaccination2,
 		"Rotavirus 3 Dose Immunizations or Procedures" Rotavirus323Vaccination3
-		where Rotavirus323Vaccination2.occurrence as dateTime 1 day or more after day of Rotavirus323Vaccination1.occurrence as dateTime
-			and Rotavirus323Vaccination3.occurrence as dateTime 1 day or more after day of Rotavirus323Vaccination2.occurrence as dateTime
+		where Rotavirus323Vaccination2.date 1 day or more after day of Rotavirus323Vaccination1.date
+			and Rotavirus323Vaccination3.date 1 day or more after day of Rotavirus323Vaccination2.date
 		return Rotavirus323Vaccination1
-  
+
 define "Rotavirus 3 Dose Vaccinations":
 	from
 		"Rotavirus 3 Dose Immunizations or Procedures" Rotavirus3Vaccination1,
 		"Rotavirus 3 Dose Immunizations or Procedures" Rotavirus3Vaccination2,
 		"Rotavirus 3 Dose Immunizations or Procedures" Rotavirus3Vaccination3
-		where Rotavirus3Vaccination2.occurrence as dateTime 1 day or more after day of Rotavirus3Vaccination1.occurrence as dateTime
-			and Rotavirus3Vaccination3.occurrence as dateTime 1 day or more after day of Rotavirus3Vaccination2.occurrence as dateTime
+		where Rotavirus3Vaccination2.date 1 day or more after day of Rotavirus3Vaccination1.date
+			and Rotavirus3Vaccination3.date 1 day or more after day of Rotavirus3Vaccination2.date
 		return Rotavirus3Vaccination1
-  
+
 define "Rotavirus 3 Dose Vaccinations Followed by One Rotavirus 2 Dose Vaccination":
 	from
 		"Rotavirus 3 Dose Immunizations or Procedures" Rotavirus332Vaccination1,
 		"Rotavirus 3 Dose Immunizations or Procedures" Rotavirus332Vaccination2,
 		"Rotavirus 2 Dose Immunizations or Procedures" Rotavirus332Vaccination3
-		where Rotavirus332Vaccination2.occurrence as dateTime 1 day or more after day of Rotavirus332Vaccination1.occurrence as dateTime
-			and Rotavirus332Vaccination3.occurrence as dateTime 1 day or more after day of Rotavirus332Vaccination2.occurrence as dateTime
+		where Rotavirus332Vaccination2.date 1 day or more after day of Rotavirus332Vaccination1.date
+			and Rotavirus332Vaccination3.date 1 day or more after day of Rotavirus332Vaccination2.date
 		return Rotavirus332Vaccination1
-  
-define "Rotavirus Numerator Inclusion Conditions":	
-	(  ["Condition": "Anaphylaxis due to rotavirus vaccine (disorder)"]
+
+define "Rotavirus Numerator Inclusion Conditions":
+	(
+    ["Condition": "Anaphylaxis due to rotavirus vaccine (disorder)"]
 			union ["Condition": "Severe Combined Immunodeficiency"]
-			union ["Condition": "Intussusception"] ) RotavirusConditions
-			where RotavirusConditions.verificationStatus = 'confirmed' 
-				and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate,  RotavirusConditions.onset as Period)<= Patient.birthDate + 2 years ))
-   
- define "Two Influenza Vaccinations": 
+			union ["Condition": "Intussusception"]
+  ) RotavirusConditions
+			where RotavirusConditions.verificationStatus ~ 'confirmed'
+				and (
+          Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate),  RotavirusConditions.onset."start")
+            <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years,  RotavirusConditions.onset."start")
+        )
+
+ define "Two Influenza Vaccinations":
 	from
 		"Influenza Immunizations or Procedures" FluVaccination1,
 		"Influenza Immunizations or Procedures" FluVaccination2
-		where FluVaccination2.occurrence as dateTime 1 day or more after day of FluVaccination1.occurrence as dateTime
-		return FluVaccination1
+  		where FluVaccination2.date 1 day or more after day of FluVaccination1.date
+  		return FluVaccination1
 
-define "Influenza Immunizations or Procedures": 	
-	( ["Immunization": "Influenza Vaccine"] InfluenzaVaccination
-			where InfluenzaVaccination.status = 'completed' )
-				and (( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, InfluenzaVaccination.occurrence as dateTime)>= 180 ))
-				and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, InfluenzaVaccination.occurrence as dateTime)<= Patient.birthDate + 2 years )))
-  
+define "Influenza Immunizations or Procedures":
+  ["Immunization": "Influenza Vaccine"] InfluenzaVaccination
+  	where InfluenzaVaccination.status ~ 'completed'
+  		and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), InfluenzaVaccination.date) >= 180 )
+  		and (
+        Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), InfluenzaVaccination.date)
+          <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, InfluenzaVaccination.date)
+      )
+
 define "Influenza Numerator Inclusion Conditions":
-	( ["Condition": "Influenza virus vaccine adverse reaction (disorder)"]
-		union ["Condition": "Malignant Neoplasm of Lymphatic and Hematopoietic Tissue"]
-		union ["Condition": "Neomycin adverse reaction (disorder)"]
-		union ["Condition": "HIV"]
-		union ["Condition": "Disorders of the Immune System"] ) InfluenzaConditions
-			where InfluenzaConditions.verificationStatus = 'confirmed' 
-				and ( Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate, InfluenzaConditions.onset as Period)<= Patient.birthDate + 2 years ))
-  
- 
+	(
+    ["Condition": "Influenza virus vaccine adverse reaction (disorder)"]
+  		union ["Condition": "Malignant Neoplasm of Lymphatic and Hematopoietic Tissue"]
+  		union ["Condition": "Neomycin adverse reaction (disorder)"]
+  		union ["Condition": "HIV"]
+  		union ["Condition": "Disorders of the Immune System"]
+  ) InfluenzaConditions
+			where InfluenzaConditions.verificationStatus ~ 'confirmed'
+				and (
+          Global."CalendarAgeInDaysAt"(FHIRHelpers.ToDate(Patient.birthDate), InfluenzaConditions.onset."start")
+            <= Global."CalendarAgeInDaysAt"(Patient.birthDate + 2 years, InfluenzaConditions.onset."start")
+        )
