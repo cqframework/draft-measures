@@ -52,22 +52,20 @@ define "Denominator":
 
 define "Denominator Exclusions":
 	exists ( [Condition: code in "Conditions Due To Human Immunodeficiency Virus (HIV)"] HIVConditions
-			where HIVConditions.clinicalStatus = 'active'
-			and HIVConditions.verificationStatus = 'confirmed'
-			and FHIRHelpers.ToDateTime(HIVConditions.onset as dateTime) before start of "Measurement Period" )
+			where FHIRHelpers.ToConcept(HIVConditions.clinicalStatus) ~ Global."active"
+			and FHIRHelpers.ToConcept(HIVConditions.verificationStatus) ~ Global."confirmed"
+			and Global."Normalize Onset"(HIVConditions.onset) starts before start of "Measurement Period" )
 
 define "Numerator":
-	exists ( "HIV Test Performed" )
+	exists "HIV Test Performed"
 
 define "HIV Test Performed":
 	( [Observation: "Human Immunodeficiency Virus (HIV) Laboratory Test Codes (Ab and Ag)"]
 		union [Observation: "HIV 1 and 2 tests - Meaningful Use set"] ) HIVTest
-		where exists ( Global.CalendarAgeInYearsAt(FHIRHelpers.ToDate(Patient.birthDate), start of FHIRHelpers.ToInterval(HIVTest.effective as Period)) >= 15
-					and Global.CalendarAgeInYearsAt(FHIRHelpers.ToDate(Patient.birthDate), start of FHIRHelpers.ToInterval(HIVTest.effective as Period)) < 66 )
+		where Global.CalendarAgeInYearsAt(FHIRHelpers.ToDate(Patient.birthDate), start of Global."Normalize Interval"(HIVTest.effective)) between 15 and 65
 			and HIVTest.status in {'final', 'amended', 'corrected'}
-			and FHIRHelpers.ToInterval(HIVTest.effective as Period) starts before end of "Measurement Period"
+			and Global."Normalize Interval"(HIVTest.effective) starts before end of "Measurement Period"
 
 define "Initial Population":
-exists ( Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of "Measurement Period") >= 15
-		and Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of "Measurement Period") < 66 )
+	Global.CalendarAgeInYearsAt(FHIRHelpers.ToDate(Patient.birthDate), start of "Measurement Period") between 15 and 65
 		and exists "Qualifying Encounters"
