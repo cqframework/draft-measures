@@ -2,9 +2,9 @@ library EXM506_FHIR4 version '2.0.000'
 
 using FHIR version '4.0.0'
 
-include MATGlobalCommonFunctions_FHIR version '4.0.000' called Global
+include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Global
 include FHIRHelpers version '4.0.0' called FHIRHelpers
-include SupplementalDataElements_FHIR version '1.0.0' called SDE
+include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
 
 codesystem "Diagnosis Role": 'http://terminology.hl7.org/CodeSystem/diagnosis-role'
 codesystem "LOINC": 'http://loinc.org'
@@ -32,25 +32,37 @@ parameter "Measurement Period" Interval<DateTime>
 
 context Patient
 
+define "SDE Ethnicity":
+  SDE."Ethnicity"
+
+define "SDE Payer":
+  SDE."Payer"
+
+define "SDE Race":
+  SDE."Race"
+
+define "SDE Sex":
+  SDE."ONC Administrative Sex"
+
 define "Inpatient Encounter with Age Greater than or Equal to 18":
   Global."Inpatient Encounter" EncounterInpatient
      with ["Patient"] BirthDate
        such that Global.CalendarAgeInYearsAt(FHIRHelpers.ToDate(Patient.birthDate), start of FHIRHelpers.ToInterval(EncounterInpatient.period)) >= 18
 
 define "Opioid at Discharge":
-      ["MedicationRequest": medication in "Schedule II and Schedule III Opioids"] OpioidsDischarge
-            where exists (OpioidsDischarge.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
-                and OpioidsDischarge.intent = 'plan'
+  ["MedicationRequest": "Schedule II and Schedule III Opioids"] OpioidsDischarge
+      where exists (OpioidsDischarge.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+          and OpioidsDischarge.intent = 'plan'
 
-  define "Benzodiazepine at Discharge":
-      ["MedicationRequest": medication in "Schedule IV Benzodiazepines"] BenzodiazepineDischarge
-        where exists (BenzodiazepineDischarge.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
-              and BenzodiazepineDischarge.intent = 'plan'
+define "Benzodiazepine at Discharge":
+  ["MedicationRequest": "Schedule IV Benzodiazepines"] BenzodiazepineDischarge
+      where exists (BenzodiazepineDischarge.category C where FHIRHelpers.ToConcept(C) ~ "Discharge")
+          and BenzodiazepineDischarge.intent = 'plan'
 
 define "Encounter with an Opioid or Benzodiazepine at Discharge":
-"Inpatient Encounter with Age Greater than or Equal to 18" InpatientEncounter
-      with ( "Opioid at Discharge" union  "Benzodiazepine at Discharge" )OpioidBenzodiazepine
-                such that FHIRHelpers.ToDateTime(OpioidBenzodiazepine.authoredOn) during (InpatientEncounter.period)
+  "Inpatient Encounter with Age Greater than or Equal to 18" InpatientEncounter
+    with ("Opioid at Discharge" union "Benzodiazepine at Discharge") OpioidBenzodiazepine
+      such that FHIRHelpers.ToDateTime(OpioidBenzodiazepine.authoredOn) during (InpatientEncounter.period)
 
 define "Initial Population":
 "Encounter with an Opioid or Benzodiazepine at Discharge"
@@ -58,10 +70,10 @@ define "Initial Population":
 define "Denominator":
 "Initial Population"
 
-define "Denominator Exclusions":
+define "Denominator Exclusion":
  ("Inpatient Encounter with Age Greater than or Equal to 18" InpatientEncounter
  with [Condition: "All Primary and Secondary Cancer"]Cancer
-      such that Cancer.onset overlaps InpatientEncounter.period)
+      such that Global."Normalize Interval"(Cancer.onset) overlaps InpatientEncounter.period)
 
        union ("Inpatient Encounter with Age Greater than or Equal to 18" InpatientEncounter
      with (["ServiceRequest": "Palliative Care"]
@@ -72,13 +84,15 @@ define "Denominator Exclusions":
    union ("Inpatient Encounter with Age Greater than or Equal to 18" InpatientEncounter
  with  (["Procedure": "Palliative Care"]
      union ["Procedure": "Hospice Care"] ) PalliativeOrHospiceCarePerformed
-             such that PalliativeOrHospiceCarePerformed.performed overlaps InpatientEncounter.period)
+             such that Global."Normalize Interval"(PalliativeOrHospiceCarePerformed.performed)
+              overlaps InpatientEncounter.period)
 
 define "Encounter with a Concurrent Opioid and Benzodiazepine at Discharge":
 "Inpatient Encounter with Age Greater than or Equal to 18" InpatientEncounter
-   with ("Opioid at Discharge" intersect "Benzodiazepine at Discharge") OpioidBenzodiazepine
-       such that FHIRHelpers.ToDateTime(OpioidBenzodiazepine.authoredOn) during (InpatientEncounter.period)
-
+   with ("Opioid at Discharge") OpioidDischarge
+   such that FHIRHelpers.ToDateTime(OpioidDischarge.authoredOn) during (InpatientEncounter.period)
+   with ("Benzodiazepine at Discharge") BenzodiazepineDischarge
+   such that FHIRHelpers.ToDateTime(BenzodiazepineDischarge.authoredOn) during (InpatientEncounter.period)
 
 define "Encounter with Two or More Concurrent Opioids at Discharge":
 	"Inpatient Encounter with Age Greater than or Equal to 18" InpatientEncounter
