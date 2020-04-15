@@ -70,6 +70,9 @@ define "Qualifying Encounter":
 		where ValidEncounter.period during "Measurement Period"
 		and ValidEncounter.status  = 'finished'
 
+define "Denominator":
+"Initial Population"
+
 define "Numerator":
 [Observation: "Falls Screening"] FallsScreening
 		where FallsScreening.status in {'final', 'amended', 'corrected', 'preliminary'}
