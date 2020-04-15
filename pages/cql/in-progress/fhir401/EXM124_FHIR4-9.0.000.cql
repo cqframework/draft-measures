@@ -1,4 +1,4 @@
-library EXM124_FHIR401 version '8.2.000'
+library EXM124_FHIR401 version '9.0.000'
 
 
 /*
@@ -64,41 +64,30 @@ define "Denominator":
 
 define "Denominator Exclusion":
 	Hospice."Has Hospice"
-		or exists "Surgical Absence of Cervix"
 		or exists "Absence of Cervix"
 
 define "Absence of Cervix":
-	[Condition : "Congenital absence of cervix (disorder)"] NoCervixBirth
-		where Global."Normalize Interval"(NoCervixBirth.onset) starts before end of "Measurement Period"
+  ([Procedure: "Hysterectomy with No Residual Cervix"] NoCervixProcedure
+   where Global."Normalize Interval"(NoCervixProcedure.performed) ends on or before end of "Measurement Period"
+     and NoCervixProcedure.status = 'completed'
+     )
+  union [Condition : "Congenital absence of cervix (disorder)"] NoCervixBirth
+		where Global."Normalize Interval"(NoCervixBirth.onset) starts on or before end of "Measurement Period"
   //    and NoCervixBirth.clinicalStatus ~ ToConcept(Global."active") because this is an excluion, all statuses are acceptable
 
-define "Surgical Absence of Cervix":
-	[Procedure: "Hysterectomy with No Residual Cervix"] NoCervixHysterectomy
-		where Global."Normalize Interval"(NoCervixHysterectomy.performed) ends before end of "Measurement Period"
-			and NoCervixHysterectomy.status = 'completed'
-
 define "Numerator":
-	exists "Pap Test Within 3 Years"
-		or exists "Pap Test With HPV Within 5 Years"
+	exists "Cervical Cytology Within 3 Years"
+		or exists "HPV Test Within 5 Years fpr Women Age 30 and Older"
 
-define "Pap Test with Results":
-	[Observation: "Pap Test"] PapTest
-		where PapTest.value is not null
-			and PapTest.status in { 'final', 'amended', 'corrected', 'preliminary' }
+define "Cervical Cytology Within 3 Years":
+	[Observation: "Pap Test"] CervicalCytology
+		where CervicalCytology.value is not null
+			and CervicalCytology.status in { 'final', 'amended', 'corrected', 'preliminary' }
+		  and Global."Normalize Interval"(CervicalCytology.effective) ends 3 years or less on or before end of "Measurement Period"
 
-define "Pap Test Within 3 Years":
-	"Pap Test with Results" PapTest
-		where Global."Normalize Interval"(PapTest.effective) ends 3 years or less before end of "Measurement Period"
-
-define "PapTest Within 5 Years":
-	( "Pap Test with Results" PapTestOver30YearsOld
-			where Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of Global."Normalize Interval"(PapTestOver30YearsOld.effective))>= 30
-				and Global."Normalize Interval"(PapTestOver30YearsOld.effective) ends 5 years or less before end of "Measurement Period"
-	)
-
-define "Pap Test With HPV Within 5 Years":
-	"PapTest Within 5 Years" PapTestOver30YearsOld
-		with [Observation: "HPV Test"] HPVTest
-			such that HPVTest.value is not null
-        and Global."Normalize Interval"(HPVTest.effective) starts within 1 day of start of Global."Normalize Interval"(PapTestOver30YearsOld.effective)
-				and HPVTest.status in { 'final', 'amended', 'corrected', 'preliminary' }
+define "HPV Test Within 5 Years fpr Women Age 30 and Older":
+	[Observation: "HPV Test"] HPVTest
+      where HPVTest.value is not null
+        and HPVTest.status in { 'final', 'amended', 'corrected', 'preliminary' }
+        and  Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of Global."Normalize Interval"(HPVTest.effective))>= 30
+        and Global."Normalize Interval"(HPVTest.effective) ends 5 years or less on or before end of "Measurement Period"
