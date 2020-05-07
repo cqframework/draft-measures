@@ -1,4 +1,4 @@
-library TJCOverall_FHIR4 version '5.0.000'
+library TJCOverall_QICore4 version '5.0.000'
 
 /*
 @update: @@BTR 2020-03-31 ->
@@ -7,11 +7,10 @@ Updated FHIR version to 4.0.1
 @@
 */
 
-using FHIR version '4.0.1'
+using QICore version '4.0.0'
 
-include FHIRHelpers version '4.0.1' called FHIRHelpers
-include MATGlobalCommonFunctions_FHIR4 version '5.0.000' called Global
-include SupplementalDataElements_FHIR4 version '2.0.0' called SDE
+include MATGlobalCommonFunctions_QICore4 version '5.0.000' called Global
+include SupplementalDataElements_QICore4 version '2.0.0' called SDE
 
 codesystem "SNOMEDCT": 'http://snomed.info/sct/731000124108'
 codesystem "LOINC": 'http://loinc.org'
@@ -45,6 +44,8 @@ define "Intervention Comfort Measures":
 		(["Procedure": "Comfort Measures"] InterventionPerformed
 		where InterventionPerformed.status = 'completed')
 
+/*
+ISSUE: Encounter.diagnosis element is missing due to issue with tooling generation
 define "All Stroke Encounter":
 	"Non Elective Inpatient Encounter" NonElectiveEncounter
     where Global.PrincipalDiagnosis(NonElectiveEncounter).code in "Hemorrhagic Stroke"
@@ -67,16 +68,16 @@ define "Ischemic Stroke Encounters with Discharge Disposition":
 			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Home for Hospice Care"
 			or IschemicStrokeEncounter.hospitalization.dischargeDisposition in "Discharged to Health Care Facility for Hospice Care"
 
-// Translator issue with 1.4.9-SNAPSHOT: https://github.com/cqframework/clinical_quality_language/issues/511
 define "Comfort Measures during Hospitalization":
 	"Ischemic Stroke Encounter" IschemicStrokeEncounter
-   	//with "Intervention Comfort Measures" ComfortMeasure
-    //	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
+   	with "Intervention Comfort Measures" ComfortMeasure
+    	such that FHIRHelpers.ToDateTime(Coalesce(ComfortMeasure.performed as dateTime,ComfortMeasure.authoredOn)) during Global."HospitalizationWithObservation"(IschemicStrokeEncounter)
 
 define "Encounter with Principal Diagnosis and Age":
 	"All Stroke Encounter" AllStrokeEncounter
 		with ["Patient"] BirthDate
 			such that Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of FHIRHelpers.ToInterval(AllStrokeEncounter.period)) >= 18
+*/
 
 define function "CalendarDayOfOrDayAfter"(StartValue DateTime ):
 	Interval(Global."ToDate"(StartValue), Global."ToDate"(StartValue + 2 days))
