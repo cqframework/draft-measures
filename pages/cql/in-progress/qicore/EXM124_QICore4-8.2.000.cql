@@ -13,10 +13,10 @@ in the measure development community.
 
 using QICore version '4.0.0'
 
-include Hospice_FHIR4 version '2.0.000' called Hospice
-include AdultOutpatientEncounters_FHIR4 version '2.0.000' called AdultOutpatientEncounters
-include MATGlobalCommonFunctions_FHIR4 version '5.0.000' called Global
-include SupplementalDataElements_FHIR4 version '2.0.0' called SDE
+include Hospice_QICore4 version '2.0.000' called Hospice
+include AdultOutpatientEncounters_QICore4 version '2.0.000' called AdultOutpatientEncounters
+include MATGlobalCommonFunctions_QICore4 version '5.0.000' called Global
+include SupplementalDataElements_QICore4 version '2.0.0' called SDE
 
 codesystem "SNOMEDCT:2017-09": 'http://snomed.info/sct/731000124108' version 'http://snomed.info/sct/731000124108/version/201709'
 

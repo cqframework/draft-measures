@@ -4,14 +4,13 @@ library EXM165_FHIR4 version '8.5.000'
 Controlling High Blood Pressure (CBP)
 */
 
-using FHIR version '4.0.0'
+using QICore version '4.0.0'
 
-include FHIRHelpers version '4.0.0'
-include MATGlobalCommonFunctions_FHIR4 version '4.0.000' called Common
-include AdultOutpatientEncounters_FHIR4 version '1.1.000' called AdultOutpatientEncounters
-include SupplementalDataElements_FHIR4 version '1.0.0' called SDE
-include AdvancedIllnessandFrailtyExclusion_FHIR4 version '4.0.000' called FrailtyLTI
-include Hospice_FHIR4 version '1.0.000' called Hospice
+include MATGlobalCommonFunctions_QICore4 version '5.0.000' called Common
+include AdultOutpatientEncounters_QICore4 version '2.0.000' called AdultOutpatientEncounters
+include SupplementalDataElements_QICore4 version '2.0.0' called SDE
+include AdvancedIllnessandFrailtyExclusion_QICore4 version '5.0.000' called FrailtyLTI
+include Hospice_QICore4 version '2.0.000' called Hospice
 //include NCQACommon_FHIR version '3.10.000' called Common
 //include Participation_FHIR version '1.0.0'
 
@@ -97,33 +96,24 @@ define "Most Recent Blood Pressure Day":
 	Max("Blood Pressure Days")
 
 define "Qualifying Diastolic Blood Pressure Reading":
-	["Observation": "Blood pressure"] BloodPressure
-	  where BloodPressure.status in {'final', 'amended'}
+	["observation-bp"] BloodPressure
+	  where BloodPressure.DiastolicBP.value is not null
+      and BloodPressure.status in {'final', 'amended'}
       and BloodPressure.effective during "Measurement Period"
       // TODO: Turn this into a value set
-	    //and not (GetEncounter(BloodPressure."context").class.code in { 'EMER', 'IMP', 'ACUTE', 'NONAC', 'PRENC', 'SS' })
-      and exists (
-        BloodPressure.component DiastolicBP
-          where FHIRHelpers.ToConcept(DiastolicBP.code) ~ "Diastolic blood pressure"
-            and DiastolicBP.value.unit = 'mm[Hg]'
-      )
-//Note: Once we can specify that the FHIR BP Profile must be used, then status, code, and unit will not be required
+      and not (GetEncounter(BloodPressure.encounter).class.code in { 'EMER', 'IMP', 'ACUTE', 'NONAC', 'PRENC', 'SS'})
 
 // TODO: Move to Common Functions
 define function GetEncounter(reference Reference):
   singleton from ( [Encounter: id in Common.GetId(reference.reference)] )
 
 define "Qualifying Systolic Blood Pressure Reading":
-	["Observation": "Blood pressure"] BloodPressure
+	["observation-bp"] BloodPressure
 	  where BloodPressure.status in {'final', 'amended'}
       and BloodPressure.effective during "Measurement Period"
       // TODO: Turn this into a value set
 	    and not (GetEncounter(BloodPressure.encounter).class.code in { 'EMER', 'IMP', 'ACUTE', 'NONAC', 'PRENC', 'SS'})
-      and exists (
-        BloodPressure.component SystolicBP
-          where FHIRHelpers.ToConcept(SystolicBP.code) ~ "Systolic blood pressure"
-            and SystolicBP.value.unit = 'mm[Hg]'
-      )
+
 //Note: Once we can specify that the FHIR BP Profile must be used, then status, code, and unit will not be required
 
 define "Numerator":
@@ -131,16 +121,16 @@ define "Numerator":
 		and "Has Systolic Blood Pressure Less Than 140"
 
 define "Initial Population":
-	Common.CalendarAgeInYearsAt(FHIRHelpers.ToDate(Patient.birthDate), end of "Measurement Period") between 18 and 85
+	Common.CalendarAgeInYearsAt(ToDate(Patient.birthDate), end of "Measurement Period") between 18 and 85
 		and exists "Essential Hypertension Diagnosis"
-		and exists AdultOutpatientEncounters."Qualifying Encounters"("Measurement Period")
+		and exists AdultOutpatientEncounters."Qualifying Encounters"
 
 define "Pregnancy Or Renal Diagnosis Exclusions":
 	( ["Condition": "Pregnancy"]
 		union ["Condition": "End Stage Renal Disease"]
 		union ["Condition": "Kidney Transplant Recipient"]
 		union ["Condition": "Chronic Kidney Disease, Stage 5"] ) PregnancyESRDDiagnosis
-      where PregnancyESRDDiagnosis.verificationStatus.coding.code contains 'confirmed'
+      where PregnancyESRDDiagnosis.verificationStatus = "confirmed"
         and PregnancyESRDDiagnosis.recordedDate before end of "Measurement Period"
 
 define "Denominator":
@@ -148,7 +138,7 @@ define "Denominator":
 
 define "End Stage Renal Disease Encounter":
 	["Encounter": "ESRD Monthly Outpatient Services"] ESRDEncounter
-		where ESRDEncounter.status.value in { 'arrived', 'triaged', 'in-progress', 'onleave', 'finished' }
+		where ESRDEncounter.status in { 'arrived', 'triaged', 'in-progress', 'onleave', 'finished' }
 		  and ESRDEncounter.period starts before end of "Measurement Period"
 
 define "End Stage Renal Disease Procedures":
@@ -156,11 +146,11 @@ define "End Stage Renal Disease Procedures":
 		union ["Procedure": "Kidney Transplant"]
 		union ["Procedure": "Dialysis Services"] ) ESRDProcedure
 		where ESRDProcedure.status = 'completed'
-      and FHIRHelpers.ToInterval(ESRDProcedure.performed as Period) starts before end of "Measurement Period"
+      and Common."Normalize Interval"(ESRDProcedure.performed) starts before end of "Measurement Period"
 
 define "Essential Hypertension Diagnosis":
 	["Condition": "Essential Hypertension"] Hypertension
-    where Hypertension.verificationStatus.coding.code contains 'confirmed'
+    where Hypertension.verificationStatus = ToConcept(Common."confirmed")
      and (Hypertension.recordedDate 6 months or less on or after start of "Measurement Period"
       or Hypertension.recordedDate before end of "Measurement Period"
     )
@@ -168,7 +158,7 @@ define "Essential Hypertension Diagnosis":
 
 // TODO: Translate exclusions
 define "Denominator Exclusions":
-    Hospice."Has Hospice"("Measurement Period")
+    Hospice."Has Hospice"
         or exists "Pregnancy Or Renal Diagnosis Exclusions"
         or ( exists "End Stage Renal Disease Procedures"
                 or exists "End Stage Renal Disease Encounter"
