@@ -4,7 +4,7 @@ library AdvancedIllnessandFrailtyExclusion_FHIR4 version '5.0.000'
 @update: @@BTR 2020-03-31 ->
 Incremented version to 5.0.000
 Updated FHIR version to 4.0.1
-@@
+@@@
 */
 
 using FHIR version '4.0.1'
@@ -35,62 +35,6 @@ parameter "Measurement Period" Interval<DateTime>
 
 context Patient
 
-define "Advanced Illness Diagnoses":
-    [Condition: "Advanced Illness"] AdvancedIllnessDiagnosis
-
-define "Outpatient Encounters with Advanced Illness":
-	( [Encounter: "Outpatient"]
-		union [Encounter: "Observation"]
-		union [Encounter: "ED"]
-		union [Encounter: "Nonacute Inpatient"] ) OutpatientEncounter
-		with [Condition: "Advanced Illness"] AdvancedIllnessDiagnosis
-            such that exists (
-                OutpatientEncounter.diagnosis.condition EncounterDiagnosis
-                    where EndsWith(EncounterDiagnosis.reference, AdvancedIllnessDiagnosis.id)
-            )
-            and OutpatientEncounter.period starts 2 years or less before
-			end of "Measurement Period"
-
-define "Long Term Care Periods During Measurement Period":
-	( [Encounter: "Care Services in Long-Term Residential Facility"]
-		union [Encounter: "Nursing Facility Visit"] ) LongTermFacilityEncounter
-		where LongTermFacilityEncounter.period overlaps "Measurement Period"
-		return LongTermFacilityEncounter.period
-			intersect "Measurement Period"
-
-define "Inpatient Encounter with Advanced Illness":
-	[Encounter: "Acute Inpatient"] InpatientEncounter
-		with [Condition: "Advanced Illness"] AdvancedIllnessDiagnosis
-            such that exists (
-                InpatientEncounter.diagnosis.condition EncounterDiagnosis
-                    where EndsWith(EncounterDiagnosis.reference, AdvancedIllnessDiagnosis.id)
-            )
-			and InpatientEncounter.period starts 2 years or less before
-			end of "Measurement Period"
-
-define "Dementia Medications In Year Before or During Measurement Period":
-	["MedicationDispense": "Dementia Medications"] DementiaMed
-		where DementiaMed.whenHandedOver during day of Interval[
-            ( start of "Measurement Period" - 1 year ), end of "Measurement Period"
-        ]
-
-define "Has Criteria Indicating Frailty":
-	exists ( [DeviceRequest: "Frailty Device"] FrailtyDeviceOrder
-			where FrailtyDeviceOrder.authoredOn during "Measurement Period"
-	)
-		or exists ( [DeviceUseStatement: "Frailty Device"] FrailtyDeviceUse
-				where Global."Normalize Interval"(FrailtyDeviceUse.timing) overlaps "Measurement Period"
-		)
-		or exists ( [Condition: "Frailty Diagnosis"] FrailtyDiagnosis
-				where Global."Prevalence Period"(FrailtyDiagnosis) overlaps "Measurement Period"
-		)
-		or exists ( [Encounter: "Frailty Encounter"] FrailtyEncounter
-				where FrailtyEncounter.period overlaps "Measurement Period"
-		)
-		or exists ( [Observation: "Frailty Symptom"] FrailtySymptomObservation
-				where Global."Normalize Interval"(FrailtySymptomObservation.effective) overlaps "Measurement Period"
-		)
-
 define "Advanced Illness and Frailty Exclusion Including Over Age 80":
 	//If the measure includes populations age 80 and older, then use this logic:
 	(
@@ -114,6 +58,61 @@ define "Advanced Illness and Frailty Exclusion Including Under Age 80":
             or exists ( "Inpatient Encounter with Advanced Illness" )
             or exists "Dementia Medications In Year Before or During Measurement Period"
         )
+
+define "Outpatient Encounters with Advanced Illness":
+	( [Encounter: "Outpatient"]
+		union [Encounter: "Observation"]
+		union [Encounter: "ED"]
+		union [Encounter: "Nonacute Inpatient"] ) OutpatientEncounter
+		 with [Condition: "Advanced Illness"] AdvancedIllnessDiagnosis
+            such that exists (
+                OutpatientEncounter.diagnosis.condition EncounterDiagnosis
+                    where EndsWith(EncounterDiagnosis.reference, AdvancedIllnessDiagnosis.id)
+            )
+            and OutpatientEncounter.period starts 2 years or less on or before
+			end of "Measurement Period"
+
+define "Inpatient Encounter with Advanced Illness":
+	[Encounter: "Acute Inpatient"] InpatientEncounter
+		with [Condition: "Advanced Illness"] AdvancedIllnessDiagnosis
+            such that exists (
+                InpatientEncounter.diagnosis.condition EncounterDiagnosis
+                    where EndsWith(EncounterDiagnosis.reference, AdvancedIllnessDiagnosis.id)
+            )
+			and InpatientEncounter.period starts 2 years or less on or before
+			end of "Measurement Period"
+// start here
+define "Dementia Medications In Year Before or During Measurement Period":
+	["MedicationDispense": "Dementia Medications"] DementiaMed
+		where DementiaMed.whenHandedOver during Interval[
+            ( start of "Measurement Period" - 1 year ), end of "Measurement Period"
+        ]
+
+define "Has Criteria Indicating Frailty":
+//Ask Bryn about devices
+	exists ( [DeviceRequest: "Frailty Device"] FrailtyDeviceOrder
+			where FrailtyDeviceOrder.authoredOn during "Measurement Period"
+	)
+		or exists ( [DeviceUseStatement: "Frailty Device"] FrailtyDeviceUse
+				where Global."Normalize Interval"(FrailtyDeviceUse.timing) overlaps "Measurement Period"
+		)
+		or exists ( [Condition: "Frailty Diagnosis"] FrailtyDiagnosis
+				where Global."Prevalence Period"(FrailtyDiagnosis) overlaps "Measurement Period"
+		)
+		or exists ( [Encounter: "Frailty Encounter"] FrailtyEncounter
+				where FrailtyEncounter.period overlaps "Measurement Period"
+		)
+		or exists ( [Observation: "Frailty Symptom"] FrailtySymptomObservation
+				where Global."Normalize Interval"(FrailtySymptomObservation.effective) overlaps "Measurement Period"
+		)
+
+
+        define "Long Term Care Periods During Measurement Period":
+        	( [Encounter: "Care Services in Long-Term Residential Facility"]
+        		union [Encounter: "Nursing Facility Visit"] ) LongTermFacilityEncounter
+        		where LongTermFacilityEncounter.period overlaps "Measurement Period"
+        		return LongTermFacilityEncounter.period
+        			intersect "Measurement Period"
 
 define "Has Spent More Than 90 Days in Long Term Care":
 	"Days Spent in Long Term Care During Measurement Period" > 90
