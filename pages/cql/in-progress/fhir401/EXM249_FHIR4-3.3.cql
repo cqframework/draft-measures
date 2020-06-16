@@ -289,6 +289,19 @@ define "Glucocorticoids Daily Dosage Per Medication": //Most changes made using 
       daysInPeriod: expand { medPeriod } per day,
       dailyDosage: dailyDosage
     }
+/*define "Glucocorticoids Daily Dosage Per Medication":
+  "Glucocorticoid Medication Active" MedicationGlucocorticoid
+    let dosesPerDay: "DosesPerDay"(MedicationGlucocorticoid.frequency),
+    dailyDosage: "GetMedicationDailyDose"(MedicationGlucocorticoid.dosage, dosesPerDay),
+    medPeriod: MedicationGlucocorticoid.relevantPeriod
+      intersect Interval[start of MedicationGlucocorticoid.relevantPeriod,
+      end of "Measurement Period"]
+    return Tuple {
+      code: MedicationGlucocorticoid.code,
+      daysInPeriod: expand { medPeriod } per day,
+      dailyDosage: dailyDosage
+    }*/
+
 
 define "Has Independent Risk Factors Before Measurement Period":
   exists  (["Procedure": "Gastric Bypass Surgery"] GastricBypass
@@ -302,6 +315,9 @@ define "Has Independent Risk Factors Before Measurement Period":
 
 define function "GetMedicationDailyDose"(dosage Quantity, dosesPerDay Decimal):
   dosage * System.Quantity { value: dosesPerDay, unit: '/d' }
+
+//define function "GetMedicationDailyDose"(dosage Quantity, dosesPerDay Decimal):
+//  dosage * Quantity { value: dosesPerDay, unit: '/d' }
 
 define function "DosesPerDay"(frequency System.Code): //Codes replaced with TimingAbbreviation codes
   case
@@ -323,3 +339,29 @@ define function "DosesPerDay"(frequency System.Code): //Codes replaced with Timi
     when frequency ~ "MO" then 0.033
     else null
   end
+
+/*define function "DosesPerDay"(frequency Code):
+  case
+    when frequency ~ "Once daily (qualifier value)" then 1.0
+    when frequency ~ "Twice a day (qualifier value)" then 2.0
+    when frequency ~ "Three times daily (qualifier value)" then 3.0
+    when frequency ~ "Four times daily (qualifier value)" then 4.0
+    when frequency ~ "Every twenty four hours (qualifier value)" then 1.0
+    when frequency ~ "Every twelve hours (qualifier value)" then 2.0
+    when frequency ~ "Every thirty six hours (qualifier value)" then 0.67
+    when frequency ~ "Every eight hours (qualifier value)" then 3.0
+    when frequency ~ "Every four hours (qualifier value)" then 6.0
+    when frequency ~ "Every six hours (qualifier value)" then 4.0
+    when frequency ~ "Every seventy two hours (qualifier value)" then 0.34
+    when frequency ~ "Every forty eight hours (qualifier value)" then 0.5
+    when frequency ~ "Every eight to twelve hours (qualifier value)" then 2.0
+    when frequency ~ "Every six to eight hours (qualifier value)" then 3.0
+    when frequency ~ "Every three to four hours (qualifier value)" then 6.0
+    when frequency ~ "Every three to six hours (qualifier value)" then 4.0
+    when frequency ~ "Every two to four hours (qualifier value)" then 6.0
+    when frequency ~ "One to four times a day (qualifier value)" then 4.0
+    when frequency ~ "One to three times a day (qualifier value)" then 3.0
+    when frequency ~ "One to two times a day (qualifier value)" then 2.0
+    when frequency ~ "Two to four times a day (qualifier value)" then 4.0
+    else null
+  end*/
