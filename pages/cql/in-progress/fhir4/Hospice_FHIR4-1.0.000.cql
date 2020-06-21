@@ -20,9 +20,12 @@ valueset "Hospice care ambulatory": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.8
 code "Discharge to healthcare facility for hospice care (procedure)": '428371000124100' from "SNOMEDCT:2017-09" display 'Discharge to healthcare facility for hospice care (procedure)'
 code "Discharge to home for hospice care (procedure)": '428361000124107' from "SNOMEDCT:2017-09" display 'Discharge to home for hospice care (procedure)'
 
+parameter "Measurement Period" Interval<DateTime>
+  default Interval[@2019-01-01T00:00:00.0, @2020-01-01T00:00:00.0)
+
 context Patient
 
-define function "Has Hospice"(MeasurementPeriod Interval<DateTime>):
+define "Has Hospice":
 	exists (
 	    [Encounter: "Encounter Inpatient"] DischargeHospice
 			where DischargeHospice.status = 'finished'
@@ -30,15 +33,15 @@ define function "Has Hospice"(MeasurementPeriod Interval<DateTime>):
 			        FHIRHelpers.ToConcept(DischargeHospice.hospitalization.dischargeDisposition).codes[0] ~ "Discharge to home for hospice care (procedure)"
 					    or FHIRHelpers.ToConcept(DischargeHospice.hospitalization.dischargeDisposition).codes[0] ~ "Discharge to healthcare facility for hospice care (procedure)"
 			    )
-				and DischargeHospice.period ends during day of MeasurementPeriod
+				and DischargeHospice.period ends during "Measurement Period"
 	)
     or exists (
         [ServiceRequest: "Hospice care ambulatory"] HospiceOrder
             where HospiceOrder.intent = 'order'
-                and FHIRHelpers.ToDateTime(HospiceOrder.authoredOn) in day of MeasurementPeriod
+                and FHIRHelpers.ToDateTime(HospiceOrder.authoredOn) in "Measurement Period"
     )
     or exists (
         [Procedure: "Hospice care ambulatory"] HospicePerformed
-            where HospicePerformed.status = 'completed'
-                and Global."Normalize Interval"(HospicePerformed.performed) overlaps MeasurementPeriod
+            where HospicePerformed.status in { 'completed','on-hold','in-progress','stopped' }
+                and Global."Normalize Interval"(HospicePerformed.performed) overlaps "Measurement Period"
     )
