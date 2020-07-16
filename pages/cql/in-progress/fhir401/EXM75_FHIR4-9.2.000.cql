@@ -1,5 +1,3 @@
-[‎7/‎16/‎2020 11:33 AM]  Katherine Sobel:
-No Title
 library ChildrenWhoHaveDentalDecayorCavities version '9.2.000'
 
 using FHIR version '4.0.1'
