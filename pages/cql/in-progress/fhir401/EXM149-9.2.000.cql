@@ -86,8 +86,9 @@ define "SDE Race":
 define "SDE Sex":
   SDE."SDE Sex"
 
-//define "Denominator Exceptions":
-  //exists "Patient Reason for Not Performing Assessment of Cognition Using Standardized Tools or Alternate Methods"
+define "Denominator Exceptions":
+  exists "Patient Reason for Not Performing Assessment of Cognition Using Standardized Tools"
+  or exists "Patient Reason for Not Performing Assessment of Cognition Using Alternate Methods"
 
 define "Assessment of Cognition Using Standardized Tools":
   ( ["Observation": "Standardized Tools for Assessment of Cognition"]) CognitiveMeasurement
@@ -107,10 +108,20 @@ define "Assessment of Cognition Using Alternative Methods":
 define "Assessment of Cognition Using Standardized Tools or Alternate Methods":
   "Assessment of Cognition Using Standardized Tools" union "Assessment of Cognition Using Alternative Methods"
 
-// Observation not performed and procedure not performed needs to be broken out as 2 defines
-//define "Patient Reason for Not Performing Assessment of Cognition Using Standardized Tools or Alternate Methods":
-//  ( ["Observation": "Standardized Tools for Assessment of Cognition"]
-//    union ["Intervention, Not Performed": "Cognitive Assessment"] ) NoCognitiveAssessment
-//    with "Dementia Encounter" EncounterDementia
-//      such that NoCognitiveAssessment.authorDatetime during EncounterDementia.relevantPeriod
-//    where NoCognitiveAssessment.negationRationale in "Patient Reason"
+define "Patient Reason for Not Performing Assessment of Cognition Using Standardized Tools":
+  (["Observation": "Standardized Tools for Assessment of Cognition"]) NoCognitiveAssessment
+  with "Dementia Encounter" EncounterDementia
+    such that Global."Normalize Interval"(NoCognitiveAssessment.effective) during EncounterDementia.period
+  where "GetNotDoneModifierExtension"(NoCognitiveAssessment).value is true
+  and Global."GetExtension"(NoCognitiveAssessment, 'qicore-notDoneReason').value.coding in "Patient Reason"
+  and NoCognitiveAssessment.status = 'final'
+
+define "Patient Reason for Not Performing Assessment of Cognition Using Alternate Methods":
+( ["Procedure": "Cognitive Assessment"] ) NoCognitiveAssessment
+  with "Dementia Encounter" EncounterDementia
+    such that Global."Normalize Interval"(NoCognitiveAssessment.performed) during EncounterDementia.period
+  where NoCognitiveAssessment.status = 'not-done' and NoCognitiveAssessment.statusReason in "Patient Reason"
+
+define function "GetNotDoneModifierExtension"(domainResource DomainResource):
+  singleton from (domainResource.modifierExtension E
+	  where E.url = ('http://hl7.org/fhir/us/qicore/StructureDefinition/qicore-notDone'))
