@@ -57,7 +57,7 @@ define "Stratification 1":
 
 
 define "Stratification 2":
-  /*Patient encounters with a principal diagnosisof "Psychiatric/Mental Health Diagnosis*/
+  /*Patient encounters with a principal diagnosis of "Psychiatric/Mental Health Diagnosis*/
 Global."Inpatient Encounter" EncounterInpatient
   where   Global."PrincipalDiagnosis"(EncounterInpatient).code in "Psychiatric/Mental Health Diagnosis"
 
