@@ -1,4 +1,4 @@
-library EXM153 version '9.1.000'
+library EXM153 version '9.2.000'
 
 using FHIR version '4.0.1'
 
@@ -102,7 +102,7 @@ define "Diagnoses Identifying Sexual Activity":
     union ["Condition": "Syphilis"]
     union ["Condition": "Carrier of Predominantly Sexually Transmitted Infection"]
     union ["Condition": "Complications of Pregnancy, Childbirth and the Puerperium"]) SexualActivityDiagnosis
-    where SexualActivityDiagnosis.clinicalStatus ~ ToConcept(Global."confirmed")
+    where SexualActivityDiagnosis.verificationStatus ~ ToConcept(Global."confirmed")
         and Global."Prevalence Period"(SexualActivityDiagnosis) overlaps "Measurement Period"
 
 define "Active Contraceptive Medications":
@@ -187,7 +187,7 @@ exists (["Observation": "Chlamydia Screening"] ChlamydiaTest
        and end of Global."Normalize Interval"(ChlamydiaTest.effective) during "Measurement Period")
 
 define "Stratifaction 1":
-Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of "Measurement Period") in Interval[16, 21]
+Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of "Measurement Period") in Interval[16, 20]
 
 define "Stratifaction 2":
 Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of "Measurement Period") in Interval[21, 24]
