@@ -7,6 +7,9 @@ Updated FHIR version to 4.0.1
 Changed timezone keyword to timezoneoffset for use with CQL 1.4
 Removed Normalize Onset in favor of more general Normalize Interval
 @@@
+
+@update: @@MT 2020-08-03 ->
+Checked for null in "Prevalence Period"
 */
 
 using FHIR version '4.0.1'
@@ -217,7 +220,11 @@ define function "Normalize Abatement"(condition Condition):
 	else null
 
 define function "Prevalence Period"(condition Condition):
-  Interval[start of "Normalize Interval"(condition.onset), end of "Normalize Abatement"(condition))
+  if end of "Normalize Abatement"(condition) is null then
+    Interval[start of "Normalize Interval"(condition.onset), end of "Normalize Abatement"(condition)]
+  else if end of "Normalize Abatement"(condition) is not null then
+    Interval[start of "Normalize Interval"(condition.onset), end of "Normalize Abatement"(condition))
+  else null
 
 define function "GetId"(uri String):
 	Last(Split(uri, '/'))
