@@ -128,24 +128,25 @@ define "Denominator Exclusions":
   exists ( ( [Condition: "Rhabdomyolysis"]
           union [Condition: "Breastfeeding"]
           union [Condition: "Pregnancy or Other Related Diagnoses"] ) ExclusionDiagnosis
-          where Global."Normalize Interval" ( ExclusionDiagnosis.onset ) overlaps "Measurement Period"
+          where Global."Prevalence Period" ( ExclusionDiagnosis ) overlaps "Measurement Period"
       )
 
 define "Has Diabetes":
   exists ( [Condition: "Diabetes"] Diabetes
-          where Global."Normalize Interval" ( Diabetes.onset ) overlaps "Measurement Period"
+          where Global."Prevalence Period" ( Diabetes ) overlaps "Measurement Period"
       )
 
 define "Has ESRD":
   exists ( [Condition: "End Stage Renal Disease"] ESRD
-          where Global."Normalize Interval" ( ESRD.onset ) overlaps "Measurement Period"
+          where Global."Prevalence Period" ( ESRD)
+           overlaps "Measurement Period"
       )
 
 define "Has Hepatitis or Liver Disease":
   exists ( ( [Condition: "Hepatitis A"]
           union [Condition: "Hepatitis B"]
           union [Condition: "Liver Disease"] ) HepatitisLiverDisease
-          where Global."Normalize Interval" ( HepatitisLiverDisease.onset ) overlaps "Measurement Period"
+          where Global."Prevalence Period" ( HepatitisLiverDisease ) overlaps "Measurement Period"
       )
 
 define "Has Hypercholesterolemia":
