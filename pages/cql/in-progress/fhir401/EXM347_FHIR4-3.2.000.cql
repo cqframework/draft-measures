@@ -109,6 +109,13 @@ define "Denominator Exceptions":
         or exists "Adverse Reaction to Statin"
         or exists "Allergy or Intolerance to Statin"
 
+define "Denominator Exceptions 2":
+  "Patient Has Order for or Receiving Hospice Care or Palliative Care"
+        or "Has ESRD"
+        or "Has Hepatitis or Liver Disease"
+        or exists "Adverse Reaction to Statin"
+        or exists "Allergy or Intolerance to Statin"
+
 define "Denominator Exceptions 3":
   "Patient Has Order for or Receiving Hospice Care or Palliative Care"
         or "Has ESRD"
@@ -158,7 +165,7 @@ define "Highest LDL Result Within 3 Years is Greater Than or Equal To 70 and Les
 
 define "Most Recent LDL Result Within 3 Years is Less Than 70":
   ( Last([Observation: "LDL Cholesterol"] LDL
-          where Global."Normalize Interval"(LDL.effective)3 years or less before
+          where Global."Normalize Interval"(LDL.effective) 3 years or less before
           end "Measurement Period"
             and LDL.status in { 'final', 'amended', 'corrected', 'appended' }
           sort by effective
