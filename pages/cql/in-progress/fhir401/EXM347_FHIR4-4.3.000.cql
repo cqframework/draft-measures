@@ -57,7 +57,7 @@ define "Adverse Reaction to Statin":
 
 define "Allergy or Intolerance to Statin":
   [AllergyIntolerance: "Statin Allergen"] StatinAllergyIntolerance
-        where Global."Normalize Interval" ( StatinAllergyIntolerance.onset ) overlaps "Measurement Period"
+        where Global."Normalize Interval" ( StatinAllergyIntolerance.onset ) starts before end "Measurement Period"
 
 define "ASCVD Diagnosis or Procedure Before End of Measurement Period":
   ( ( [Condition: "Myocardial Infarction"]
