@@ -1,13 +1,13 @@
-library EXM127_FHIR4 version '9.1.000'
+library EXM127_FHIR4 version '9.2.000'
 
 using FHIR version '4.0.1'
 
 include FHIRHelpers version '4.0.1' called FHIRHelpers
-include Hospice_FHIR4 version '2.0.000' called Hospice
-include MATGlobalCommonFunctions_FHIR4 version '5.0.000' called Global
-include SupplementalDataElements_FHIR4 version '2.0.0' called SDE
+include Hospice version '2.0.000' called Hospice
+include MATGlobalCommonFunctions version '5.0.000' called Global
+include SupplementalDataElements version '2.0.0' called SDE
 
-codesystem "LOINC":'http://loinc.org'
+
 
 valueset "Annual Wellness Visit": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.526.3.1240'
 valueset "Care Services in Long-Term Residential Facility": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.464.1003.101.12.1014'
@@ -24,7 +24,7 @@ valueset "Preventive Care Services - Established Office Visit, 18 and Up": 'http
 valueset "Preventive Care Services-Initial Office Visit, 18 and Up": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.464.1003.101.12.1023'
 valueset "Race": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.836'
 
-code "Birthdate": '21112-8' from "LOINC" display 'Birth date'
+
 
 parameter "Measurement Period" Interval<DateTime>
 
@@ -43,8 +43,8 @@ define "SDE Sex":
   SDE."SDE Sex"
 
 define "Initial Population":
-  ["Patient"] BirthDate
-  	where Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of "Measurement Period")>= 65
+  [Patient] BirthDate
+  	where Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of "Measurement Period")>= 65
       and exists "Qualifying Encounters"
 
 define "Qualifying Encounters":
@@ -66,11 +66,11 @@ define "Denominator Exclusions":
   Hospice."Has Hospice"
 
 define "Numerator":
-    exists ( ["Immunization": "Pneumococcal Vaccine"] PneumococcalVaccine
+    exists ( [Immunization: "Pneumococcal Vaccine"] PneumococcalVaccine
         where PneumococcalVaccine.status = 'completed'
         and PneumococcalVaccine.occurrence as dateTime on or before end of "Measurement Period"
     )
-      or exists ( ["Procedure": "Pneumococcal Vaccine Administered"] PneumococcalVaccineGiven
+      or exists ( [Procedure: "Pneumococcal Vaccine Administered"] PneumococcalVaccineGiven
           where PneumococcalVaccineGiven.status = 'completed'
           and PneumococcalVaccineGiven.performed as Period on or before end of "Measurement Period"
       )
