@@ -36,12 +36,12 @@ define "Outpatient Encounters with Advanced Illness":
 		union [Encounter: "Observation"]
 		union [Encounter: "ED"]
 		union [Encounter: "Nonacute Inpatient"] ) OutpatientEncounter
-		with "Advanced Illness Diagnoses" AdvancedIllnessDiagnosis
+		with [Condition: "Advanced Illness"] AdvancedIllnessDiagnosis
             such that exists (
-                OutpatientEncounter.diagnosis.condition Condition
-                    where EndsWith(Condition.reference, AdvancedIllnessDiagnosis.id)
+                OutpatientEncounter.diagnosis.condition EncounterDiagnosis
+                    where EndsWith(EncounterDiagnosis.reference, AdvancedIllnessDiagnosis.id)
             )
-            and OutpatientEncounter.period starts 2 years or less before
+            and  OutpatientEncounter.period starts 2 years or less before
 			end of "Measurement Period"
 
 define "Long Term Care Periods During Measurement Period":
@@ -53,38 +53,35 @@ define "Long Term Care Periods During Measurement Period":
 
 define "Inpatient Encounter with Advanced Illness":
 	[Encounter: "Acute Inpatient"] InpatientEncounter
-		with "Advanced Illness Diagnoses" AdvancedIllnessDiagnosis
+		with [Condition: "Advanced Illness"] AdvancedIllnessDiagnosis
             such that exists (
-                InpatientEncounter.diagnosis.condition Condition
-                    where EndsWith(Condition.reference, AdvancedIllnessDiagnosis.id)
+                InpatientEncounter.diagnosis.condition EncounterDiagnosis
+                    where EndsWith(EncounterDiagnosis.reference, AdvancedIllnessDiagnosis.id)
             )
 			and InpatientEncounter.period starts 2 years or less before
 			end of "Measurement Period"
 
 define "Dementia Medications In Year Before or During Measurement Period":
 	["MedicationDispense": "Dementia Medications"] DementiaMed
-		where DementiaMed.whenHandedOver as dateTime during day of Interval[
+		where DementiaMed.whenHandedOver during day of Interval[
             ( start of "Measurement Period" - 1 year ), end of "Measurement Period"
         ]
 
 define "Has Criteria Indicating Frailty":
 	exists ( [DeviceRequest: "Frailty Device"] FrailtyDeviceOrder
-			where FrailtyDeviceOrder.authoredOn during day of "Measurement Period"
+			where FrailtyDeviceOrder.authoredOn during "Measurement Period"
 	)
 		or exists ( [DeviceUseStatement: "Frailty Device"] FrailtyDeviceUse
-				where FrailtyDeviceUse.timing as Period overlaps "Measurement Period"
-                    or FrailtyDeviceUse.timing as dateTime during day of "Measurement Period"
+				where  Global."Normalize Interval"(FrailtyDeviceUse.timing) overlaps "Measurement Period"
 		)
 		or exists ( [Condition: "Frailty Diagnosis"] FrailtyDiagnosis
-				where FrailtyDiagnosis.onset as Period overlaps "Measurement Period"
-                    or FrailtyDiagnosis.onset as dateTime during day of "Measurement Period"
+				where  Global."Prevalence Period"(FrailtyDiagnosis) overlaps "Measurement Period"
 		)
 		or exists ( [Encounter: "Frailty Encounter"] FrailtyEncounter
 				where FrailtyEncounter.period overlaps "Measurement Period"
 		)
 		or exists ( [Observation: "Frailty Symptom"] FrailtySymptomObservation
-				where FrailtySymptomObservation.effective as Period overlaps "Measurement Period"
-                    or FrailtySymptomObservation.effective as dateTime during day of "Measurement Period"
+				where  Global."Normalize Interval"(FrailtySymptomObservation.effective) overlaps "Measurement Period"
 		)
 
 define "Advanced Illness and Frailty Exclusion Including Over Age 80":
