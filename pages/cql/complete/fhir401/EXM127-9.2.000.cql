@@ -43,9 +43,8 @@ define "SDE Sex":
   SDE."SDE Sex"
 
 define "Initial Population":
-  [Patient] BirthDate
-  	where Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(BirthDate.birthDate), start of "Measurement Period")>= 65
-      and exists "Qualifying Encounters"
+  Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of "Measurement Period")>= 65
+  and exists "Qualifying Encounters"
 
 define "Qualifying Encounters":
        ([Encounter: "Office Visit"]
