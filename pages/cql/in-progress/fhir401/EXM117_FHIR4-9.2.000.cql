@@ -236,7 +236,7 @@ define "Measles Indicators":
         and end of Global."Normalize Interval"(MeaslesIgGPresence.effective) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
     union (["Condition": "Measles"] MeaslesDiagnosis
       where MeaslesDiagnosis.clinicalStatus ~ ToConcept(Global."active")
-        and start of Global."Prevalance Period"(MeaslesDiagnosis) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
+        and start of Global."Prevalence Period"(MeaslesDiagnosis) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
 
 define "Mumps Indicators":
   (["Observation": "Mumps Antibody Test (IgG Antibody Titer)"] MumpsTiter
