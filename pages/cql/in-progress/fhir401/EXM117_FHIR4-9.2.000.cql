@@ -337,7 +337,7 @@ define "Hepatitis B Immunizations or Procedures":
 
 define "Hepatitis B Numerator Inclusion Conditions":
   (["Observation": "Anti Hepatitis B Virus Surface Ab"] HepatitisBAntigenTest
-      where HepatitisBAntigenTest.result in "Positive Finding"
+      where HepatitisBAntigenTest.value in "Positive Finding"
         and HepatitisBAntigenTest.status in { 'final', 'amended', 'corrected' }
         and end of Global."Normalize Interval"(HepatitisBAntigenTest.effective) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
     union (["Condition": "Anaphylaxis due to Hepatitis B vaccine (disorder)"] HepatitisBReaction
@@ -362,28 +362,28 @@ define "One Chicken Pox Vaccination":
 
 define "Varicella Zoster Numerator Inclusion Conditions":
   (["Observation": "Varicella Zoster Antibody Test (IgG Antibody Titer)"] ChickenPoxTiter
-      where ChickenPoxTiter.result >= 1.10
+      where ChickenPoxTiter.value >= 1.10
         and ChickenPoxTiter.status in { 'final', 'amended', 'corrected' }
         and end of Global."Normalize Interval"(ChickenPoxTiter.effective) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
     union (["Observation": "Varicella Zoster Antibody Test (IgG Antibody Presence)"] ChickenPoxIgGPresence
-      where ChickenPoxIgGPresence.result in "Positive Finding"
+      where ChickenPoxIgGPresence.value in "Positive Finding"
         and ChickenPoxIgGPresence.status in { 'final', 'amended', 'corrected' }
         and end of Global."Normalize Interval"(ChickenPoxIgGPresence.effective) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
     union (["Condition": "Disorders of the Immune System"] ImmuneDisorder
       where ImmuneDisorder.clinicalStatus ~ ToConcept(Global."active")
-        and start of Global."Prevalance Period"(ImmuneDisorder) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
+        and start of Global."Prevalence Period"(ImmuneDisorder) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
     union (["Condition": "HIV"] HIV
       where HIV.clinicalStatus ~ ToConcept(Global."active")
-        and start of Global."Prevalance Period"(HIV) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
+        and start of Global."Prevalence Period"(HIV) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
     union (["Condition": "Malignant Neoplasm of Lymphatic and Hematopoietic Tissue"] LymphaticMalignantNeoplasm
       where LymphaticMalignantNeoplasm.clinicalStatus ~ ToConcept(Global."active")
-        and start of Global."Prevalance Period"(LymphaticMalignantNeoplasm) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
+        and start of Global."Prevalence Period"(LymphaticMalignantNeoplasm) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
     union (["Condition": "Neomycin adverse reaction (disorder)"] NeomycinReaction
       where NeomycinReaction.clinicalStatus ~ ToConcept(Global."active")
-        and start of Global."Prevalance Period"(NeomycinReaction) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
+        and start of Global."Prevalence Period"(NeomycinReaction) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
     union (["Condition": "Varicella Zoster"] VaricellaZoster
       where VaricellaZoster.clinicalStatus ~ ToConcept(Global."active")
-        and start of Global."Prevalance Period"(VaricellaZoster) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
+        and start of Global."Prevalence Period"(VaricellaZoster) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
 
 define "Four Pneumococcal Conjugate Vaccinations":
   from
@@ -409,7 +409,7 @@ define "Pneumococcal Conjugate Immunizations or Procedures":
 define "Pneumococcal Conjugate Numerator Inclusion Conditions":
   ["Condition": "Pneumococcal vaccine adverse reaction (disorder)"] PneumococcalReaction
     where PneumococcalReaction.clinicalStatus ~ ToConcept(Global."active")
-      and start of Global."Prevalance Period"(PneumococcalReaction) during Interval[Patient.birthDate, Patient.birthDate + 2 years]
+      and start of Global."Prevalence Period"(PneumococcalReaction) during Interval[Patient.birthDate, Patient.birthDate + 2 years]
 
 define "One Hepatitis A Vaccinations":
   ((["Immunization": "Hepatitis A Vaccine"] HepatitisAImmunization
@@ -423,15 +423,15 @@ define "One Hepatitis A Vaccinations":
 
 define "Hepatitis A Numerator Inclusion Conditions":
  (["Observation": "Anti Hepatitis A IgG Antigen Test"] HepatitisAAntigenTest
-      where HepatitisAAntigenTest.result in "Positive Finding"
+      where HepatitisAAntigenTest.value in "Positive Finding"
         and HepatitisAAntigenTest.status in { 'final', 'amended', 'corrected' }
         and end of Global."Normalize Interval"(HepatitisAAntigenTest.effective) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
     union (["Condition": "Anaphylactic Reaction to Hepatitis A Vaccine"] HepatitisAReaction
       where HepatitisAReaction.clinicalStatus ~ ToConcept(Global."active")
-        and start of Global."Prevalance Period"(HepatitisAReaction) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
+        and start of Global."Prevalence Period"(HepatitisAReaction) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
     union (["Condition": "Hepatitis A"] HepatitisADiagnosis
       where HepatitisADiagnosis.clinicalStatus ~ ToConcept(Global."active")
-        and start of Global."Prevalance Period"(HepatitisADiagnosis) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
+        and start of Global."Prevalence Period"(HepatitisADiagnosis) during Interval[Patient.birthDate, Patient.birthDate + 2 years])
 
 define "Has Appropriate Number of Rotavirus Immunizations":
   exists ("All Rotavirus Vaccinations" RotavirusImmunization
@@ -484,7 +484,7 @@ define "Rotavirus Numerator Inclusion Conditions":
       union ["Condition": "Severe Combined Immunodeficiency"]
       union ["Condition": "Intussusception"]) RotavirusConditions
       where RotavirusConditions.clinicalStatus ~ ToConcept(Global."active")
-        and start of Global."Prevalance Period"(RotavirusConditions) during Interval[Patient.birthDate, Patient.birthDate + 2 years]
+        and start of Global."Prevalence Period"(RotavirusConditions) during Interval[Patient.birthDate, Patient.birthDate + 2 years]
 
 define "Two Influenza Vaccinations":
   from
@@ -510,4 +510,4 @@ define "Influenza Numerator Inclusion Conditions":
     union ["Condition": "HIV"]
     union ["Condition": "Disorders of the Immune System"]) InfluenzaConditions
     where InfluenzaConditions.clinicalStatus ~ ToConcept(Global."active")
-      and start of Global."Prevalance Period"(InfluenzaConditions) during Interval[Patient.birthDate, Patient.birthDate + 2 years]
+      and start of Global."Prevalence Period"(InfluenzaConditions) during Interval[Patient.birthDate, Patient.birthDate + 2 years]
