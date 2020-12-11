@@ -1,4 +1,4 @@
-library EXM125_FHIR401 version '9.1.000'
+library EXM125 version '9.1.000'
 
 /*
 Based on CMS125v7 - Breast Cancer Screening
@@ -14,11 +14,11 @@ in the measure development community.
 using FHIR version '4.0.1'
 
 include FHIRHelpers version '4.0.1' called FHIRHelpers
-include Hospice_FHIR4 version '2.0.000' called Hospice
-include AdultOutpatientEncounters_FHIR4 version '2.0.000' called AdultOutpatientEncounters
-include MATGlobalCommonFunctions_FHIR4 version '5.0.000' called Global
-include SupplementalDataElements_FHIR4 version '2.0.0' called SDE
-include AdvancedIllnessandFrailtyExclusion_FHIR4 version '5.0.000' called AdvancedIllness
+include Hospice version '2.0.000' called Hospice
+include AdultOutpatientEncounters version '2.0.000' called AdultOutpatientEncounters
+include MATGlobalCommonFunctions version '5.0.000' called Global
+include SupplementalDataElements version '2.0.0' called SDE
+include AdvancedIllnessandFrailtyExclusion version '5.0.000' called AdvancedIllness
 
 valueset "ONC Administrative Sex": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113762.1.4.1'
 valueset "Race": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.836'
@@ -67,7 +67,7 @@ define "Denominator":
 define "Denominator Exclusion":
 		Hospice."Has Hospice"
 				or (( exists "Right Mastectomy Diagnosis" or exists "Right Mastectomy Procedure")
-          and (exists "Left Mastectomy" or exists "Left Mastectomy Procedure"))
+            and (exists "Left Mastectomy Diagnosis" or exists "Left Mastectomy Procedure"))
 				or exists "Bilateral Mastectomy Diagnosis"
 				or exists "Bilateral Mastectomy Procedure"
         or AdvancedIllness."Advanced Illness and Frailty Exclusion Including Under Age 80"
@@ -77,7 +77,7 @@ define "Denominator Exclusion":
 define "Right Mastectomy Diagnosis":
 		(
 				( [Condition: "Status Post Right Mastectomy"]
-          //where C.clinicalStatus ~ ToConcept(Global."active") not nneeded for exclusion
+          //where C.clinicalStatus ~ ToConcept(Global."active") not needed for exclusion
         )
 				union (
 						[Condition: "Unilateral Mastectomy, Unspecified Laterality"] UnilateralMastectomyDiagnosis
@@ -97,7 +97,7 @@ define "Left Mastectomy Procedure":
             where Global."Normalize Interval"(UnilateralMastectomyLeftPerformed.performed) ends on or before end of "Measurement Period"
                and UnilateralMastectomyLeftPerformed.status = 'completed'
 
-define "Left Mastectomy":
+define "Left Mastectomy Diagnosis":
 		(
 		    ( [Condition: "Status Post Left Mastectomy"]
         //  where C.clinicalStatus ~ ToConcept(Global."active") not needed for exclusion
@@ -122,7 +122,7 @@ define "Bilateral Mastectomy Procedure":
 
 define "Numerator":
 		exists (
-				[DiagnosticReport: "Mammography"] Mammogram
+				[Observation: "Mammography"] Mammogram  // QDM - QI Core mapping guidance advises using Observation for Diagnostic Study, Performed.
 						where ( Global."Normalize Interval"(Mammogram.effective) ends 27 months or less on or before end of "Measurement Period" )
 								and Mammogram.status in { 'final', 'amended', 'corrected', 'appended' }
 		)
