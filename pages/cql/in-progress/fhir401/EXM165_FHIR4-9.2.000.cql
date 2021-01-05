@@ -80,7 +80,7 @@ define "Denominator Exclusions":
                   or exists "End Stage Renal Disease Encounter"
           )
      or (Global."CalendarAgeInYearsAt"(ToDateTime(Patient.birthDate), start of "Measurement Period")>= 65 )
-                  and AdvancedIllness."Has Spent More Than 90 Days in Long Term Care"
+                  and AdvancedIllness."Long Term Care Periods Longer Than 90 Consecutive Days"
         or AdvancedIllness."Advanced Illness and Frailty Exclusion Including Over Age 80"
 
 define "Pregnancy Or Renal Diagnosis Exclusions":

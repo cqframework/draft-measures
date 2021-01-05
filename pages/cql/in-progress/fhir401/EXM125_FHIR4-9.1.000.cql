@@ -70,9 +70,9 @@ define "Denominator Exclusion":
           and (exists "Left Mastectomy" or exists "Left Mastectomy Procedure"))
 				or exists "Bilateral Mastectomy Diagnosis"
 				or exists "Bilateral Mastectomy Procedure"
-        or AdvancedIllness."Advanced Illness and Frailty Exclusion Including Under Age 80"
+        or AdvancedIllness."Advanced Illness and Frailty Exclusion Not Including Over Age 80"
         or (Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of "Measurement Period")>= 65
-            and AdvancedIllness."Has Spent More Than 90 Days in Long Term Care")
+            and AdvancedIllness."Long Term Care Periods Longer Than 90 Consecutive Days")
 
 define "Right Mastectomy Diagnosis":
 		(

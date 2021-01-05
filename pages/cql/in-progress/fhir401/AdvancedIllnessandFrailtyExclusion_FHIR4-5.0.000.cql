@@ -50,7 +50,7 @@ define "Advanced Illness and Frailty Exclusion Including Over Age 80":
 			    and "Has Criteria Indicating Frailty"
 		)
 
-define "Advanced Illness and Frailty Exclusion Including Under Age 80":
+define "Advanced Illness and Frailty Exclusion Not Including Over Age 80":
 	//If the measure does NOT include populations age 80 and older, then use this logic:
 	Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of "Measurement Period")>= 65
         and "Has Criteria Indicating Frailty"
@@ -106,21 +106,14 @@ define "Has Criteria Indicating Frailty":
 				where Global."Normalize Interval"(FrailtySymptomObservation.effective) overlaps "Measurement Period"
 		)
 
+define "Long Term Care Periods During Measurement Period":
+  	( [Encounter: "Care Services in Long-Term Residential Facility"]
+      union [Encounter: "Nursing Facility Visit"] ) LongTermFacilityEncounter
+      		where LongTermFacilityEncounter.period overlaps "Measurement Period"
+      		return LongTermFacilityEncounter.period
+      			intersect "Measurement Period"
 
-        define "Long Term Care Periods During Measurement Period":
-        	( [Encounter: "Care Services in Long-Term Residential Facility"]
-        		union [Encounter: "Nursing Facility Visit"] ) LongTermFacilityEncounter
-        		where LongTermFacilityEncounter.period overlaps "Measurement Period"
-        		return LongTermFacilityEncounter.period
-        			intersect "Measurement Period"
-
-define "Has Spent More Than 90 Days in Long Term Care":
-	"Days Spent in Long Term Care During Measurement Period" > 90
-
-define "Days Spent in Long Term Care During Measurement Period":
-	"CumulativeDays"("Long Term Care Periods During Measurement Period")
-
-define function "CumulativeDays"(Intervals List<Interval<DateTime>> ):
-	Sum((collapse Intervals)CollapsedInterval
-			return all duration in days of CollapsedInterval
-	)
+define "Long Term Care Periods Longer Than 90 Consecutive Days":
+ exists ( "Long Term Care Periods During Measurement Period" LongTermCareDuringMP
+    where duration in days of LongTermCareDuringMP > 90
+)

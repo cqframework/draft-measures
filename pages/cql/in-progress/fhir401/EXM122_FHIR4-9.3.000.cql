@@ -48,10 +48,10 @@ define "Denominator":
 
 define "Denominator Exclusions":
   Hospice."Has Hospice"
-    or FrailtyLTI."Advanced Illness and Frailty Exclusion Including Under Age 80"
+    or FrailtyLTI."Advanced Illness and Frailty Exclusion Not Including Over Age 80"
     or ( exists ["Patient"] BirthDate
         where ( Global."CalendarAgeInYearsAt" ( FHIRHelpers.ToDate(BirthDate.birthDate), start of "Measurement Period" ) >= 65 )
-          and FrailtyLTI."Has Spent More Than 90 Days in Long Term Care"
+          and FrailtyLTI."Long Term Care Periods Longer Than 90 Consecutive Days"
     )
 
 define "Numerator":
