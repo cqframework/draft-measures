@@ -73,6 +73,9 @@ define "Qualifying Encounter":
 define "Denominator":
 "Initial Population"
 
+define "Denominator Exclusions":
+Hospice."Has Hospice"
+
 define "Numerator":
 [Observation: "Falls Screening"] FallsScreening
 		where FallsScreening.status in {'final', 'amended', 'corrected', 'preliminary'}

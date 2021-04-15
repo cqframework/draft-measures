@@ -13,7 +13,7 @@ include MATGlobalCommonFunctions_FHIR4 version '5.0.000' called Global
 include SupplementalDataElements_FHIR4 version '2.0.0' called SDE
 include AdvancedIllnessandFrailtyExclusion_FHIR4 version '5.0.000' called AdvancedIllness
 
-codesystem "LOINC": 'urn:oid:2.16.840.1.113883.6.1'
+codesystem "LOINC": 'http://loinc.org'
 codesystem "ActEncounterCode": 'http://terminology.hl7.org/CodeSystem/v3-ActCode'
 
 valueset "Chronic Kidney Disease, Stage 5": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.526.3.1002'
@@ -31,7 +31,8 @@ valueset "Race": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.114222.4.11.83
 valueset "Vascular Access for Dialysis": 'http://cts.nlm.nih.gov/fhir/ValueSet/2.16.840.1.113883.3.464.1003.109.12.1011'
 
 code "Birth date": '21112-8' from "LOINC" display 'Birth date'
-code "Blood pressure": '85354-9' from "LOINC" display 'blood pressure'
+//code "Blood pressure": '85354-9' from "LOINC" display 'blood pressure'
+code "Blood pressure panel with all children optional": '85354-9' from "LOINC" display 'Blood pressure panel with all children optional'
 code "Diastolic blood pressure": '8462-4' from "LOINC" display 'Diastolic blood pressure'
 code "Systolic blood pressure": '8480-6' from "LOINC" display 'Systolic blood pressure'
 
@@ -80,7 +81,7 @@ define "Denominator Exclusions":
                   or exists "End Stage Renal Disease Encounter"
           )
      or (Global."CalendarAgeInYearsAt"(ToDateTime(Patient.birthDate), start of "Measurement Period")>= 65 )
-                  and AdvancedIllness."Long Term Care Periods Longer Than 90 Consecutive Days"
+                  and AdvancedIllness."Has Spent More Than 90 Days in Long Term Care"
         or AdvancedIllness."Advanced Illness and Frailty Exclusion Including Over Age 80"
 
 define "Pregnancy Or Renal Diagnosis Exclusions":
@@ -150,11 +151,10 @@ define "Most Recent Blood Pressure Day":
 	Max("Blood Pressure Days")
 
 define "Qualifying Diastolic Blood Pressure Reading":
-	["Observation": "Blood pressure"] BloodPressure
+	["Observation": "Blood pressure panel with all children optional"] BloodPressure
 	  where BloodPressure.status.value in {'final', 'amended'}
       and Global."Normalize Interval"(BloodPressure.effective) during "Measurement Period"
-      // TODO: Turn this into a value set
-	   and not (GetEncounter(BloodPressure.encounter).class.code.value in {'EMER','IMP', 'ACUTE', 'NONAC', 'PRENC', 'SS'})
+      	   and not (GetEncounter(BloodPressure.encounter).class.code.value in {'EMER','IMP', 'ACUTE', 'NONAC', 'PRENC', 'SS'})
          and exists (
         BloodPressure.component DiastolicBP
           where FHIRHelpers.ToConcept(DiastolicBP.code) ~ "Diastolic blood pressure"
@@ -167,12 +167,11 @@ define function GetEncounter(reference Reference):
   singleton from ( [Encounter: id in Global.GetId(reference.reference)] )
 
 define "Qualifying Systolic Blood Pressure Reading":
-	["Observation": "Blood pressure"] BloodPressure
+	["Observation": "Blood pressure panel with all children optional"] BloodPressure
 	  where BloodPressure.status.value in {'final', 'amended'}
         and Global."Normalize Interval"(BloodPressure.effective) during "Measurement Period"
       and not (GetEncounter(BloodPressure.encounter).class.code.value in {'EMER','IMP', 'ACUTE', 'NONAC', 'PRENC', 'SS'})
-      // TODO: Turn this into a value set
-      and exists (
+            and exists (
         BloodPressure.component SystolicBP
           where FHIRHelpers.ToConcept(SystolicBP.code) ~ "Systolic blood pressure"
             and SystolicBP.value.unit = 'mm[Hg]'

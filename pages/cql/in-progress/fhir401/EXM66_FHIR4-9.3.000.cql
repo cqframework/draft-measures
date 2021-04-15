@@ -59,7 +59,6 @@ Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of "M
 and "Has Qualifying Encounters"
       and exists ( "Total Knee Arthroplasty Procedure" )
 
-
 define "Has Qualifying Encounters":
 exists ( ( ["Encounter": "Outpatient Consultation"]
       union ["Encounter": "Office Visit"]

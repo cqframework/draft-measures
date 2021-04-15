@@ -1,13 +1,17 @@
 library EXM130_FHIR4 version '9.2.000'
 
 /*
+Based on CMS130v7 - Colorectal Cancer Screening
+*/
+
+/*
 This example is a work in progress and should not be considered a final specification
 or recommendation for guidance. This example will help guide and direct the process
 of finding conventions and usage patterns that meet the needs of the various stakeholders
 in the measure development community.
 */
-using FHIR version '4.0.1'
 
+using FHIR version '4.0.1'
 
 include FHIRHelpers version '4.0.1' called FHIRHelpers
 include Hospice_FHIR4 version '2.0.000' called Hospice
@@ -50,7 +54,7 @@ define "SDE Sex":
   			and exists AdultOutpatientEncounters."Qualifying Encounters"
 
 define "Denominator":
-	true
+	"Initial Population"
 
 define "Flexible Sigmoidoscopy Performed":
 	[Procedure: "Flexible Sigmoidoscopy"] FlexibleSigmoidoscopy
@@ -67,9 +71,9 @@ define "Total Colectomy Performed":
 		where Colectomy.status = 'completed'
 			and Global."Normalize Interval"(Colectomy.performed) starts on or before end of "Measurement Period"
 
-define "Malignant Neoplasm":
+define "Malignant Neoplasm Ever":
 	[Condition: "Malignant Neoplasm of Colon"] ColorectalCancer
-		where Global."Prevalence Period"(ColorectalCancer) starts on or before end of "Measurement Period"
+		where Global."Normalize Onset"(ColorectalCancer.onset) starts on or before end of "Measurement Period"
 
 define "Fecal Occult Blood Test Performed":
 	[Observation: "Fecal Occult Blood Test (FOBT)"] FecalOccultResult
@@ -86,7 +90,7 @@ define "Fecal Immunochemical Test DNA":
 define "Colonoscopy Performed":
 	[Procedure: "Colonoscopy"] Colonoscopy
 		where Colonoscopy.status = 'completed'
-		  and Global."Normalize Interval"(Colonoscopy.performed) ends 10 years or less on or before end of "Measurement Period"
+		  and Global."Normalize Onset"(Colonoscopy.performed) ends 10 years or less on or before end of "Measurement Period"
 
 define "Numerator":
 	exists "Colonoscopy Performed"
@@ -96,9 +100,6 @@ define "Numerator":
 		or exists "CT Colonography Performed"
 
 define "Denominator Exclusion":
-	Hospice."Has Hospice"
-		or exists "Malignant Neoplasm"
+	Hospice."Has Hospice"("Measurement Period")
+		or exists "Malignant Neoplasm Ever"
 		or exists "Total Colectomy Performed"
-        or AdvancedIllness."Advanced Illness and Frailty Exclusion Not Including Over Age 80"
-        or (Global."CalendarAgeInYearsAt"(FHIRHelpers.ToDate(Patient.birthDate), start of "Measurement Period")>= 65
-            and AdvancedIllness."Long Term Care Periods Longer Than 90 Consecutive Days")
