@@ -22,7 +22,7 @@ parameter "Measurement Period" Interval<DateTime>
 	
 context Patient
 
-define function "Qualifying Encounters"(MeasurementPeriod Interval<DateTime>):
+define "Qualifying Encounters":
 	(
 	    [Encounter: "Office Visit"]
 		union [Encounter: "Annual Wellness Visit"]
@@ -30,5 +30,5 @@ define function "Qualifying Encounters"(MeasurementPeriod Interval<DateTime>):
 		union [Encounter: "Preventive Care Services-Initial Office Visit, 18 and Up"]
 		union [Encounter: "Home Healthcare Services"]
     ) ValidEncounter
-		where ValidEncounter.period during day of MeasurementPeriod
+		where ValidEncounter.period during "Measurement Period"
 		and ValidEncounter.status  = 'finished'
